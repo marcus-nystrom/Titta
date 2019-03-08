@@ -3,24 +3,25 @@ from psychopy import visual, monitors
 from psychopy import core, event, gui
 import numpy as np
 import os, sys
-
+import tobii_research
 
 # Insert the parent directory (where SMITE is) to path
 curdir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(curdir)
 sys.path.insert(0,os.path.dirname(curdir)) 
-from Titta import Titta, helpers_tobii as helpers, tobii_research
+from Titta import Titta, helpers_tobii as helpers
+
 
 # Parameters
 et_name = 'Spectrum'
 dummy_mode = False
     
 # Change any of the default dettings?
-settings = TITTA.get_defaults(et_name)
+settings = Titta.get_defaults(et_name)
 settings.FILENAME = 'testfile.tsv'
 
 # Connect to eye tracker
-tracker = TITTA.Connect(settings)
+tracker = Titta.Connect(settings)
 if dummy_mode:
     tracker.set_dummy_mode()
 tracker.init()
@@ -42,12 +43,12 @@ tracker.calibrate(win)
 tracker.start_recording(gaze_data=True, store_data=True)
 
 # Present something
-text.text = 'Recording. Press escape to stop'
+text.text = 'Recording. Press space to stop'
 text.draw()
 win.flip()
 tracker.send_message('recording started')
         
-event.waitKeys(['escape'])
+event.waitKeys(['space'])
 tracker.send_message('recording stopped')
 tracker.stop_recording(gaze_data=True)
 
