@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<PsychoPy2experiment encoding="utf-8" version="3.0.1">
+<PsychoPy2experiment encoding="utf-8" version="3.0.6">
   <Settings>
     <Param name="Completed URL" updates="None" val="" valType="str"/>
     <Param name="Data filename" updates="None" val="u'data/%s_%s_%s' % (expInfo['participant'], expName, expInfo['date'])" valType="code"/>
@@ -32,7 +32,7 @@
   </Settings>
   <Routines>
     <Routine name="trial">
-      <ImageComponent name="image">
+      <ImageComponent name="stim_image">
         <Param name="color" updates="constant" val="$[1,1,1]" valType="str"/>
         <Param name="colorSpace" updates="constant" val="rgb" valType="str"/>
         <Param name="durationEstim" updates="None" val="" valType="code"/>
@@ -41,7 +41,7 @@
         <Param name="image" updates="set every repeat" val="$images" valType="str"/>
         <Param name="interpolate" updates="constant" val="linear" valType="str"/>
         <Param name="mask" updates="constant" val="None" valType="str"/>
-        <Param name="name" updates="None" val="image" valType="code"/>
+        <Param name="name" updates="None" val="stim_image" valType="code"/>
         <Param name="opacity" updates="constant" val="1" valType="code"/>
         <Param name="ori" updates="constant" val="0" valType="code"/>
         <Param name="pos" updates="constant" val="(0, 0)" valType="code"/>
@@ -55,17 +55,17 @@
         <Param name="units" updates="None" val="from exp settings" valType="str"/>
       </ImageComponent>
       <CodeComponent name="code">
-        <Param name="Begin Experiment" updates="constant" val="import tobii_research as tr&amp;#10;import os&amp;#10;&amp;#10;# Insert the parent directory (where Titta is) to path&amp;#10;curdir = os.path.dirname(os.path.abspath(__file__))&amp;#10;os.chdir(curdir)&amp;#10;sys.path.insert(0,os.path.dirname(curdir)) &amp;#10;from Titta import Titta&amp;#10;&amp;#10;et_name = 'Spectrum'&amp;#10;settings = TITTA.get_defaults(et_name)&amp;#10;settings.FILENAME = expInfo['participant'] + '.tsv'&amp;#10;&amp;#10;# Connect to eye tracker&amp;#10;tracker = TITTA.Connect(settings)&amp;#10;#tracker.set_dummy_mode()&amp;#10;tracker.init()&amp;#10;&amp;#10;# Calibrate&amp;#10;tracker.calibrate(win)&amp;#10;tracker.start_recording(gaze_data=True, store_data=True)" valType="extendedCode"/>
+        <Param name="Begin Experiment" updates="constant" val="import tobii_research as tr&amp;#10;import os&amp;#10;&amp;#10;# Insert the parent directory (where Titta is) to path&amp;#10;curdir = os.path.dirname(os.path.abspath(__file__))&amp;#10;os.chdir(curdir)&amp;#10;sys.path.insert(0,os.path.dirname(curdir)) &amp;#10;from Titta import Titta&amp;#10;&amp;#10;et_name = 'Spectrum'&amp;#10;settings = Titta.get_defaults(et_name)&amp;#10;settings.FILENAME = expInfo['participant'] + '.tsv'&amp;#10;&amp;#10;# Connect to eye tracker&amp;#10;tracker = Titta.Connect(settings)&amp;#10;#tracker.set_dummy_mode()&amp;#10;tracker.init()&amp;#10;&amp;#10;# Calibrate&amp;#10;tracker.calibrate(win)&amp;#10;tracker.start_recording(gaze_data=True, store_data=True)" valType="extendedCode"/>
         <Param name="Begin JS Experiment" updates="constant" val="" valType="extendedCode"/>
         <Param name="Begin JS Routine" updates="constant" val="" valType="extendedCode"/>
-        <Param name="Begin Routine" updates="constant" val="tracker.send_message('_'.join([image.name, 'onset']))" valType="extendedCode"/>
+        <Param name="Begin Routine" updates="constant" val="tracker.send_message('_'.join([images, 'onset']))" valType="extendedCode"/>
         <Param name="Code Type" updates="None" val="Py" valType="str"/>
         <Param name="Each Frame" updates="constant" val="" valType="extendedCode"/>
         <Param name="Each JS Frame" updates="constant" val="" valType="extendedCode"/>
         <Param name="End Experiment" updates="constant" val="tracker.stop_recording(gaze_data=True)&amp;#10;tracker.save_data()" valType="extendedCode"/>
         <Param name="End JS Experiment" updates="constant" val="" valType="extendedCode"/>
         <Param name="End JS Routine" updates="constant" val="" valType="extendedCode"/>
-        <Param name="End Routine" updates="constant" val="tracker.send_message('_'.join([image.name, 'offset']))" valType="extendedCode"/>
+        <Param name="End Routine" updates="constant" val="tracker.send_message('_'.join([images, 'offset']))" valType="extendedCode"/>
         <Param name="name" updates="None" val="code" valType="code"/>
       </CodeComponent>
     </Routine>

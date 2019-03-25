@@ -7,6 +7,7 @@
 *.o
 *.so
 *.bin
+*.pyc
 
 # Packages #
 ############
@@ -31,6 +32,7 @@
 *.png
 *.gif
 *.mp4
+*.bin
 
 # Logs and databases #
 ######################
