@@ -16,6 +16,7 @@ from __future__ import print_function # towards Python 3 compatibility
 
 from psychopy import visual, core, event
 import pandas as pd
+import csv
 #import time
 import sys
 
@@ -1854,11 +1855,19 @@ class myTobii(object):
     def save_data(self):
         ''' Saves the data
         '''
-    
-            
-        # Save gaze data
-        df = pd.DataFrame(self.gaze_data_container, columns=self.header)
-        df.to_csv(self.filename[:-4] + '.tsv', sep='\t')
+        
+        # Save gaze data. If 32 bit Python version, Pandas throws a Memory error if
+        # gaze_data_container > 2 GB. Therefore the csv-module is used instead.
+        if sys.version_info >= (3,0,0):
+            df = pd.DataFrame(self.gaze_data_container, columns=self.header)
+            df.to_csv(self.filename[:-4] + '.tsv', sep='\t')
+        else:        
+            print(sys.getsizeof(self.gaze_data_container))
+            with open(self.filename[:-4] + '.tsv', 'wb') as csv_file:
+                csv_writer = csv.writer(csv_file, delimiter='\t')
+                csv_writer.writerow(self.header)
+                for row in self.gaze_data_container:
+                    csv_writer.writerow(row)          
             
         # Save messages
         df_msg = pd.DataFrame(self.msg_container,  columns = ['device_time_stamp',
