@@ -17,3 +17,9 @@ Titta is licensed under the Creative Commons Attribution 4.0 (CC BY 4.0) license
 functionality.
 
 *Note* that this toolbox is in a beta state. The API may change drastically at any time without notice. Work is ongoing, and code may also be in a broken or untested state without warning.
+
+To get started:
+Open a command window where psychopy is installed, so that you have the right python.exe on path. Then execute 
+"python -m pip install tobii_research".
+
+Importantly, download the _py2 version (Python 2.7) of the latest release of PsychoPy. Tobii supports only Python 2.7 and 3.5; not 3.6 that the latest version of PsychoPy uses).
