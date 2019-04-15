@@ -5,7 +5,7 @@ import numpy as np
 import os, sys
 import tobii_research
 
-# Insert the parent directory (where SMITE is) to path
+# Insert the parent directory (where Titta is) to path
 curdir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(curdir)
 sys.path.insert(0,os.path.dirname(curdir)) 
