@@ -1370,9 +1370,7 @@ class myTobii(object):
         ''' Get system time stamp
         '''
         
-        sample = self.get_latest_sample()
-        
-        return sample['device_time_stamp'], sample['system_time_stamp']
+        return tr.get_system_time_stamp()    
         
     #%% 
     def start_sample_buffer(self, sample_buffer_length=3):
@@ -1399,7 +1397,7 @@ class myTobii(object):
         ''' Sends a message to the data file
         '''       
         ts = self.get_system_time_stamp()
-        self.msg_container.append([ts[0], ts[1], msg])
+        self.msg_container.append([ts, msg])
         
     #%%
     def get_latest_sample(self):
@@ -1870,8 +1868,8 @@ class myTobii(object):
                     csv_writer.writerow(row)          
             
         # Save messages
-        df_msg = pd.DataFrame(self.msg_container,  columns = ['device_time_stamp',
-             'system_time_stamp', 'msg'])
+        df_msg = pd.DataFrame(self.msg_container,  columns = ['system_time_stamp', 
+                                                              'msg'])
         df_msg.to_csv(self.filename[:-4] + '_msg.tsv', sep='\t')            
         
         # Dump other collected information to file

@@ -13,7 +13,7 @@ from Titta import Titta, helpers_tobii as helpers
 
 
 # Parameters
-et_name = 'Spectrum'
+et_name = 'Tobii4C'
 dummy_mode = False
     
 # Change any of the default dettings?
@@ -28,7 +28,7 @@ tracker.init()
 
 # Window set-up (this color will be used for calibration)
 win = visual.Window(monitor = settings.mon, fullscr = settings.FULLSCREEN,
-                    screen=1, size=settings.SCREEN_RES, units = 'deg')
+                    screen=0, size=settings.SCREEN_RES, units = 'deg')
 text = visual.TextStim(win, text='')                    
 
                                   
