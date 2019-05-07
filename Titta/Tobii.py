@@ -6,7 +6,7 @@ Created on Thu Jun 01 14:11:57 2017
 
 ToDO: 
     1) Integrate raw classes
-    2) Fix eye image in spectrum (DONE!)
+    2) Fix lag in eye image presentation in Spectrum 
     3) Test monocular calibrations (calibration mode cannot exit until both eyes done)
         Use flags
        hide data from the eye that is not calibrated (DONE!)
@@ -74,7 +74,10 @@ class myTobii(object):
             settings.RECORD_EYE_IMAGES_DURING_CALIBRATION = False
 
         self.settings = settings
-        self.eye_tracker_name = eye_tracker_name        
+        self.eye_tracker_name = eye_tracker_name  
+        
+        # Initiate direct access to barebone SDK functionallity
+        self.rawSDK = rawSDK()
         
     #%%  
     def init(self):
@@ -98,11 +101,16 @@ class myTobii(object):
             k += 1
             core.wait(2)
 			
-        tracker = tr.EyeTracker(self.settings.TRACKER_ADDRESS) # 
-        print(tracker.model)
-        if len(tracker.model) == 0:
+        # Make functions from the EyeTracker object available            
+        self.tracker = tr.EyeTracker(self.settings.TRACKER_ADDRESS) # 
+#        self.rawTracker = rawTracker(self.settings.TRACKER_ADDRESS)
+#        print(self.rawTracker)
+#        self.tracker = self.rawTracker.tracker
+        
+        print(self.tracker.model)
+        if len(self.tracker.model) == 0:
             raise Exception('blah') 
-        self.tracker = tracker
+        
         
         # Store recorded data in lists
         self.gaze_data_container = []
@@ -561,7 +569,7 @@ class myTobii(object):
             self.moving_circ.pos = ((avg_pos[0] - 0.5) * -1 - offset[0] , 
                                     (avg_pos[1] - 0.5) * -1 - offset[1]) 
                                     
-            self.moving_circ.radius = (avg_pos[2] - 0.5) + graphics.HEAD_POS_CIRCLE_MOVING_RADIUS
+            self.moving_circ.radius = (avg_pos[2] - 0.5)*-1 + graphics.HEAD_POS_CIRCLE_MOVING_RADIUS
             
             # Control min size of radius
             if self.moving_circ.radius < graphics.HEAD_POS_CIRCLE_MOVING_MIN_RADIUS:
@@ -1546,9 +1554,9 @@ class myTobii(object):
         as a numpy array
         '''
     
-#        print("System time: {0}, Device time {1}, Camera id {2}".format(self.eye_image['system_time_stamp'],
-#                                                                         self.eye_image['device_time_stamp'],
-#                                                                         self.eye_image['camera_id']))
+        print("System time: {0}, Device time {1}, Camera id {2}".format(self.eye_image['system_time_stamp'],
+                                                                         self.eye_image['device_time_stamp'],
+                                                                         self.eye_image['camera_id']))
         im_info = self.eye_image
     
         #image = PhotoImage(data=base64.standard_b64encode(self.eye_image['image_data']))
@@ -1778,12 +1786,15 @@ class myTobii(object):
     #%%    
     def _eye_image_callback(self, im):
         ''' Here eye images are accessed and optionally saved to list
+        Called every time a new eye image is available.
+        
         Args:
             im - dict with information about eye image
             
         '''
         
         # Make eye image dict available to rest of class
+        print(im.shape())
         self.eye_image = im           
         
         
@@ -1879,6 +1890,11 @@ class myTobii(object):
             pickle.dump(self.image_data_container, fp)
             pickle.dump(self.calibration_history(), fp)
             pickle.dump(self.system_info(), fp)
+            python_version = '.'.join([str(sys.version_info[0]), 
+                                  str(sys.version_info[1]),
+                                  str(sys.version_info[2])])
+            pickle.dump(python_version, fp)
+            
 
 
     
@@ -1892,10 +1908,8 @@ class rawSDK(object):
     ''' Access Tobii SDK’s EyeTrackingOperations instance to call 
     its functions directly
     '''
-    
-    import tobii_research as tr
-    
-    def __init__():
+        
+    def __init__(self):
         pass
         
     def find_all_eye_trackers(self):
@@ -1905,13 +1919,11 @@ class rawSDK(object):
         return tr.get_system_time_stamp()    
     
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-class rawSDK(object):
+class rawTracker(object):
     ''' Acess Tobii SDK’s eye tracker handle to call its functions directly
     '''
-    
-    import tobii_research as tr
-    
-    def __init__(tracker_address):    
+        
+    def __init__(self, tracker_address):    
         self.tracker = tr.EyeTracker(tracker_address)    
         
     #%% FUNCTIONS 
