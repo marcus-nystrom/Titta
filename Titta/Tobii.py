@@ -15,6 +15,7 @@ ToDO:
 from __future__ import print_function # towards Python 3 compatibility
 
 from psychopy import visual, core, event
+from collections import deque
 import pandas as pd
 import csv
 #import time
@@ -162,7 +163,8 @@ class myTobii(object):
         self.old_timestamp = 0
         
         # Placeholder for eye images
-        self.eye_image = None
+        self.eye_image = deque(maxlen=2) # To store the most recent eye images
+                                            # for the left and right eyes
         self.image_type = None
         self.eye_image_write = False
 
@@ -1549,15 +1551,22 @@ class myTobii(object):
         
    
     #%%    
-    def get_latest_eye_image(self):
-        ''' Retuns the most recently acquired eye image
-        as a numpy array
+    def get_eye_image(self, im_info):
+        ''' Converts an eye image returned from the Tobii SDK to
+        a numpy array
+        
+        Args:
+            im_info - dict with info about image as returned by the SDK
+            
+        Returns:
+            nparr
+            
         '''
     
-        print("System time: {0}, Device time {1}, Camera id {2}".format(self.eye_image['system_time_stamp'],
-                                                                         self.eye_image['device_time_stamp'],
-                                                                         self.eye_image['camera_id']))
-        im_info = self.eye_image
+#        print("System time: {0}, Device time {1}, Camera id {2}".format(self.eye_image['system_time_stamp'],
+#                                                                         self.eye_image['device_time_stamp'],
+#                                                                         self.eye_image['camera_id']))
+#        im_info = self.eye_image
     
         #image = PhotoImage(data=base64.standard_b64encode(self.eye_image['image_data']))
         #print(self.eye_image)
@@ -1600,7 +1609,7 @@ class myTobii(object):
         
         #print(im_final.flatten().min(), im_final.flatten().max())
       
-        return nparr, im_info
+        return nparr
     #%%     
     def _advanced_setup(self):
         ''' Shows eye image and tracking monitor
@@ -1651,6 +1660,7 @@ class myTobii(object):
             # Get eye tracker distance 
             xyz_pos_eye_l = sample['left_gaze_origin_in_user_coordinate_system']
             xyz_pos_eye_r = sample['right_gaze_origin_in_user_coordinate_system']  
+            
             dist = np.nanmean([xyz_pos_eye_l[2], xyz_pos_eye_r[2]])                  
 #            dist = (xyz_pos_eye_l[2] + 
 #                    xyz_pos_eye_r[2]) / 2.0           
@@ -1758,14 +1768,19 @@ class myTobii(object):
         ''' Draw left and right eye image
         '''
         
-        if tr.CAPABILITY_HAS_EYE_IMAGES in self.tracker.device_capabilities: 
-#                            
-            im_arr, im_id = self.get_latest_eye_image()
+        if tr.CAPABILITY_HAS_EYE_IMAGES in self.tracker.device_capabilities:
+
+            # The the most recent image from the left and the right cameras                
+            im_arr_0 = self.get_eye_image(self.eye_image[0])
+            im_arr_1 = self.get_eye_image(self.eye_image[1])
+            
                 
-            if im_id['camera_id'] == 0:
-                self.eye_image_stim_l.image = im_arr
-            elif im_id['camera_id'] == 1:
-                self.eye_image_stim_r.image = im_arr                  
+            if self.eye_image[0]['camera_id'] == 0:
+                self.eye_image_stim_l.image = im_arr_0
+                self.eye_image_stim_r.image = im_arr_1                
+            else:
+                self.eye_image_stim_r.image = im_arr_0
+                self.eye_image_stim_l.image = im_arr_1   
                     
             self.eye_image_stim_l.draw()          
             self.eye_image_stim_r.draw()
@@ -1794,8 +1809,7 @@ class myTobii(object):
         '''
         
         # Make eye image dict available to rest of class
-        print(im.shape())
-        self.eye_image = im           
+        self.eye_image.append(im)
         
         
 #       # If in advanced setup mode, put image in texture to be displayed
@@ -1807,15 +1821,17 @@ class myTobii(object):
                         
         # Store image dict in list, if self.store_data = True
         if self.store_data:
-            self.image_data_container.append(im)
+            self.image_data_container.append(im[-1])
 
     #%%    
     def subscribe_to_eye_images(self):
         ''' Starts sending eye images
         '''
+        print('subscribe')
         self.tracker.subscribe_to(tr.EYETRACKER_EYE_IMAGES, 
                                   self._eye_image_callback,
                                   as_dictionary=True)
+                
     #%%    
     def unsubscribe_from_eye_images(self):
         ''' Stops sending eye images

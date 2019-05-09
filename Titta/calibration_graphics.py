@@ -10,7 +10,7 @@ blue = tuple(np.array([37, 97, 163]) / 255.0 * 2 - 1)
 blue_active = tuple(np.array([11, 122, 244]) / 255.0 * 2 - 1)
 green = tuple(np.array([0, 120, 0]) / 255.0 * 2 - 1)
 red = tuple(np.array([150, 0, 0]) / 255.0 * 2 - 1)
-yellow = tuple(np.array([150, 150, 0]) / 255.0 * 2 - 1)
+yellow = tuple(np.array([255, 255, 0]) / 255.0 * 2 - 1)
 yellow_linecolor = tuple(np.array([255, 255, 0]) / 255.0 * 2 - 1)
 
 TEXT_SIZE = 0.04 # Size of text
@@ -49,8 +49,8 @@ POS_SETUP_BUTTON = (-0.5, -0.8)
 COLOR_SETUP_BUTTON = blue
 WIDTH_SETUP_BUTTON = 0.30
 HEIGHT_SETUP_BUTTON = 0.08
-SETUP_BUTTON = 'a'
-SETUP_BUTTON_TEXT = 'advanced (a)'
+SETUP_BUTTON = 'e'
+SETUP_BUTTON_TEXT = 'eye images (e)'
 
 POS_ACCEPT_BUTTON = (0.5, -0.8)
 COLOR_ACCEPT_BUTTON = green

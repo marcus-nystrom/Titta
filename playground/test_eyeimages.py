@@ -18,6 +18,9 @@ else:
     from Tkinter import Tk, PhotoImage
  
  
+def gaze_callback(gaze):
+    pass
+    
 def eye_image_callback(eye_image_data):
     print("System time: {0}, Device time {1}, Camera id {2}".format(eye_image_data['system_time_stamp'],
                                          eye_image_data['device_time_stamp'],
@@ -30,12 +33,16 @@ def eye_image_callback(eye_image_data):
 def eye_images(eyetracker):
     root = Tk()
     print("Subscribing to eye images for eye tracker with serial number {0}.".format(eyetracker.serial_number))
+    
+    eyetracker.subscribe_to(tr.EYETRACKER_GAZE_DATA, gaze_callback, as_dictionary=True)
     eyetracker.subscribe_to(tr.EYETRACKER_EYE_IMAGES, eye_image_callback, as_dictionary=True)
  
     # Wait for eye images.
     time.sleep(4)
  
     eyetracker.unsubscribe_from(tr.EYETRACKER_EYE_IMAGES, eye_image_callback)
+    eyetracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA, gaze_callback)
+    
     print("Unsubscribed from eye images.")
     root.destroy()
  # <EndExample>
