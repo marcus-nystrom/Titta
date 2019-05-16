@@ -26,8 +26,9 @@ def eye_image_callback(eye_image_data):
                                          eye_image_data['device_time_stamp'],
                                          eye_image_data['camera_id']))
  
-    image = PhotoImage(data=base64.standard_b64encode(eye_image_data['image_data']))
-    print("{0} width {1}, height {2}".format(image, image.width(), image.height()))
+    print(eye_image_data['image_data'])
+#    image = PhotoImage(data=base64.standard_b64encode(eye_image_data['image_data']))
+#    print("{0} width {1}, height {2}".format(image, image.width(), image.height()))
  
  
 def eye_images(eyetracker):
@@ -38,7 +39,7 @@ def eye_images(eyetracker):
     eyetracker.subscribe_to(tr.EYETRACKER_EYE_IMAGES, eye_image_callback, as_dictionary=True)
  
     # Wait for eye images.
-    time.sleep(4)
+    time.sleep(10)
  
     eyetracker.unsubscribe_from(tr.EYETRACKER_EYE_IMAGES, eye_image_callback)
     eyetracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA, gaze_callback)

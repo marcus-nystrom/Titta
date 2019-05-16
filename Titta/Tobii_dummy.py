@@ -78,7 +78,7 @@ class Connect(Thread):
     #%%             
     def run(self):
         # Called by the e.g., et.start()
-        # Continously read data into the ringbuffer (convert to deg)
+        # Continously read data into a ringbuffer
         while True:
             if self.__stop:        
                 break

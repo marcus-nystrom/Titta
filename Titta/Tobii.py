@@ -682,6 +682,9 @@ class myTobii(object):
         self.stop_recording(image_data=True)   
         self.mouse.setVisible(0)
         
+        # Clear the screen
+        win.flip()
+        
         return action
                 
         
