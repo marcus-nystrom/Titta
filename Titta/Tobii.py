@@ -683,7 +683,7 @@ class myTobii(object):
         self.mouse.setVisible(0)
         
         # Clear the screen
-        win.flip()
+        self.win.flip()
         
         return action
                 
