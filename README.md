@@ -16,7 +16,7 @@ Titta is licensed under the Creative Commons Attribution 4.0 (CC BY 4.0) license
 `examples/read_me.py` shows a minimal example of using the toolbox's
 functionality.
 
-*Note* that this toolbox is in a beta state. The API may change drastically at any time without notice. Work is ongoing, and code may also be in a broken or untested state without warning.
+*Note* that this toolbox is in a beta state. The API may change drastically at any time without notice. Work is ongoing, and code may also be in a broken or untested state without warning. That said, the toolbox has already been used in several projects at the Lund University Humanities Lab, Sweden.
 
 To get started:
 Open a command window where psychopy is installed, so that you have the right python.exe on path. Then execute 
