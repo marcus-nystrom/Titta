@@ -6,11 +6,12 @@ Created on Thu Jun 01 14:11:57 2017
 
 ToDO: 
     1) Integrate raw classes
-    2) Fix lag in eye image presentation in Spectrum 
     3) Test monocular calibrations (calibration mode cannot exit until both eyes done)
         Use flags
        hide data from the eye that is not calibrated (DONE!)
     4) Implement dynamic calibration (use as default)
+    5) Select calibration with arrow keys
+    * Add vaildation button
 """
 from __future__ import print_function # towards Python 3 compatibility
 
@@ -217,7 +218,15 @@ class myTobii(object):
                                         pos=graphics.POS_RECAL_BUTTON) 
         self.recalibrate_button_text = visual.TextStim(win, text=graphics.RECAL_BUTTON_TEXT, 
                                                      height=graphics.TEXT_SIZE, units='norm',
-                                                     pos=graphics.POS_RECAL_BUTTON)                                                     
+                                                     pos=graphics.POS_RECAL_BUTTON)  
+
+        self.revalidate_button = visual.Rect(win, width= graphics.WIDTH_REVAL_BUTTON, 
+                                            height=graphics.HEIGHT_REVAL_BUTTON,  
+                                        units='norm', fillColor=graphics.COLOR_REVAL_BUTTON,
+                                        pos=graphics.POS_REVAL_BUTTON) 
+        self.revalidate_button_text = visual.TextStim(win, text=graphics.REVAL_BUTTON_TEXT, 
+                                                     height=graphics.TEXT_SIZE, units='norm',
+                                                     pos=graphics.POS_REVAL_BUTTON)                                                     
                                         
         self.setup_button = visual.Rect(win, width= graphics.WIDTH_SETUP_BUTTON, 
                                         height=graphics.HEIGHT_SETUP_BUTTON,  
@@ -389,12 +398,16 @@ class myTobii(object):
             print(action)
             if 'setup' in action:
                 action = self._check_head_position()
-            elif 'cal' in action:                                           
+            elif 'cal' in action:   
+                
+                # Default to last calibration when a new 
+                # Calibration is run
+                self.selected_calibration = len(self.deviations) + 1                                        
                 action = self._run_calibration()
             elif 'val' in action:
                 action = self._run_validation()
             elif 'res' in action:
-                action, selected_calibration = self._show_validation_screen()
+                action = self._show_validation_screen()
 #            elif 'adv' in action:
 ##                action = self._advanced_setup()
 #                action = self._show_eye_image()
@@ -422,7 +435,7 @@ class myTobii(object):
             
         # Save all calibrations (appending 'used' means that the calibration was used)
         for i, devs in enumerate(self.deviations):
-            if i == selected_calibration-1:
+            if i == self.selected_calibration - 1:
                 self.all_validation_results.append(devs + ['used'])
             else:
                 self.all_validation_results.append(devs + ['not used'])              
@@ -863,8 +876,8 @@ class myTobii(object):
             samples.draw()        
                         
         # Save validation results as image
-        nCalibrations = len(self.deviations) + 1
-        fname = 'calibration_image' + str(nCalibrations)+'.png'
+        # nCalibrations = len(self.deviations) + 1
+        fname = 'calibration_image' + str(self.selected_calibration)+'.png'
         self.win.getMovieFrame(buffer='back')
         self.win.saveMovieFrames(fname)
 
@@ -886,7 +899,7 @@ class myTobii(object):
 
             # None is returned on empty calibration.
             if calibration_data is not None:
-                print("Saving calibration to file for eye tracker with serial number {0}.".format(self.tracker.serial_number))
+                print("Saving calibration to file {} for eye tracker with serial number {}.".format(filename, self.tracker.serial_number))
                 f.write(self.tracker.retrieve_calibration_data())
             else:
                 print("No calibration available for eye tracker with serial number {0}.".format(self.tracker.serial_number))
@@ -904,7 +917,7 @@ class myTobii(object):
             
         # Don't apply empty calibrations.
         if len(calibration_data) > 0:
-            print("Applying calibration on eye tracker with serial number {0}.".format(self.tracker.serial_number))
+            print("Applying calibration {} on eye tracker with serial number {}.".format(filename, self.tracker.serial_number))
             self.tracker.apply_calibration_data(calibration_data)
             
         
@@ -997,7 +1010,8 @@ class myTobii(object):
             deviation_l = np.nan
             rms_l = np.nan            
             
-        self.deviations.append([np.nanmean(deviation_l), np.nanmean(deviation_r),
+        self.deviations.insert(self.selected_calibration - 1,
+                               [np.nanmean(deviation_l), np.nanmean(deviation_r),
                                 np.nanmean(rms_l), np.nanmean(rms_r)])
             
         self._generate_validation_image(target_pos[:, 2:], gaze_pos[:, :-2])
@@ -1048,8 +1062,8 @@ class myTobii(object):
             samples.draw()       
 
         # Save validation results as image
-        nCalibrations = len(self.deviations)
-        fname = 'validation_image' + str(nCalibrations)+'.png'
+        # nCalibrations = len(self.deviations)
+        fname = 'validation_image' + str(self.selected_calibration) + '.png'
         self.win.getMovieFrame(buffer='back')
         self.win.saveMovieFrames(fname)
 
@@ -1154,11 +1168,11 @@ class myTobii(object):
 
         # get (and save) validation screen image
         nCalibrations = len(self.deviations)
-        fname = 'validation_image' + str(nCalibrations)+'.png'
         self.save_calibration(str(nCalibrations))
         core.wait(0.2)
         
         # Add image as texture
+        fname = 'validation_image' + str(self.selected_calibration)+'.png'        
         self.accuracy_image.image = fname
         show_validation_image = True    # Default is to show validation results, 
                                         # not calibration results
@@ -1171,12 +1185,12 @@ class myTobii(object):
         select_accuracy_rect = []
         select_rect_text = []
         accuracy_values = []#[0] * len(x_pos)] * nCalibrations
-        print(accuracy_values)
+        # print(accuracy_values)
 
         y_pos = y_pos_res
-        print(self.deviations)
+        # print(self.deviations)
         for i in range(nCalibrations):
-            print(self.deviations[i])
+            # print(self.deviations[i])
             select_accuracy_rect.append(visual.Rect(self.win, width= 0.15, 
                                                 height= 0.05, 
                                                 units='norm',
@@ -1212,11 +1226,11 @@ class myTobii(object):
             accuracy_values.append(accuracy_values_j)                 
             y_pos -= 0.06
             
-        for i in range(nCalibrations):            
-            for j, x in enumerate(x_pos): 
-                print(i, j, accuracy_values[i][j].text, accuracy_values[i][j].pos)            
+        # for i in range(nCalibrations):            
+        #     for j, x in enumerate(x_pos): 
+        #         print(i, j, accuracy_values[i][j].text, accuracy_values[i][j].pos)            
         
-        print('acc values done')
+        # print('acc values done')
         
         # Prepare header
         header_text = []    
@@ -1230,10 +1244,10 @@ class myTobii(object):
                                                 pos = (x, y_pos_res + 0.06),
                                                 color = (1, 1, 1)))
                                                 
-        print('header done')
+        # print('header done')
 
         # Wait for user input
-        selected_calibration = nCalibrations # keep track of which calibration is selected
+        # self.selected_calibration = nCalibrations # keep track of which calibration is selected
         selection_done = False
         display_gaze = False
         gaze_button_pressed = False
@@ -1249,6 +1263,9 @@ class myTobii(object):
             # Draw buttons (re-calibrate, accept and move on, show gaze)
             self.recalibrate_button.draw()
             self.recalibrate_button_text.draw()
+            
+            self.revalidate_button.draw()
+            self.revalidate_button_text.draw()            
             
             self.accept_button.draw()
             self.accept_button_text.draw()
@@ -1266,7 +1283,7 @@ class myTobii(object):
             for i in range(nCalibrations):
                 
                 # Highlight selected calibrations
-                if i == selected_calibration - 1: # Calibration selected
+                if i == self.selected_calibration - 1: # Calibration selected
 #                    select_rect_text[i].color = graphics.blue_active
                     select_accuracy_rect[i].fillColor = graphics.blue_active
                     if nCalibrations > 1:
@@ -1294,7 +1311,7 @@ class myTobii(object):
                     else:
                         fname = 'calibration_image' + str(i + 1) + '.png'
                     self.accuracy_image.image = fname
-                    selected_calibration = int(i + 1)
+                    self.selected_calibration = int(i + 1)
                     break
                     
             # Check if key or button is pressed
@@ -1302,6 +1319,15 @@ class myTobii(object):
             if graphics.RECAL_BUTTON in k or self.mouse.isPressedIn(self.recalibrate_button):
                 action = 'setup'
                 selection_done = True
+            elif graphics.REVAL_BUTTON in k or self.mouse.isPressedIn(self.revalidate_button):
+                
+                action = 'val'
+                
+                # Delete previous validation results, since we want to 
+                # re-validate
+                self.deviations.pop(self.selected_calibration - 1)
+                
+                selection_done = True                
             elif graphics.ACCEPT_BUTTON in k or self.mouse.isPressedIn(self.accept_button):
                 action = 'done'
                 selection_done = True                
@@ -1311,7 +1337,7 @@ class myTobii(object):
                         self.load_calibration(k[0])  # Load the selected calibration
                         fname = 'validation_image' + str(k[0]) + '.png'
                         self.accuracy_image.image = fname
-                        selected_calibration = int(k[0])       
+                        self.selected_calibration = int(k[0])       
                         
             elif 'escape' in k:
                 action = 'quit'
@@ -1337,10 +1363,10 @@ class myTobii(object):
                 
                 # If validation image show, switch to calibration and vice versa
                 if show_validation_image:
-                    fname = 'validation_image' + str(nCalibrations)+'.png'
+                    fname = 'validation_image' + str(self.selected_calibration)+'.png'
                     self.accuracy_image.image = fname                
                 else:
-                    fname = 'calibration_image' + str(nCalibrations)+'.png'
+                    fname = 'calibration_image' + str(self.selected_calibration)+'.png'
                     self.accuracy_image.image = fname                     
 
                 cal_image_button_pressed = True
@@ -1359,7 +1385,7 @@ class myTobii(object):
         self.mouse.setVisible(0)
 
         
-        return action, selected_calibration
+        return action
                 
     #%%   
     def system_info(self):   
@@ -1773,18 +1799,15 @@ class myTobii(object):
         
         if tr.CAPABILITY_HAS_EYE_IMAGES in self.tracker.device_capabilities:
 
-            # The the most recent image from the left and the right cameras                
-            im_arr_0 = self.get_eye_image(self.eye_image[0])
-            im_arr_1 = self.get_eye_image(self.eye_image[1])
-            
-                
-            if self.eye_image[0]['camera_id'] == 0:
-                self.eye_image_stim_l.image = im_arr_0
-                self.eye_image_stim_r.image = im_arr_1                
-            else:
-                self.eye_image_stim_r.image = im_arr_0
-                self.eye_image_stim_l.image = im_arr_1   
-                    
+            for i, eye_im in enumerate(list(self.eye_image)):
+                im_arr = self.get_eye_image(eye_im)
+
+                # Always display image from camera_id == 0 on left side
+                if eye_im['camera_id'] == 0:
+                    self.eye_image_stim_l.image = im_arr
+                else:
+                    self.eye_image_stim_r.image = im_arr          
+                 
             self.eye_image_stim_l.draw()          
             self.eye_image_stim_r.draw()
 
