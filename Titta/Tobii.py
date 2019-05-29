@@ -5,13 +5,16 @@ Created on Thu Jun 01 14:11:57 2017
 @author: Marcus
 
 ToDO: 
-    1) Integrate raw classes
-    3) Test monocular calibrations (calibration mode cannot exit until both eyes done)
+    * Integrate raw classes
+    * Test monocular calibrations (calibration mode cannot exit until both eyes done)
         Use flags
        hide data from the eye that is not calibrated (DONE!)
-    4) Implement dynamic calibration (use as default)
-    5) Select calibration with arrow keys
-    * Add vaildation button
+    *	Implement dynamic calibration (use as default)
+    * Select calibration with arrow keys
+	* self.tracker = tr.EyeTracker(self.settings.TRACKER_ADDRESS - add better error message if this call fails
+	  e.g. "Could not connect to eye tracker. Did you forget to switch is on or provide the wrong eye tracker name?
+    * Add vaildation button (make sure that pressing 'r'
+	  during validation restarts only the validation.
 """
 from __future__ import print_function # towards Python 3 compatibility
 
