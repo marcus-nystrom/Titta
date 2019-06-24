@@ -26,7 +26,8 @@ import csv
 import sys
 
 if sys.version_info[0] == 3: # if Python 3:
-    from io import StringIO
+    #from io import StringIO
+    from io import BytesIO as StringIO
     import pickle
 else: # else Python 2
     from cStringIO import StringIO
