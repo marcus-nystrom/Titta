@@ -13,7 +13,7 @@ import tobii_research
 # Insert the parent directory (where Titta is) to path
 from Titta import Titta, helpers_tobii as helpers
 
-
+ 
 win = visual.Window(screen=1)
 
 # Parameters

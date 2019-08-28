@@ -15,7 +15,7 @@ from Titta import Titta, helpers_tobii as helpers
 # Parameters
 et_name = 'Spectrum'
 dummy_mode = False
-    
+     
 # Change any of the default dettings?
 settings = Titta.get_defaults(et_name)
 settings.FILENAME = 'testfile.tsv'
@@ -29,7 +29,11 @@ tracker.init()
 # Window set-up (this color will be used for calibration)
 win = visual.Window(monitor = settings.mon, fullscr = settings.FULLSCREEN,
                     screen=1, size=settings.SCREEN_RES, units = 'deg')
+
+# win_op = visual.Window(monitor = settings.mon, fullscr = settings.FULLSCREEN,
+#                     screen=0, size=settings.SCREEN_RES, units = 'deg')
 print(win.size)
+# print(win_op.size)
 
 text = visual.TextStim(win, text='')                    
 
@@ -50,7 +54,7 @@ text.draw()
 win.flip()
 tracker.send_message('recording started')
         
-event.waitKeys(['space'])
+event.waitKeys()
 tracker.send_message('recording stopped')
 tracker.stop_recording(gaze_data=True)
 

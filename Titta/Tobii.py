@@ -15,6 +15,7 @@ ToDO:
 	  e.g. "Could not connect to eye tracker. Did you forget to switch is on or provide the wrong eye tracker name?
     * make sure that pressing 'r' during validation, restarts a validition when in validation mode
     (i.e., when the validation button has been pressed)
+    * move screen information out of settings file (only eye tracker stuff there.)
 """
 from __future__ import print_function # towards Python 3 compatibility
 
@@ -22,6 +23,7 @@ from psychopy import visual, core, event
 from collections import deque
 import pandas as pd
 import csv
+import copy
 #import time
 import sys
 
@@ -186,11 +188,15 @@ class myTobii(object):
         
         
            #%% 
-    def _create_calibration_buttons(self, win):
-        '''Creates click buttons that are used during calibration'''
+    def _create_calibration_buttons(self):
+        '''Creates click buttons that are used during calibration
+        If another window object, win_operator, is given, the experiment 
+        will be run in dual screen mode.
         
-        # Find out ratio aspect of (16:10) or 
-        screen_res = win.size
+        '''
+        
+        # Find out ratio aspect of the stimulus screen (16:10) or 
+        screen_res = self.win.size
         ratio = screen_res[0] / float(screen_res[1])
         
         # Shown during setup to check gaze in corners
@@ -198,117 +204,110 @@ class myTobii(object):
                               [-0.45 * ratio, 0.45], [0.45 * ratio, 0.45]]
 
         # Text object to draw text (on buttons)
-        instruction_text = visual.TextStim(win,text='',wrapWidth = 1,height = graphics.TEXT_SIZE, units='norm')  
-        instruction_text = visual.TextStim(win,text='',wrapWidth = 1,height = graphics.TEXT_SIZE, units='norm')  
-        self.instruction_text = instruction_text
+        instruction_text = visual.TextStim(self.win,text='',wrapWidth = 1,height = graphics.TEXT_SIZE, units='norm')  
+        self.instruction_text = instruction_text        
+        instruction_text_op = visual.TextStim(self.win_temp,text='',wrapWidth = 1,height = graphics.TEXT_SIZE, units='norm')  
+        self.instruction_text_op = instruction_text_op        
+
 
         # Setup stimuli for drawing calibration / validation targets
-        self.cal_dot = helpers.MyDot2(win, units='deg',
+        self.cal_dot = helpers.MyDot2(self.win, units='deg',
                                      outer_diameter=graphics.TARGET_SIZE, 
                                      inner_diameter=graphics.TARGET_SIZE_INNER)
         
         # Click buttons
-        self.calibrate_button = visual.Rect(win, width= graphics.WIDTH_CAL_BUTTON, 
+        self.calibrate_button = visual.Rect(self.win_temp, width= graphics.WIDTH_CAL_BUTTON, 
                                             height=graphics.HEIGHT_CAL_BUTTON,  
                                         units='norm', fillColor=graphics.COLOR_CAL_BUTTON,
                                         pos=graphics.POS_CAL_BUTTON)                
-        self.calibrate_button_text = visual.TextStim(win, text=graphics.CAL_BUTTON_TEXT, 
+        self.calibrate_button_text = visual.TextStim(self.win_temp, text=graphics.CAL_BUTTON_TEXT, 
                                                      height=graphics.TEXT_SIZE, units='norm',
                                                      pos=graphics.POS_CAL_BUTTON)
                                                      
-        self.recalibrate_button = visual.Rect(win, width= graphics.WIDTH_RECAL_BUTTON, 
+        self.recalibrate_button = visual.Rect(self.win_temp, width= graphics.WIDTH_RECAL_BUTTON, 
                                             height=graphics.HEIGHT_RECAL_BUTTON,  
                                         units='norm', fillColor=graphics.COLOR_RECAL_BUTTON,
                                         pos=graphics.POS_RECAL_BUTTON) 
-        self.recalibrate_button_text = visual.TextStim(win, text=graphics.RECAL_BUTTON_TEXT, 
+        self.recalibrate_button_text = visual.TextStim(self.win_temp, text=graphics.RECAL_BUTTON_TEXT, 
                                                      height=graphics.TEXT_SIZE, units='norm',
                                                      pos=graphics.POS_RECAL_BUTTON)  
 
-        self.revalidate_button = visual.Rect(win, width= graphics.WIDTH_REVAL_BUTTON, 
+        self.revalidate_button = visual.Rect(self.win_temp, width= graphics.WIDTH_REVAL_BUTTON, 
                                             height=graphics.HEIGHT_REVAL_BUTTON,  
                                         units='norm', fillColor=graphics.COLOR_REVAL_BUTTON,
                                         pos=graphics.POS_REVAL_BUTTON) 
-        self.revalidate_button_text = visual.TextStim(win, text=graphics.REVAL_BUTTON_TEXT, 
+        self.revalidate_button_text = visual.TextStim(self.win_temp, text=graphics.REVAL_BUTTON_TEXT, 
                                                      height=graphics.TEXT_SIZE, units='norm',
                                                      pos=graphics.POS_REVAL_BUTTON)                                                     
                                         
-        self.setup_button = visual.Rect(win, width= graphics.WIDTH_SETUP_BUTTON, 
+        self.setup_button = visual.Rect(self.win_temp, width= graphics.WIDTH_SETUP_BUTTON, 
                                         height=graphics.HEIGHT_SETUP_BUTTON,  
                                         units='norm', fillColor=graphics.COLOR_SETUP_BUTTON,
                                         pos=graphics.POS_SETUP_BUTTON)
-        self.setup_button_text = visual.TextStim(win, text=graphics.SETUP_BUTTON_TEXT, 
+        self.setup_button_text = visual.TextStim(self.win_temp, text=graphics.SETUP_BUTTON_TEXT, 
                                                  height=graphics.TEXT_SIZE, units='norm',
                                                  pos=graphics.POS_SETUP_BUTTON)             
 
-        self.accept_button = visual.Rect(win, width= graphics.WIDTH_ACCEPT_BUTTON, 
+        self.accept_button = visual.Rect(self.win_temp, width= graphics.WIDTH_ACCEPT_BUTTON, 
                                         height=graphics.HEIGHT_ACCEPT_BUTTON,  
                                         units='norm', fillColor=graphics.COLOR_ACCEPT_BUTTON,
                                         pos=graphics.POS_ACCEPT_BUTTON)
-        self.accept_button_text = visual.TextStim(win, text=graphics.ACCEPT_BUTTON_TEXT, 
+        self.accept_button_text = visual.TextStim(self.win_temp, text=graphics.ACCEPT_BUTTON_TEXT, 
                                                   height=graphics.TEXT_SIZE, units='norm',
                                                   pos=graphics.POS_ACCEPT_BUTTON)             
                                                                         
-        self.back_button = visual.Rect(win, width= graphics.WIDTH_BACK_BUTTON, 
+        self.back_button = visual.Rect(self.win_temp, width= graphics.WIDTH_BACK_BUTTON, 
                                         height=graphics.HEIGHT_BACK_BUTTON,  
                                         units='norm', fillColor=graphics.COLOR_BACK_BUTTON,
                                         pos=graphics.POS_BACK_BUTTON)    
-        self.back_button_text = visual.TextStim(win, text=graphics.BACK_BUTTON_TEXT, 
+        self.back_button_text = visual.TextStim(self.win_temp, text=graphics.BACK_BUTTON_TEXT, 
                                                 height=graphics.TEXT_SIZE, units='norm',
                                                 pos=graphics.POS_BACK_BUTTON)             
                                                                       
-        self.gaze_button = visual.Rect(win, width= graphics.WIDTH_GAZE_BUTTON, 
+        self.gaze_button = visual.Rect(self.win_temp, width= graphics.WIDTH_GAZE_BUTTON, 
                                         height=graphics.HEIGHT_GAZE_BUTTON,  
                                         units='norm', fillColor=graphics.COLOR_GAZE_BUTTON,
                                         pos=graphics.POS_GAZE_BUTTON)   
-        self.gaze_button_text = visual.TextStim(win, text=graphics.GAZE_BUTTON_TEXT, 
+        self.gaze_button_text = visual.TextStim(self.win_temp, text=graphics.GAZE_BUTTON_TEXT, 
                                                 height=graphics.TEXT_SIZE, units='norm',
                                                 pos=graphics.POS_GAZE_BUTTON)   
 
-        self.calibration_image = visual.Rect(win, width= graphics.WIDTH_CAL_IMAGE_BUTTON, 
+        self.calibration_image = visual.Rect(self.win_temp, width= graphics.WIDTH_CAL_IMAGE_BUTTON, 
                                         height=graphics.HEIGHT_CAL_IMAGE_BUTTON,  
                                         units='norm', fillColor=graphics.COLOR_CAL_IMAGE_BUTTON,
                                         pos=graphics.POS_CAL_IMAGE_BUTTON)  
         
-        self.calibration_image_text = visual.TextStim(win, text=graphics.CAL_IMAGE_BUTTON_TEXT, 
+        self.calibration_image_text = visual.TextStim(self.win_temp, text=graphics.CAL_IMAGE_BUTTON_TEXT, 
                                                 height=graphics.TEXT_SIZE, units='norm',
                                                 pos=graphics.POS_CAL_IMAGE_BUTTON)             
                                         
         # Dots for the setup screen
-        self.setup_dot = helpers.MyDot2(win, units='height',
+        self.setup_dot = helpers.MyDot2(self.win, units='height',
                                      outer_diameter=graphics.SETUP_DOT_OUTER_DIAMETER, 
                                      inner_diameter=graphics.SETUP_DOT_INNER_DIAMETER)        
-        
-        # Setup control circles for head position
-        self.static_circ = visual.Circle(win, radius = graphics.HEAD_POS_CIRCLE_FIXED_RADIUS, 
-                                         lineColor = graphics.HEAD_POS_CIRCLE_FIXED_COLOR,
-                                         lineWidth=4, units='height')
-        self.moving_circ = visual.Circle(win, radius = graphics.HEAD_POS_CIRCLE_MOVING_RADIUS, 
-                                         lineColor = graphics.yellow_linecolor,
-                                         opacity=0.5,
-                                         fillColor = graphics.HEAD_POS_CIRCLE_MOVING_FILLCOLOR,
-                                         lineWidth=4, units='height')        
+              
                                          
         # Dot for showing et data
-        self.et_sample_l = visual.Circle(win, radius = graphics.ET_SAMPLE_RADIUS, 
+        self.et_sample_l = visual.Circle(self.win_temp, radius = graphics.ET_SAMPLE_RADIUS, 
                                          fillColor = 'red', units='deg') 
-        self.et_sample_r = visual.Circle(win, radius = graphics.ET_SAMPLE_RADIUS, 
+        self.et_sample_r = visual.Circle(self.win_temp, radius = graphics.ET_SAMPLE_RADIUS, 
                                          fillColor = 'blue', units='deg')   
-        self.et_line_l = visual.Line(win, lineColor = 'red', units='deg', lineWidth=0.4)
-        self.et_line_r = visual.Line(win, lineColor = 'blue', units='deg', lineWidth=0.4)
+        # self.et_line_l = visual.Line(self.win_temp, lineColor = 'red', units='deg', lineWidth=0.4)
+        # self.et_line_r = visual.Line(self.win_temp, lineColor = 'blue', units='deg', lineWidth=0.4)
         
       
         # Show images (eye image, validation resutls)
-        self.eye_image_stim_l = visual.ImageStim(win, units='norm',
+        self.eye_image_stim_l = visual.ImageStim(self.win_temp, units='norm',
                                                    size=graphics.EYE_IMAGE_SIZE,
                                                    pos=graphics.EYE_IMAGE_POS_L, 
                                                    image=np.zeros((512, 512)))
-        self.eye_image_stim_r = visual.ImageStim(win, units='norm',
+        self.eye_image_stim_r = visual.ImageStim(self.win_temp, units='norm',
                                                    size=graphics.EYE_IMAGE_SIZE,
                                                    pos=graphics.EYE_IMAGE_POS_R,
                                                    image=np.zeros((512, 512)))
       
         # Accuracy image 
-        self.accuracy_image = visual.ImageStim(win, image=None,units='norm', size=(1.5,1.5),
+        self.accuracy_image = visual.ImageStim(self.win_temp, image=None,units='norm', size=(1.5,1.5),
                                           pos=(0, 0.25))
         
     
@@ -317,11 +316,13 @@ class myTobii(object):
         pass
         
     #%%
-    def calibrate(self, win, eye='both', calibration_number = 'second'):
+    def calibrate(self, win, win_operator=None, 
+                  eye='both', calibration_number = 'second'):
         ''' Enters the calibration screen and gives the user control 
         over what happens
         Args:
             win - psychopy window object
+            win_operator - psychopy window object for the operator screen
             eye - 'left', 'right', or 'both' - default
             calibration_number - 'first' or 'second'. If 'first', don't exit
                                  calibration mode until 'second' calibration 
@@ -331,16 +332,26 @@ class myTobii(object):
         if self.eye_tracker_name != 'Spectrum':
             assert eye=='both', 'Monocular calibrations available only in Spectrum'
             
+
+            
+        # Create a temp variable for screen object
+        if win_operator:
+            win_temp = win_operator
+        else:
+            win_temp = win            
+            
         self.eye = eye
         self.win = win
-        self.mouse = event.Mouse()
+        self.win_operator = win_operator
+        self.win_temp = win_temp
+        self.mouse = event.Mouse(win=win_temp)
         self.mouse.setVisible(0)
         
         self.calibration_number = calibration_number
         
         # Create click buttons used during calibration
-        self._create_calibration_buttons(win)
-        
+        self._create_calibration_buttons()        
+
         # Animated calibration?
         if self.settings.ANIMATE_CALIBRATION:
             
@@ -400,6 +411,8 @@ class myTobii(object):
             elif 'quit' in action:
                 self.stop_recording()
                 self.win.close()
+                if self.win_operator:
+                    self.win_operator.close()
                 core.quit()
             else:
                 pass
@@ -497,7 +510,7 @@ class myTobii(object):
             raise ValueError('Eye tracker switched on?')
             
             
-        # Initiate parameters of head class
+        # Initiate parameters of head class (shown on participant screen)
         et_head = helpers.EThead(self.win)
         latest_valid_yaw = 0 
         latest_valid_roll = 0
@@ -505,6 +518,10 @@ class myTobii(object):
         latest_valid_bincular_avg = np.array([0.5, 0.5, 0.5])
         offset = np.array([0, 0, 0])
         
+        # Initiate parameters of head class (shown on operator screen)        
+        if self.win_operator:
+            et_head_op = helpers.EThead(self.win_operator)      
+            
         show_eye_images = False
         image_button_pressed = False
         while True:
@@ -514,8 +531,7 @@ class myTobii(object):
                 self.setup_dot.setPos(i)
                 self.setup_dot.draw()
 
-            # Draw buttons, one to calibrate, and one to 
-            # go to the advanced setup screen
+            # Draw buttons, one to calibrate
             self.calibrate_button.draw()
             self.calibrate_button_text.draw()   
             
@@ -533,6 +549,7 @@ class myTobii(object):
              # Get position of eyes in track box
             sample = self.get_latest_sample()
             
+            # Draw et head on participant screen
             latest_valid_bincular_avg, \
             previous_binocular_sample_valid,\
             latest_valid_yaw, \
@@ -543,7 +560,21 @@ class myTobii(object):
                                     latest_valid_yaw, 
                                     latest_valid_roll, 
                                     offset)         
-            et_head.draw()            
+            et_head.draw()       
+            
+            # Draw et head on operator screen
+            if self.win_operator:            
+                latest_valid_bincular_avg, \
+                previous_binocular_sample_valid,\
+                latest_valid_yaw, \
+                latest_valid_roll, \
+                offset = et_head_op.update(sample,
+                                        latest_valid_bincular_avg,    
+                                        previous_binocular_sample_valid,
+                                        latest_valid_yaw, 
+                                        latest_valid_roll, 
+                                        offset)         
+                et_head_op.draw()              
                         
             # Draw instruction
             self.instruction_text.pos = (0, 0.8)
@@ -556,10 +587,10 @@ class myTobii(object):
              
             
             try:
-                self.instruction_text.pos = (0, 0.9)
-                self.instruction_text.text = ' '.join(['Distance:', 
+                self.instruction_text_op.pos = (0, 0.9)
+                self.instruction_text_op.text = ' '.join(['Distance:', 
                                                        str(int(np.nanmean([l_pos, r_pos])/10.0)), 'cm'])
-                self.instruction_text.draw() 
+                self.instruction_text_op.draw() 
             except:
                 pass
             
@@ -587,6 +618,9 @@ class myTobii(object):
             
             # Update the screen
             self.win.flip()
+            if self.win_operator:            
+                self.win_operator.flip()
+            
              
         # Stop streaming of eye images
         self.stop_recording(image_data=True)   
@@ -594,6 +628,8 @@ class myTobii(object):
         
         # Clear the screen
         self.win.flip()
+        if self.win_operator:            
+            self.win_operator.flip()        
         
         return action
                 
@@ -610,14 +646,16 @@ class myTobii(object):
         
         
         self.win.flip()
-        
+        if self.win_operator:
+            self.win_operator.flip()
+            
         self.store_data = True
         
         cal_pos=self.settings.CAL_POS
-        paval=self.settings.PACING_INTERVAL   
+        paval=self.settings.PACING_INTERVAL
         
         # Optional start recording of eye images
-        if self.settings.RECORD_EYE_IMAGES_DURING_CALIBRATION:
+        if self.settings.RECORD_EYE_IMAGES_DURING_CALIBRATION or self.win_operator:
             self.start_recording(image_data=True)            
         
         np.random.shuffle(cal_pos)
@@ -629,50 +667,73 @@ class myTobii(object):
         action = 'setup'
         
         # Go through the targets one by one
-        for i, pos in enumerate(cal_pos[:, :2]):
-            # Display dot and give user chance to move the eye
-            self.cal_dot.setPos(cal_pos[i, 2:]) # Tobii and psychopy have different coord systems
-            self.cal_dot.draw()
-            self.win.flip()
-            self.send_message('Calibration point {} at position {} {}'.format(i, pos[0], pos[1]))
+        t0 = self.clock.getTime()
+        i = 0
+        pos_old = [0, 0]
+        calibration_done = False
+        animation_state = 'static'
+        tick = 0
+        while not calibration_done:
+            
+            k = event.getKeys() 
+            
+            # Get current calibration target position
+            pos = cal_pos[i, 2:] # Psychopoy and Tobii have different coordinate systems
+            tobii_data = cal_pos[i, :2]           
+            
+            # Time to switch to a new point
+            if paval > 0 or 'space' in k:
+                if (self.clock.getTime() - t0) > paval:
+                    t0 = self.clock.getTime()
+                    pos_old = pos[:]
+                    i += 1
+                    
+                    
+                    # Collect some calibration data
+                    if self.eye_tracker_name == 'Spectrum':
+                        if self.eye == 'left':
+                            if self.calibration.collect_data(tobii_data[0], tobii_data[1], self.eye_to_calibrate) != tr.CALIBRATION_STATUS_SUCCESS_LEFT_EYE:
+                                self.calibration.collect_data(tobii_data[0], tobii_data[1], self.eye_to_calibrate)
+                        elif self.eye == 'right':
+                            if self.calibration.collect_data(tobii_data[0], tobii_data[1], self.eye_to_calibrate) != tr.CALIBRATION_STATUS_SUCCESS_RIGHT_EYE:
+                                self.calibration.collect_data(tobii_data[0], tobii_data[1], self.eye_to_calibrate)
+                        else:
+                            if self.calibration.collect_data(tobii_data[0], tobii_data[1], self.eye_to_calibrate) != tr.CALIBRATION_STATUS_SUCCESS:
+                                self.calibration.collect_data(tobii_data[0], tobii_data[1], self.eye_to_calibrate)  
+                    else:
+                        if self.calibration.collect_data(tobii_data[0], tobii_data[1]) != tr.CALIBRATION_STATUS_SUCCESS:
+                            self.calibration.collect_data(tobii_data[0], tobii_data[1])           
+                            
+                    if i == 5:
+                        break
+                    
 
-            
-            if paval == 0:
-                k = event.waitKeys()
-            else:
-                core.wait(paval)
-                k = event.getKeys() 
-            
-            # Collect some data 
-            if self.eye_tracker_name == 'Spectrum':
-                if self.eye == 'left':
-                    if self.calibration.collect_data(pos[0], pos[1], self.eye_to_calibrate) != tr.CALIBRATION_STATUS_SUCCESS_LEFT_EYE:
-                        self.calibration.collect_data(pos[0], pos[1], self.eye_to_calibrate)
-                elif self.eye == 'right':
-                    if self.calibration.collect_data(pos[0], pos[1], self.eye_to_calibrate) != tr.CALIBRATION_STATUS_SUCCESS_RIGHT_EYE:
-                        self.calibration.collect_data(pos[0], pos[1], self.eye_to_calibrate)
+            # Animate calibration dots or show static dots?
+            if self.settings.ANIMATE_CALIBRATION:
+                if animation_state == 'move':                    
+                    move_completed = self.animator.move_point(pos_old, (pos[0], pos[1]), tick)
+                    if move_completed:
+                        animation_state = 'static' # or move
+                        tick = 0
                 else:
-                    if self.calibration.collect_data(pos[0], pos[1], self.eye_to_calibrate) != tr.CALIBRATION_STATUS_SUCCESS:
-                        self.calibration.collect_data(pos[0], pos[1], self.eye_to_calibrate)  
+                    self.animator.animate_target(0, (pos[0], pos[1]), tick)
             else:
-                if self.calibration.collect_data(pos[0], pos[1]) != tr.CALIBRATION_STATUS_SUCCESS:
-                    self.calibration.collect_data(pos[0], pos[1])                
-                          
-                  
+                self.cal_dot.setPos(pos)
+                self.cal_dot.draw()                
+            
+            tick += 1
+            
             # Abort calibration if esc is pressed (and go back to setup screen)
             if 'escape' in k:                
-#                self.calibration.leave_calibration_mode()
                 return action
-                
-                
+
             # 'r' aborts and restarts calibration 
             if 'r' in k:
-#                self.calibration.leave_calibration_mode()
                 action = 'cal' 
-                return action                          
+                return action                 
             
-        # Clear the screen
-        self.win.flip()       
+            self.win.flip()
+
 
         # Apply the calibration and get the calibration results
         calibration_result = self.calibration.compute_and_apply()
@@ -705,7 +766,7 @@ class myTobii(object):
         
         # Stop recording of eye images unless validation is next      
         if 'val' not in action:
-            if self.settings.RECORD_EYE_IMAGES_DURING_CALIBRATION:
+            if self.settings.RECORD_EYE_IMAGES_DURING_CALIBRATION or self.win_operator:
                 self.stop_recording(image_data=True)     
      
         return action
