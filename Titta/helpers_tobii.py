@@ -46,10 +46,11 @@ def norm2tobii(pos):
     
     return pos
     
-def tobii2deg(pos, mon, screen_height):
+def tobii2deg(pos, mon):
     ''' Converts Tobiis coordinate system [0, 1 to degrees.
     Note that the Tobii coordinate system start in the upper left corner
     and the PsychoPy coordinate system in the center
+    Assumes pixels are square
     Args:   pos: N x 2 array with calibratio position in [0, 1]
             screen_height: height of screen in cm            
     '''
@@ -60,7 +61,8 @@ def tobii2deg(pos, mon, screen_height):
            
     # Cenvert to psychopy coordinates (center)
     pos[:, 0] = pos[:, 0] * mon.getWidth() 
-    pos[:, 1] = pos[:, 1] * screen_height 
+    pos[:, 1] = pos[:, 1] * mon.getWidth() * (float(mon.getSizePix()[1]) / \
+                                              float(mon.getSizePix()[0]))
     
     # Convert to deg.
     pos_deg = cm2deg(pos, mon, correctFlat=False)    

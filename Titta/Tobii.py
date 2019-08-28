@@ -322,7 +322,7 @@ class myTobii(object):
         over what happens
         Args:
             win - psychopy window object
-            win_operator - psychopy window object for the operator screen
+            win_operator - psychopy window object for the operator screen (optional)
             eye - 'left', 'right', or 'both' - default
             calibration_number - 'first' or 'second'. If 'first', don't exit
                                  calibration mode until 'second' calibration 
@@ -332,7 +332,12 @@ class myTobii(object):
         if self.eye_tracker_name != 'Spectrum':
             assert eye=='both', 'Monocular calibrations available only in Spectrum'
             
-
+        # Generate coordinates for calibration in PsychoPy and 
+        # Tobii coordinate system
+        CAL_POS_DEG = helpers.tobii2deg(self.settings.CAL_POS_TOBII, win.monitor)
+        VAL_POS_DEG = helpers.tobii2deg(self.settings.VAL_POS_TOBII, win.monitor)
+        self.CAL_POS = np.hstack((self.settings.CAL_POS_TOBII, CAL_POS_DEG))
+        self.VAL_POS = np.hstack((self.settings.VAL_POS_TOBII, VAL_POS_DEG))        
             
         # Create a temp variable for screen object
         if win_operator:
@@ -347,6 +352,7 @@ class myTobii(object):
         self.mouse = event.Mouse(win=win_temp)
         self.mouse.setVisible(0)
         
+        # Used to keep track on monocular calibrations
         self.calibration_number = calibration_number
         
         # Create click buttons used during calibration
@@ -475,14 +481,12 @@ class myTobii(object):
             
 #        if self.eye == 'left' or self.eye == 'both':
         self.et_sample_l.pos = helpers.tobii2deg(np.array([[lx, ly]]), 
-                                                 self.settings.mon, 
-                                                 self.settings.SCREEN_HEIGHT)       
+                                                 self.win_temp.monitor)       
         self.et_sample_l.draw()
             
 #        if self.eye == 'right' or self.eye == 'both':
         self.et_sample_r.pos = helpers.tobii2deg(np.array([[rx, ry]]), 
-                                                 self.settings.mon, 
-                                                 self.settings.SCREEN_HEIGHT)
+                                                 self.win_temp.monitor)
         self.et_sample_r.draw()   
 
    #%%      
@@ -651,7 +655,7 @@ class myTobii(object):
             
         self.store_data = True
         
-        cal_pos=self.settings.CAL_POS
+        cal_pos=self.CAL_POS
         paval=self.settings.PACING_INTERVAL
         
         # Optional start recording of eye images
@@ -789,7 +793,7 @@ class myTobii(object):
             y_dot = p.position_on_display_area[1]
             self.cal_dot.fillColor = 'white'
             xy_dot = helpers.tobii2deg(np.array([[x_dot, y_dot]]), 
-                                       self.settings.mon, self.settings.SCREEN_HEIGHT)
+                                       self.win.monitor)
             self.cal_dot.setPos(xy_dot) # Tobii and psychopy have different coord systems            
             self.cal_dot.draw()
                         
@@ -799,7 +803,7 @@ class myTobii(object):
                     samples_l = si.left_eye.position_on_display_area
                     x, y = samples_l
                     xy_sample = helpers.tobii2deg(np.array([[x, y]]), 
-                                                  self.settings.mon, self.settings.SCREEN_HEIGHT) # Tobii and psychopy have different coord systems
+                                                  self.win.monitor) # Tobii and psychopy have different coord systems
                     xys_left.append([xy_sample[0][0], xy_sample[0][1]])
                     cal_data.append([x_dot, y_dot, x, y, 'left'])
                     
@@ -809,7 +813,7 @@ class myTobii(object):
                     samples_r = si.right_eye.position_on_display_area
                     x, y = samples_r
                     xy_sample = helpers.tobii2deg(np.array([[x, y]]), 
-                                                  self.settings.mon, self.settings.SCREEN_HEIGHT) # Tobii and psychopy have different coord systems
+                                                  self.win.monitor) # Tobii and psychopy have different coord systems
                     xys_right.append([xy_sample[0][0], xy_sample[0][1]])                  
                     cal_data.append([x_dot, y_dot, x, y, 'right'])
                     
@@ -880,14 +884,13 @@ class myTobii(object):
             
         
     #%%   
-    def _run_validation(self,  data_capture_int = 0.5):
+    def _run_validation(self):
         ''' Runs a validation to check the accuracy of the calibration
         '''
         
                 
-        target_pos = self.settings.VAL_POS
-        paval = self.settings.PACING_INTERVAL
-        
+        target_pos = self.VAL_POS
+        paval = self.settings.PACING_INTERVAL / 2
         
         np.random.shuffle(target_pos)
         
@@ -924,7 +927,7 @@ class myTobii(object):
             # Collect data for some time
             t0 = core.getTime()
             sample = []
-            while (core.getTime() - t0) < data_capture_int:
+            while (core.getTime() - t0) < paval:
                 
                 time_stamp = self.gaze_data['device_time_stamp']
                 if time_stamp != old_ts: 
@@ -949,8 +952,8 @@ class myTobii(object):
 
         # Convert data from Tobii coord system to PsychoPy coordinates 
         gaze_pos = np.array(xy_pos)
-        gaze_pos[:, 1:3] = helpers.tobii2deg(gaze_pos[:, 1:3], self.settings.mon, self.settings.SCREEN_HEIGHT)
-        gaze_pos[:, 3:5] = helpers.tobii2deg(gaze_pos[:, 3:5], self.settings.mon, self.settings.SCREEN_HEIGHT)
+        gaze_pos[:, 1:3] = helpers.tobii2deg(gaze_pos[:, 1:3], self.win.monitor)
+        gaze_pos[:, 3:5] = helpers.tobii2deg(gaze_pos[:, 3:5], self.win.monitor)
 
         # Generate an image of the validation results (if validation was completed)
 #        if len(xy_pos) == len(target_pos):

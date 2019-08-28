@@ -3,7 +3,6 @@ from psychopy import visual, monitors
 from psychopy import core, event
 import numpy as np
 import os, sys
-import tobii_research
 
 # Insert the parent directory (where Titta is) to path
 curdir = os.path.dirname(os.path.abspath(__file__))
@@ -11,6 +10,17 @@ os.chdir(curdir)
 sys.path.insert(0,os.path.dirname(curdir)) 
 from Titta import Titta, helpers_tobii as helpers
 
+# Monitor/geometry 
+MY_MONITOR                  = 'testMonitor' # needs to exists in PsychoPy monitor center
+FULLSCREEN                  = True
+SCREEN_RES                  = [1920, 1080]
+SCREEN_WIDTH                = 52.7 # cm
+VIEWING_DIST                = 63 #  # distance from eye to center of screen (cm)
+
+mon = monitors.Monitor(MY_MONITOR)  # Defined in defaults file
+mon.setWidth(SCREEN_WIDTH)          # Width of screen (cm)
+mon.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
+mon.setSizePix(SCREEN_RES)
 
 # Parameters
 et_name = 'Spectrum'
@@ -27,8 +37,8 @@ if dummy_mode:
 tracker.init()
 
 # Window set-up (this color will be used for calibration)
-win = visual.Window(monitor = settings.mon, fullscr = settings.FULLSCREEN,
-                    screen=1, size=settings.SCREEN_RES, units = 'deg')
+win = visual.Window(monitor = mon, fullscr = FULLSCREEN,
+                    screen=1, size=SCREEN_RES, units = 'deg')
 
 # win_op = visual.Window(monitor = settings.mon, fullscr = settings.FULLSCREEN,
 #                     screen=0, size=settings.SCREEN_RES, units = 'deg')
