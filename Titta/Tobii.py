@@ -13,8 +13,8 @@ ToDO:
     * Select calibration with arrow keys
 	* self.tracker = tr.EyeTracker(self.settings.TRACKER_ADDRESS - add better error message if this call fails
 	  e.g. "Could not connect to eye tracker. Did you forget to switch is on or provide the wrong eye tracker name?
-    * Add vaildation button (make sure that pressing 'r'
-	  during validation restarts only the validation.
+    * make sure that pressing 'r' during validation, restarts a validition when in validation mode
+    (i.e., when the validation button has been pressed)
 """
 from __future__ import print_function # towards Python 3 compatibility
 
@@ -311,30 +311,8 @@ class myTobii(object):
         self.accuracy_image = visual.ImageStim(win, image=None,units='norm', size=(1.5,1.5),
                                           pos=(0, 0.25))
         
-        
-        # Trackign monitor background and eyes for tracking monitor
-#        self.tracking_monitor = visual.ImageStim(win, image=None,units='norm', size=(0.5,0.5),
-#                                          pos=(0, -0.5), ori = 180)        
-        self.tracking_monitor_background = visual.Rect(win, units='norm', fillColor=graphics.TRACKING_MONITOR_COLOR,
-                                                        lineColor=graphics.TRACKING_MONITOR_COLOR,
-                                                       width=graphics.TRACKING_MONITOR_SIZE[0], 
-                                                       height=graphics.TRACKING_MONITOR_SIZE[0],
-                                                       pos=graphics.TRACKING_MONITOR_POS)
-        self.eye_l = visual.Circle(win, radius = graphics.EYE_SIZE, 
-                                         lineColor = graphics.EYE_COLOR_VALID,
-                                         lineWidth=0.01, units='height')
-        self.eye_r = visual.Circle(win, radius = graphics.EYE_SIZE, 
-                                         lineColor = graphics.EYE_COLOR_VALID,
-                                         lineWidth=0.01, units='height')        
-        
-        self.eye_l_closed = visual.Rect(win, fillColor=(1,1,1), 
-                                        lineColor=(1,1,1), units='height')
-        self.eye_r_closed = visual.Rect(win, fillColor=(1,1,1), 
-                                        lineColor=(1,1,1), units='height')        
-        self.eye_text_l = visual.TextStim(win,text='L',height = graphics.EYE_SIZE, units='height')        
-        self.eye_text_r = visual.TextStim(win,text='R',height = graphics.EYE_SIZE, units='height')                                           
-        
- 
+    
+    #%%
     def is_connected(self):
         pass
         
@@ -507,16 +485,10 @@ class myTobii(object):
         
         self.mouse.setVisible(1)
         
-        # Initialize values for position and color of eyes
-        xyz_pos_eye_l = (0, 0, 0)
-        xyz_pos_eye_r = (0, 0, 0)
-        self.eye_l.fillColor = (1, 1, 1)
-        self.eye_r.fillColor = (1, 1, 1)
-        
         self.store_data = False
         
         # Start streaming of eye images
-        self.start_recording(image_data=True, store_data = False)
+        self.start_recording(image_data=True, store_data = self.store_data)
 
         core.wait(0.5)
         
@@ -525,10 +497,13 @@ class myTobii(object):
             raise ValueError('Eye tracker switched on?')
             
             
+        # Initiate parameters of head class
+        et_head = helpers.EThead(self.win)
+        latest_valid_yaw = 0 
+        latest_valid_roll = 0
+        previous_binocular_sample_valid = True
+        latest_valid_bincular_avg = np.array([0.5, 0.5, 0.5])
         offset = np.array([0, 0, 0])
-        circle_pos_both = np.array([0, 0, 0])
-        valid_eye_temp = np.array([0, 0])
-        reset_i = 0
         
         show_eye_images = False
         image_button_pressed = False
@@ -557,46 +532,18 @@ class myTobii(object):
                              
              # Get position of eyes in track box
             sample = self.get_latest_sample()
-            xyz_pos_eye_l = sample['left_gaze_origin_in_trackbox_coordinate_system']
-            xyz_pos_eye_r = sample['right_gaze_origin_in_trackbox_coordinate_system']
-          
-            # Compute the average position of the eyes
-            avg_pos = np.nanmean([xyz_pos_eye_l, xyz_pos_eye_r], axis=0)
             
-            # If one eye is closed, the center of the circle is moved, 
-            # Try to prevent this by compensating by an offset            
-            if self.eye == 'both':
-                valid_left = np.sum(np.isnan(xyz_pos_eye_l))
-                valid_right = np.sum(np.isnan(xyz_pos_eye_r))
-                valid_eye = np.array([valid_left, valid_right]) # [0, 1] means that left is valid
-                valid_sum = valid_left + valid_right        
-                if valid_sum == 0: # if both eyes are open
-                    circle_pos_both = avg_pos[:]
-                    offset = np.array([0, 0, 0])
-                    reset_i = 0
-                elif  valid_sum == 3: # if one eye is closed
-                    if reset_i == 0:
-                        offset = np.array(circle_pos_both - avg_pos)
-                        reset_i = 1
-                        valid_eye_temp = valid_eye[:]
-                    if np.sum(valid_eye == valid_eye_temp) < 2:
-                        offset *= -1 # 
-                        valid_eye_temp = valid_eye[:]
-                    
-            # Compute position and size of circle
-            #(0.5, 0.5, 0.5)  means the eye is in the center of the box
-            self.moving_circ.pos = ((avg_pos[0] - 0.5) * -1 - offset[0] , 
-                                    (avg_pos[1] - 0.5) * -1 - offset[1]) 
-                                    
-            self.moving_circ.radius = (avg_pos[2] - 0.5)*-1 + graphics.HEAD_POS_CIRCLE_MOVING_RADIUS
-            
-            # Control min size of radius
-            if self.moving_circ.radius < graphics.HEAD_POS_CIRCLE_MOVING_MIN_RADIUS:
-                self.moving_circ.radius = graphics.HEAD_POS_CIRCLE_MOVING_MIN_RADIUS
-            
-            # Draw circles
-            self.moving_circ.draw()
-            self.static_circ.draw()
+            latest_valid_bincular_avg, \
+            previous_binocular_sample_valid,\
+            latest_valid_yaw, \
+            latest_valid_roll, \
+            offset = et_head.update(sample,
+                                    latest_valid_bincular_avg,    
+                                    previous_binocular_sample_valid,
+                                    latest_valid_yaw, 
+                                    latest_valid_roll, 
+                                    offset)         
+            et_head.draw()            
                         
             # Draw instruction
             self.instruction_text.pos = (0, 0.8)
@@ -606,52 +553,6 @@ class myTobii(object):
             # Get and draw distance information
             l_pos = self.get_latest_sample()['left_gaze_origin_in_user_coordinate_system'][2]
             r_pos = self.get_latest_sample()['right_gaze_origin_in_user_coordinate_system'][2]
-            
-            # Draw eyes
-            if self.eye == 'both' or self.eye == 'left':
-                if np.isnan(xyz_pos_eye_l[0]):
-                    self.eye_l_closed.pos = (self.moving_circ.pos[0] - self.moving_circ.radius/2.0,
-                                      self.moving_circ.pos[1])
-                    self.eye_l_closed.width = self.moving_circ.radius / 2.0 
-                    self.eye_l_closed.height = self.eye_l_closed.width / 4.0
-                    self.eye_l_closed.draw()                
-                else:
-                    self.eye_l.pos = (self.moving_circ.pos[0] - self.moving_circ.radius/2.0,
-                                      self.moving_circ.pos[1])
-                    self.eye_l.radius = self.moving_circ.radius / 4.0   
-                    self.eye_l.draw()     
-                    
-                # Indicate that the right eye is not used
-                if self.eye == 'left':
-                    self.eye_r_closed.fillColor = (1, -1, -1) # Red
-                    self.eye_r_closed.pos = (self.moving_circ.pos[0] + self.moving_circ.radius/2.0,
-                                      self.moving_circ.pos[1])
-                    self.eye_r_closed.width = self.moving_circ.radius / 2.0 
-                    self.eye_r_closed.height = self.eye_r_closed.width / 4.0
-                    self.eye_r_closed.draw() 
-                    
-                    
-            if self.eye == 'both' or self.eye == 'right':    
-                if np.isnan(xyz_pos_eye_r[0]):
-                    self.eye_r_closed.pos = (self.moving_circ.pos[0] + self.moving_circ.radius/2.0,
-                                      self.moving_circ.pos[1])
-                    self.eye_r_closed.width = self.moving_circ.radius / 2.0 
-                    self.eye_r_closed.height = self.eye_r_closed.width / 4.0
-                    self.eye_r_closed.draw()                    
-                else:
-                    self.eye_r.pos = (self.moving_circ.pos[0] + self.moving_circ.radius/2.0,
-                                      self.moving_circ.pos[1])
-                    self.eye_r.radius = self.moving_circ.radius / 4.0       
-                    self.eye_r.draw()
-                    
-                # Indicate that the right eye is not used
-                if self.eye == 'right':
-                    self.eye_l_closed.fillColor = (1, -1, -1) # Red
-                    self.eye_l_closed.pos = (self.moving_circ.pos[0] - self.moving_circ.radius/2.0,
-                                      self.moving_circ.pos[1])
-                    self.eye_l_closed.width = self.moving_circ.radius / 2.0 
-                    self.eye_l_closed.height = self.eye_l_closed.width / 4.0
-                    self.eye_l_closed.draw()                         
              
             
             try:
@@ -665,12 +566,6 @@ class myTobii(object):
             # Show eye images if requested
             if show_eye_images:
                 self._draw_eye_image()  
-                
-
-#            # Advanced setup
-#            if graphics.SETUP_BUTTON in k:
-#                action = 'adv'
-#                break 
                 
             # check whether someone left clicked any of the buttons or pressed 'space'
             if graphics.CAL_BUTTON in k or self.mouse.isPressedIn(self.calibrate_button, buttons=[0]):
@@ -692,9 +587,7 @@ class myTobii(object):
             
             # Update the screen
             self.win.flip()
-     
-#        self.stop_recording()
-        
+             
         # Stop streaming of eye images
         self.stop_recording(image_data=True)   
         self.mouse.setVisible(0)
@@ -1721,79 +1614,7 @@ class myTobii(object):
         self.stop_recording(image_data=True)            
         self.mouse.setVisible(0)
         
-        return action
- 
-    #%%    
-    def _draw_tracking_monitor(self, sample):     
-        ''' Draws tracking monitor
-        
-        Args: 
-            sample - Tobii sample dict
-        '''
-
-        #lineColor = graphics.EYE_COLOR_VALID
-        self.eye_l.radius = graphics.EYE_SIZE
-        self.eye_r.radius = graphics.EYE_SIZE
-        
-        xyz_pos_eye_l = sample['left_gaze_origin_in_trackbox_coordinate_system']
-        xyz_pos_eye_r = sample['right_gaze_origin_in_trackbox_coordinate_system']
-        validity_l = sample['left_gaze_origin_validity']
-        validity_r = sample['right_gaze_origin_validity']     
-        
-        # Get position of eye in track box (decides color of eye circles),
-        # eye green when in center of track box, and red when outside.
-        xyz_pos_eye_l = self.get_latest_sample()['left_gaze_origin_in_trackbox_coordinate_system']
-        xyz_pos_eye_r = self.get_latest_sample()['right_gaze_origin_in_trackbox_coordinate_system']
-          
-        avg_pos = []
-        for i in np.arange(len(xyz_pos_eye_r)):
-            avg_pos.append(np.nanmean([xyz_pos_eye_l[i], xyz_pos_eye_r[i]]))             
-            
-        # Let colors of eyes be proportional to how far away from the 
-        # 'sweet spot' they are (green- best, red-worse)
-        z_distance = avg_pos[2]
-        if z_distance > 1:
-            z_distance = 1
-        if z_distance < 0:
-            z_distance = 0
-            
-        red = np.abs(z_distance - 0.5) * 2
-        green = 1 - np.abs(z_distance - 0.5) * 2
-        blue = 0
-        
-        # Draw background
-        self.tracking_monitor_background.draw()
-        
-        # Draw eyes
-        xy = helpers.tobii2norm(np.array([xyz_pos_eye_r[:2]])) *graphics.TRACKING_MONITOR_SIZE[0]
-        x = xy[0][0] * -1 * graphics.TRACKING_MONITOR_SIZE[0]/2.0 + 0.03
-        y = xy[0][1] * graphics.TRACKING_MONITOR_SIZE[0]/2.0 + graphics.TRACKING_MONITOR_POS[1]/2
-        
-        if not np.isnan(x):
-            self.eye_r.pos = (x, y)
-            self.eye_text_r.pos = (x, y)
-            
-        if validity_r == 1:
-            self.eye_r.fillColor = [red, green, blue] #graphics.green
-        else:
-            self.eye_r.fillColor = [0, 0, 0]
-        self.eye_r.draw()
-        self.eye_text_r.draw()
-            
-        xy = helpers.tobii2norm(np.array([xyz_pos_eye_l[:2]])) *graphics.TRACKING_MONITOR_SIZE[0]
-        x = xy[0][0] * -1 * graphics.TRACKING_MONITOR_SIZE[0]/2.0 - 0.03
-        y = xy[0][1] * graphics.TRACKING_MONITOR_SIZE[0]/2.0 + graphics.TRACKING_MONITOR_POS[1]/2
-        
-        if not np.isnan(x):
-            self.eye_l.pos = (x, y)
-            self.eye_text_l.pos = (x, y)
-        if validity_l == 1:
-            self.eye_l.fillColor = [red, green, blue]#graphics.green
-        else:
-            self.eye_l.fillColor = [0, 0, 0]#graphics.red  
-        self.eye_l.draw()    
-        self.eye_text_l.draw()
-        
+        return action       
         
   
     #%%    

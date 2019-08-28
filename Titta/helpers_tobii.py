@@ -318,8 +318,6 @@ class EThead(object):
         # Head parameters
         HEAD_POS_CIRCLE_FIXED_COLOR = blue
         HEAD_POS_CIRCLE_FIXED_RADIUS = 0.25
-        HEAD_POS_CIRCLE_MOVING_COLOR = yellow
-        HEAD_POS_ELLIPSE_MOVING_FILLCOLOR = yellow
         self.HEAD_POS_ELLIPSE_MOVING_HEIGHT = 0.25
         self.HEAD_POS_ELLIPSE_MOVING_MIN_HEIGHT = 0.05 
         
@@ -327,21 +325,15 @@ class EThead(object):
         self.EYE_SIZE = 0.03
         EYE_COLOR_VALID = green        
         
-        # Find out ratio aspect of screen
-        screen_res = win.size
-        ratio = screen_res[0] / float(screen_res[1])
       
         # Setup control circles for head position
         self.static_circ = visual.Circle(win, radius = HEAD_POS_CIRCLE_FIXED_RADIUS, 
                                          lineColor = HEAD_POS_CIRCLE_FIXED_COLOR,
                                          lineWidth=4, units='height')
         self.moving_ellipse = visual.ShapeStim(win,  lineColor = yellow_linecolor,
-                                         lineWidth=4, units='height')        
-#        self.moving_circ = visual.Circle(win, radius = HEAD_POS_CIRCLE_MOVING_RADIUS, 
-#                                         lineColor = yellow_linecolor,
-#                                         opacity=0.5,
-#                                         fillColor = HEAD_POS_CIRCLE_MOVING_FILLCOLOR,
-#                                         lineWidth=4, units='height')                                                   
+                                         lineWidth=4, units='height', 
+                                         fillColor=yellow, opacity=0.1)        
+                                                 
         
         # Ellipses for eyes
         self.eye_l = visual.ShapeStim(win,  lineColor = EYE_COLOR_VALID,
@@ -367,8 +359,10 @@ class EThead(object):
                      
     
     def update(self, sample, latest_valid_binocular_avg,
+               previous_binocular_sample_valid,
                latest_valid_roll, 
-               latest_valid_yaw, eye='both'):
+               latest_valid_yaw, 
+               offset, eye='both'):
         '''
         Args:
             sample - a dict containing information about the sample
@@ -388,7 +382,8 @@ class EThead(object):
             latest_binocular_avg
         '''   
         
-        self.eye = eye # Which eye(s) should be tracked         
+        self.eye = eye # Which eye(s) should be tracked      
+        self.latest_valid_roll = latest_valid_roll * 180 / np.pi * -1
                 
         # Indicate that eye is not used by red color
         if 'right' in self.eye:
@@ -407,18 +402,22 @@ class EThead(object):
         
         # Compute the average position of the eyes
         avg_pos = np.nanmean([xyz_pos_eye_l, xyz_pos_eye_r], axis=0)
-#        print('avg pos  {:f} {:f} {:f}'.format(avg_pos[0], avg_pos[1], avg_pos[2]))
+        # print('avg pos  {:f} {:f} {:f}'.format(avg_pos[0], avg_pos[1], avg_pos[2]))
         
         # If one eye is closed, the center of the circle is moved, 
         # Try to prevent this by compensating by an offset  
-        offset = np.array([0, 0, 0])          
+        
         if eye == 'both':
             if self.left_eye_valid and self.right_eye_valid: # if both eyes are open
                 latest_valid_binocular_avg = avg_pos[:]
-            elif self.left_eye_valid: 
-                offset = np.array(latest_valid_binocular_avg - avg_pos)
-            else:
-                offset = np.array(latest_valid_binocular_avg - avg_pos) * -1
+                previous_binocular_sample_valid = True
+                offset = np.array([0, 0, 0])          
+            elif self.left_eye_valid or self.right_eye_valid: 
+                
+                if previous_binocular_sample_valid:
+                    offset = latest_valid_binocular_avg - avg_pos
+                    
+                previous_binocular_sample_valid = False
             
         #(0.5, 0.5, 0.5)  means the eye is in the center of the box
         self.moving_ellipse.pos = ((avg_pos[0] - 0.5) * -1 - offset[0] , 
@@ -451,7 +450,7 @@ class EThead(object):
         # The width should be zero if yaw = pi/2 rad (90 deg)
         # The width should be equal to the height if yaw = 0
         self.head_width = self.moving_ellipse.height - \
-                          yaw / np.pi * (self.moving_ellipse.height)
+                          np.abs(yaw) / np.pi * (self.moving_ellipse.height)
                           
 #        print(self.moving_ellipse.pos, self.moving_ellipse.height,
 #              self.head_width, roll, yaw)              
@@ -469,23 +468,23 @@ class EThead(object):
         eye_head_distance = self.head_width / 2
         self.eye_l.pos = (self.moving_ellipse.pos[0] - np.cos(roll) * eye_head_distance,
                           self.moving_ellipse.pos[1] - np.sin(roll) * eye_head_distance)
-        self.eye_l.vertices = ellipse_points_head / (5.0 + yaw)
+        self.eye_l.vertices = ellipse_points_head / (5.0 - yaw)
         
         self.eye_r.pos = (self.moving_ellipse.pos[0] + np.cos(roll) * eye_head_distance,
                           self.moving_ellipse.pos[1] + np.sin(roll) * eye_head_distance)
-        self.eye_r.vertices = ellipse_points_head / (5.0  - yaw)
+        self.eye_r.vertices = ellipse_points_head / (5.0 + yaw)
         
         #%% Compute the position and size of the pupils
 #        print(self.eye_l.pos)
         self.pupil_l.pos = self.eye_l.pos
-        self.pupil_l.vertices = ellipse_points_head / (12 + (8 - sample['left_pupil_diameter']))
+        self.pupil_l.vertices = self.eye_l.vertices * (sample['left_pupil_diameter']- 1)**2  / 16
         
         self.pupil_r.pos = self.eye_r.pos
-        self.pupil_r.vertices = ellipse_points_head / (12.0 + (8 - sample['right_pupil_diameter']))        
+        self.pupil_r.vertices = self.eye_r.vertices * (sample['right_pupil_diameter'] - 1)**2 / 16
         
 #        print(self.eye_l.pos, self.eye_r.pos)
         
-        return latest_valid_binocular_avg, latest_valid_roll, latest_valid_yaw
+        return latest_valid_binocular_avg, previous_binocular_sample_valid, latest_valid_roll, latest_valid_yaw, offset
                
     def draw(self):
         ''' Draw all requested features
@@ -502,6 +501,7 @@ class EThead(object):
                 self.pupil_r.draw()
             else:
                 self.eye_r_closed.pos = self.eye_r.pos
+                self.eye_r_closed.ori = self.latest_valid_roll
                 self.eye_r_closed.width = self.head_width / 2.0 
                 self.eye_r_closed.height = self.eye_r_closed.width / 4.0
                 self.eye_r_closed.draw()  
@@ -509,6 +509,7 @@ class EThead(object):
             if 'right' in self.eye:
                 # Indicate that the left eye is not used
                 self.eye_l_closed.pos = self.eye_l.pos
+                self.eye_l_closed.ori = self.latest_valid_roll
                 self.eye_l_closed.width = self.head_width / 2.0 
                 self.eye_l_closed.height = self.eye_l_closed.width / 4.0
                 self.eye_l_closed.draw()              
@@ -520,6 +521,7 @@ class EThead(object):
                 self.pupil_l.draw()
             else:
                 self.eye_l_closed.pos = self.eye_l.pos
+                self.eye_l_closed.ori = self.latest_valid_roll
                 self.eye_l_closed.width = self.head_width / 2.0 
                 self.eye_l_closed.height = self.eye_l_closed.width / 4.0
                 self.eye_l_closed.draw()       
@@ -527,11 +529,12 @@ class EThead(object):
             if 'left' in self.eye:
                 # Indicate that the right eye is not used
                 self.eye_r_closed.pos = self.eye_r.pos
+                self.eye_r_closed.ori = self.latest_valid_roll
                 self.eye_r_closed.width = self.head_width / 2.0 
                 self.eye_r_closed.height = self.eye_r_closed.width / 4.0
                 self.eye_r_closed.draw()                          
         
-        self.win.flip()
+
         
         
         

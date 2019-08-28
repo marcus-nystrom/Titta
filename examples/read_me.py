@@ -1,6 +1,6 @@
 # Import modules
 from psychopy import visual, monitors
-from psychopy import core, event, gui
+from psychopy import core, event
 import numpy as np
 import os, sys
 import tobii_research
