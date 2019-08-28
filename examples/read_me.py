@@ -29,6 +29,8 @@ tracker.init()
 # Window set-up (this color will be used for calibration)
 win = visual.Window(monitor = settings.mon, fullscr = settings.FULLSCREEN,
                     screen=1, size=settings.SCREEN_RES, units = 'deg')
+print(win.size)
+
 text = visual.TextStim(win, text='')                    
 
                                   

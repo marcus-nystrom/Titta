@@ -1380,7 +1380,7 @@ class myTobii(object):
                 gaze_button_pressed = False     
                 cal_image_button_pressed = False
                 
-            timing.append(self.clock.getTime()-t0)
+            timing.append(self.clock.getTime() - t0)
             self.win.flip() 
         
         # Clear screen and return
@@ -2134,10 +2134,5 @@ class rawTracker(object):
     
     def serial_number(self):
         return self.tracker.serial_number
-        
-        
-        
-
-        
         
         

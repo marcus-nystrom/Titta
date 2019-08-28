@@ -9,13 +9,15 @@ from collections import deque
 import numpy as np
 from psychopy.tools.monitorunittools import cm2deg
 import copy
+from matplotlib.patches import Ellipse
 import sys
 
 if sys.version_info[0] == 2: # if Python 2:
     range = xrange
     pass
 
-
+    
+#%%
 def tobii2norm(pos):
     ''' Converts from Tobiis coordinate system [0, 1] to PsychoPy's 'norm' (-1, 1).
     Note that the Tobii coordinate system start in the upper left corner
@@ -265,6 +267,276 @@ class RingBuffer(object):
         self._b.append(L)         
         """"Append buffer with the most recent sample (list L)"""    
 
+#%%
+def ellipse(xy = (0, 0), width=1, height=1, angle=0, n_points=50):
+    ''' Generates edge points for an ellipse
+    Args:
+        xy - center of ellipse
+        width - width of ellipse
+        height - height of ellipse
+        angle - angular rotation of ellipse (in radians)
+        n_points - number of points to generate
+        
+    Return:
+        points - n x 2 array with ellipse points
+    '''
+    
+    xpos,ypos=xy[0], xy[1]
+    radm,radn=width,height
+    an=angle
+    
+    co,si=np.cos(an),np.sin(an)
+    the=np.linspace(0,2*np.pi,n_points)
+    X=radm*np.cos(the)*co-si*radn*np.sin(the)+xpos 
+    Y=radm*np.cos(the)*si+co*radn*np.sin(the)+ypos 
+    
+    points = np.vstack((X, Y)).T 
+    
+    return points        
+#%%
+class EThead(object):
+    """ A class to handle head animation in Titta
+    The animated head should reflect a mirror image of the participants 
+    head.
+    """
+    
+    def __init__(self, win): 
+        '''
+        Args:
+            win - psychopy window handle
+        '''
+        
+        self.win = win
+        
+        # Define colors
+        blue = tuple(np.array([37, 97, 163]) / 255.0 * 2 - 1)
+        green = tuple(np.array([0, 120, 0]) / 255.0 * 2 - 1)
+        red = tuple(np.array([150, 0, 0]) / 255.0 * 2 - 1)
+        yellow = tuple(np.array([255, 255, 0]) / 255.0 * 2 - 1)
+        yellow_linecolor = tuple(np.array([255, 255, 0]) / 255.0 * 2 - 1)  
+        
+        # Head parameters
+        HEAD_POS_CIRCLE_FIXED_COLOR = blue
+        HEAD_POS_CIRCLE_FIXED_RADIUS = 0.25
+        HEAD_POS_CIRCLE_MOVING_COLOR = yellow
+        HEAD_POS_ELLIPSE_MOVING_FILLCOLOR = yellow
+        self.HEAD_POS_ELLIPSE_MOVING_HEIGHT = 0.25
+        self.HEAD_POS_ELLIPSE_MOVING_MIN_HEIGHT = 0.05 
+        
+        # Eye parameters
+        self.EYE_SIZE = 0.03
+        EYE_COLOR_VALID = green        
+        
+        # Find out ratio aspect of screen
+        screen_res = win.size
+        ratio = screen_res[0] / float(screen_res[1])
+      
+        # Setup control circles for head position
+        self.static_circ = visual.Circle(win, radius = HEAD_POS_CIRCLE_FIXED_RADIUS, 
+                                         lineColor = HEAD_POS_CIRCLE_FIXED_COLOR,
+                                         lineWidth=4, units='height')
+        self.moving_ellipse = visual.ShapeStim(win,  lineColor = yellow_linecolor,
+                                         lineWidth=4, units='height')        
+#        self.moving_circ = visual.Circle(win, radius = HEAD_POS_CIRCLE_MOVING_RADIUS, 
+#                                         lineColor = yellow_linecolor,
+#                                         opacity=0.5,
+#                                         fillColor = HEAD_POS_CIRCLE_MOVING_FILLCOLOR,
+#                                         lineWidth=4, units='height')                                                   
+        
+        # Ellipses for eyes
+        self.eye_l = visual.ShapeStim(win,  lineColor = EYE_COLOR_VALID,
+                                         lineWidth=2, units='height')
+        self.eye_r = visual.ShapeStim(win,  lineColor = EYE_COLOR_VALID,
+                                         lineWidth=2, units='height')  
+        
+        # Ellipses for pupils
+        self.pupil_l = visual.ShapeStim(win,  fillColor = 'black',
+                                        lineColor = 'black',
+                                        units='height')
+        self.pupil_r = visual.ShapeStim(win,  fillColor = 'black',
+                                        lineColor = 'black',
+                                        units='height')         
+        
+        self.eye_l_closed = visual.Rect(win, fillColor=(1,1,1), 
+                                        lineColor=(1,1,1), units='height')
+        self.eye_r_closed = visual.Rect(win, fillColor=(1,1,1), 
+                                        lineColor=(1,1,1), units='height') 
+        
+        self.head_width = 0.25
+        self.head_height = 0.25        
+                     
+    
+    def update(self, sample, latest_valid_binocular_avg,
+               latest_valid_roll, 
+               latest_valid_yaw, eye='both'):
+        '''
+        Args:
+            sample - a dict containing information about the sample
+            
+                relevant info in sample is
+                
+                'left_gaze_origin_in_user_coordinate_system'  
+                'right_gaze_origin_in_user_coordinate_system'              
+                'left_gaze_origin_in_trackbox_coordinate_system' 
+                'right_gaze_origin_in_trackbox_coordinate_system'
+                'left_pupil_diameter'
+                'right_pupil_diameter'
+                
+            eye - track, both eyes, left eye, or right eye
+                  the non-tracked eye will be indicated by a cross
+                  
+            latest_binocular_avg
+        '''   
+        
+        self.eye = eye # Which eye(s) should be tracked         
+                
+        # Indicate that eye is not used by red color
+        if 'right' in self.eye:
+            self.eye_l_closed.fillColor = (1, -1, -1) # Red
+            
+        if 'left' in self.eye:
+            self.eye_r_closed.fillColor = (1, -1, -1)         
+        
+        #%% 1. Compute the average position of the head ellipse
+        xyz_pos_eye_l = sample['left_gaze_origin_in_trackbox_coordinate_system']
+        xyz_pos_eye_r = sample['right_gaze_origin_in_trackbox_coordinate_system']
+      
+        # Valid data from the eyes?
+        self.right_eye_valid = np.sum(np.isnan(xyz_pos_eye_r)) == 0 # boolean
+        self.left_eye_valid = np.sum(np.isnan(xyz_pos_eye_l)) == 0
+        
+        # Compute the average position of the eyes
+        avg_pos = np.nanmean([xyz_pos_eye_l, xyz_pos_eye_r], axis=0)
+#        print('avg pos  {:f} {:f} {:f}'.format(avg_pos[0], avg_pos[1], avg_pos[2]))
+        
+        # If one eye is closed, the center of the circle is moved, 
+        # Try to prevent this by compensating by an offset  
+        offset = np.array([0, 0, 0])          
+        if eye == 'both':
+            if self.left_eye_valid and self.right_eye_valid: # if both eyes are open
+                latest_valid_binocular_avg = avg_pos[:]
+            elif self.left_eye_valid: 
+                offset = np.array(latest_valid_binocular_avg - avg_pos)
+            else:
+                offset = np.array(latest_valid_binocular_avg - avg_pos) * -1
+            
+        #(0.5, 0.5, 0.5)  means the eye is in the center of the box
+        self.moving_ellipse.pos = ((avg_pos[0] - 0.5) * -1 - offset[0] , 
+                                (avg_pos[1] - 0.5) * -1 - offset[1]) 
+                  
+        self.moving_ellipse.height = (avg_pos[2] - 0.5)*-1 + self.HEAD_POS_ELLIPSE_MOVING_HEIGHT
+
+        # Control min size of head ellipse
+        if self.moving_ellipse.height < self.HEAD_POS_ELLIPSE_MOVING_MIN_HEIGHT:
+            self.moving_ellipse.height = self.HEAD_POS_ELLIPSE_MOVING_MIN_HEIGHT
+     
+        # Compute roll and yaw data from 3D information about the eyes
+        # in the headbox (if both eyes are valid)
+        if self.left_eye_valid and self.right_eye_valid:
+            roll = np.math.tan((xyz_pos_eye_l[1] - xyz_pos_eye_r[1]) / \
+                               (xyz_pos_eye_l[0] - xyz_pos_eye_r[0])) 
+            yaw =  np.math.tan((xyz_pos_eye_l[2] - xyz_pos_eye_r[2]) / \
+                               (xyz_pos_eye_l[0] - xyz_pos_eye_r[0])) *-1
+            
+            latest_valid_roll = roll
+            latest_valid_yaw = yaw
+            
+        else: # Otherwise use latest valid measurement
+            roll = latest_valid_roll
+            yaw = latest_valid_roll    
+            
+#        print('test', latest_valid_binocular_avg, roll, yaw)
+                
+        # Compute the ellipse height and width
+        # The width should be zero if yaw = pi/2 rad (90 deg)
+        # The width should be equal to the height if yaw = 0
+        self.head_width = self.moving_ellipse.height - \
+                          yaw / np.pi * (self.moving_ellipse.height)
+                          
+#        print(self.moving_ellipse.pos, self.moving_ellipse.height,
+#              self.head_width, roll, yaw)              
+
+        # Get head ellipse points to draw
+        ellipse_points_head = ellipse(xy = (0, 0), 
+                                      width= self.head_width, 
+                                      height=self.moving_ellipse.height, 
+                                      angle=roll)  
+        
+        # update position and shape of head ellipse
+        self.moving_ellipse.vertices = ellipse_points_head
+        
+        #%% Compute the position and size of the eyes (roll)
+        eye_head_distance = self.head_width / 2
+        self.eye_l.pos = (self.moving_ellipse.pos[0] - np.cos(roll) * eye_head_distance,
+                          self.moving_ellipse.pos[1] - np.sin(roll) * eye_head_distance)
+        self.eye_l.vertices = ellipse_points_head / (5.0 + yaw)
+        
+        self.eye_r.pos = (self.moving_ellipse.pos[0] + np.cos(roll) * eye_head_distance,
+                          self.moving_ellipse.pos[1] + np.sin(roll) * eye_head_distance)
+        self.eye_r.vertices = ellipse_points_head / (5.0  - yaw)
+        
+        #%% Compute the position and size of the pupils
+#        print(self.eye_l.pos)
+        self.pupil_l.pos = self.eye_l.pos
+        self.pupil_l.vertices = ellipse_points_head / (12 + (8 - sample['left_pupil_diameter']))
+        
+        self.pupil_r.pos = self.eye_r.pos
+        self.pupil_r.vertices = ellipse_points_head / (12.0 + (8 - sample['right_pupil_diameter']))        
+        
+#        print(self.eye_l.pos, self.eye_r.pos)
+        
+        return latest_valid_binocular_avg, latest_valid_roll, latest_valid_yaw
+               
+    def draw(self):
+        ''' Draw all requested features
+        '''
+        
+        # Draw head, eyes, and pupils
+        self.static_circ.draw()
+        self.moving_ellipse.draw()
+        
+#        print(self.eye, self.moving_ellipse.pos, self.eye_r.pos, self.pupil_r.vertices)
+        if 'both' in self.eye or 'right' in self.eye:
+            if self.right_eye_valid:
+                self.eye_r.draw()
+                self.pupil_r.draw()
+            else:
+                self.eye_r_closed.pos = self.eye_r.pos
+                self.eye_r_closed.width = self.head_width / 2.0 
+                self.eye_r_closed.height = self.eye_r_closed.width / 4.0
+                self.eye_r_closed.draw()  
+                
+            if 'right' in self.eye:
+                # Indicate that the left eye is not used
+                self.eye_l_closed.pos = self.eye_l.pos
+                self.eye_l_closed.width = self.head_width / 2.0 
+                self.eye_l_closed.height = self.eye_l_closed.width / 4.0
+                self.eye_l_closed.draw()              
+            
+                
+        if 'both' in self.eye or 'left' in self.eye:
+            if self.left_eye_valid:
+                self.eye_l.draw()
+                self.pupil_l.draw()
+            else:
+                self.eye_l_closed.pos = self.eye_l.pos
+                self.eye_l_closed.width = self.head_width / 2.0 
+                self.eye_l_closed.height = self.eye_l_closed.width / 4.0
+                self.eye_l_closed.draw()       
+                
+            if 'left' in self.eye:
+                # Indicate that the right eye is not used
+                self.eye_r_closed.pos = self.eye_r.pos
+                self.eye_r_closed.width = self.head_width / 2.0 
+                self.eye_r_closed.height = self.eye_r_closed.width / 4.0
+                self.eye_r_closed.draw()                          
+        
+        self.win.flip()
+        
+        
+        
+        
+                
 #%%   
 class AnimatedCalibrationDisplay(object):
     """ A class for drawing animated targets"""
