@@ -10,15 +10,18 @@ import numpy as np
 FILENAME                    = 'test.tsv' 
 
 # Tracking parameters
-TRACKER_ADDRESS  = ''   # If none is given, find one on the network
-SAMPLING_RATE = 600     # Set sampling rate of tracker
+TRACKER_ADDRESS  = ''           # If none is given, find one on the network
+SAMPLING_RATE = 600             # Set sampling rate of tracker
 
 # Parameters for calibration
-PACING_INTERVAL = 1.0   # How long ot present the dot until samples are collected
-ANIMATE_CALIBRATION = False # Static or animated calibration dots
+PACING_INTERVAL = 1.0           # How long to present the dot until samples are collected
+AUTO_PACE = 1                   # autoaccept (2), semi autoaccept (1, accept first point, default) 
+                                # of accept with space bar (0)
+                                    
+ANIMATE_CALIBRATION = True      # Static or animated calibration dots
 RECORD_EYE_IMAGES_DURING_CALIBRATION = False
-N_CAL_TARGETS = 5  # Valid: 0, 1, 5, 9
-N_VAL_TARGETS = 4   # Valid: 4
+N_CAL_TARGETS = 5               # Valid: 0, 1, 5, 9
+N_VAL_TARGETS = 4               # Valid: 4
 
 # List all possible calibration points (in Tobii's coordinate system)
 CAL_POS_TOBII = np.array([[0.5, 0.5], [0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0],
@@ -31,7 +34,8 @@ elif N_CAL_TARGETS == 1:
 elif N_CAL_TARGETS == 5:
     CAL_POS_TOBII = CAL_POS_TOBII[[0, 1, 2, 3, 4], :]  
     
-VAL_POS_TOBII = np.array([[0.2, 0.2], [0.2, 0.8], [0.8, 0.2], [0.8, 0.8]])    
+# VAL_POS_TOBII = np.array([[0.2, 0.2], [0.2, 0.8], [0.8, 0.2], [0.8, 0.8]])    
+VAL_POS_TOBII = np.array([[0.2, 0.5], [0.5, 0.8], [0.8, 0.5], [0.5, 0.2]]) 
     
 # Scale the positions so they look good on the screen
 scaling = 0.7

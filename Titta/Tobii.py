@@ -9,13 +9,12 @@ ToDO:
     * Test monocular calibrations (calibration mode cannot exit until both eyes done)
         Use flags
        hide data from the eye that is not calibrated (DONE!)
-    *	Implement dynamic calibration (use as default)
+    *	Align validation screen with Matlab interface
     * Select calibration with arrow keys
 	* self.tracker = tr.EyeTracker(self.settings.TRACKER_ADDRESS - add better error message if this call fails
 	  e.g. "Could not connect to eye tracker. Did you forget to switch is on or provide the wrong eye tracker name?
     * make sure that pressing 'r' during validation, restarts a validition when in validation mode
     (i.e., when the validation button has been pressed)
-    * move screen information out of settings file (only eye tracker stuff there.)
 """
 from __future__ import print_function # towards Python 3 compatibility
 
@@ -118,8 +117,11 @@ class myTobii(object):
         print(self.tracker.model)
         if len(self.tracker.model) == 0:
             raise Exception('blah') 
-        
-        
+            
+        if self.settings.PACING_INTERVAL < 0.8:
+            raise Exception('Calibration pacing interval must be \
+                            larger than 0.8 s') 
+
         # Store recorded data in lists
         self.gaze_data_container = []
         self.msg_container = []
@@ -307,8 +309,8 @@ class myTobii(object):
                                                    image=np.zeros((512, 512)))
       
         # Accuracy image 
-        self.accuracy_image = visual.ImageStim(self.win_temp, image=None,units='norm', size=(1.5,1.5),
-                                          pos=(0, 0.25))
+        self.accuracy_image = visual.ImageStim(self.win_temp, image=None,units='norm', size=(2,2),
+                                          pos=(0, 0))
         
     
     #%%
@@ -362,9 +364,9 @@ class myTobii(object):
         if self.settings.ANIMATE_CALIBRATION:
             
             # Define your calibration target
-            target = helpers.MyDot2(self.win, units='pix',
-                                     outer_diameter = win.size[0] * 0.02, 
-                                     inner_diameter = win.size[0] * 0.005)
+            target = helpers.MyDot2(self.win, units='deg',
+                                     outer_diameter=graphics.TARGET_SIZE, 
+                                     inner_diameter=graphics.TARGET_SIZE_INNER)  
             self.animator = helpers.AnimatedCalibrationDisplay(self.win, target, 'animate_point')        
         
         # Screen based calibration 
@@ -532,7 +534,7 @@ class myTobii(object):
             
             # Draw four dots in the corners
             for i in self.POS_CAL_CHECK_DOTS:
-                self.setup_dot.setPos(i)
+                self.setup_dot.set_pos(i)
                 self.setup_dot.draw()
 
             # Draw buttons, one to calibrate
@@ -677,21 +679,46 @@ class myTobii(object):
         calibration_done = False
         animation_state = 'static'
         tick = 0
+        autopace = self.settings.AUTO_PACE
         while not calibration_done:
             
             k = event.getKeys() 
             
             # Get current calibration target position
             pos = cal_pos[i, 2:] # Psychopoy and Tobii have different coordinate systems
-            tobii_data = cal_pos[i, :2]           
+            tobii_data = cal_pos[i, :2]      
+            
+            # Animate calibration dots or show static dots?
+            if self.settings.ANIMATE_CALIBRATION:
+                if animation_state == 'move':                    
+                    move_completed = self.animator.move_point(pos_old, (pos[0], pos[1]), tick)
+                    if move_completed:
+                        animation_state = 'static' # or move
+                        tick = 0
+                        t0 = self.clock.getTime() 
+                else:
+                    self.animator.animate_target(0, (pos[0], pos[1]), tick)
+            else:
+                self.cal_dot.set_pos(pos)
+                self.cal_dot.draw()        
+                
+            self.win.flip()
+            
+            # Send a message at the onset (first frame) of a new dot
+            # Always happens when tick == 0
+            if tick == 0 and animation_state == 'static':
+                self.send_message('calibration point {} at position {} {}'.format(i, pos[0], pos[1]))                
             
             # Time to switch to a new point
-            if paval > 0 or 'space' in k:
+            if autopace == 2 or 'space' in k:
+                
+                # Switch to fully automatic pacing once first point is accepted
+                autopace = 2
+                
                 if (self.clock.getTime() - t0) > paval:
-                    t0 = self.clock.getTime()
+                    
                     pos_old = pos[:]
                     i += 1
-                    
                     
                     # Collect some calibration data
                     if self.eye_tracker_name == 'Spectrum':
@@ -709,23 +736,16 @@ class myTobii(object):
                             self.calibration.collect_data(tobii_data[0], tobii_data[1])           
                             
                     if i == 5:
+                        self.final_cal_position = copy.deepcopy(pos)
                         break
                     
+                    t0 = self.clock.getTime()
+                    
+                    tick = 0
+                    animation_state = 'move'
 
-            # Animate calibration dots or show static dots?
-            if self.settings.ANIMATE_CALIBRATION:
-                if animation_state == 'move':                    
-                    move_completed = self.animator.move_point(pos_old, (pos[0], pos[1]), tick)
-                    if move_completed:
-                        animation_state = 'static' # or move
-                        tick = 0
-                else:
-                    self.animator.animate_target(0, (pos[0], pos[1]), tick)
-            else:
-                self.cal_dot.setPos(pos)
-                self.cal_dot.draw()                
+           
             
-            tick += 1
             
             # Abort calibration if esc is pressed (and go back to setup screen)
             if 'escape' in k:                
@@ -736,8 +756,8 @@ class myTobii(object):
                 action = 'cal' 
                 return action                 
             
-            self.win.flip()
 
+            tick += 1                
 
         # Apply the calibration and get the calibration results
         calibration_result = self.calibration.compute_and_apply()
@@ -794,7 +814,7 @@ class myTobii(object):
             self.cal_dot.fillColor = 'white'
             xy_dot = helpers.tobii2deg(np.array([[x_dot, y_dot]]), 
                                        self.win.monitor)
-            self.cal_dot.setPos(xy_dot) # Tobii and psychopy have different coord systems            
+            self.cal_dot.set_pos(xy_dot) # Tobii and psychopy have different coord systems            
             self.cal_dot.draw()
                         
             if self.eye == 'both' or self.eye == 'left':
@@ -890,7 +910,7 @@ class myTobii(object):
         
                 
         target_pos = self.VAL_POS
-        paval = self.settings.PACING_INTERVAL / 2
+        paval = self.settings.PACING_INTERVAL
         
         np.random.shuffle(target_pos)
         
@@ -900,53 +920,99 @@ class myTobii(object):
         self.send_message('Validation_start')
         
         action = 'setup'
-        old_ts = 0
-        validation_data = [] 
-        xy_pos = [] # Stores [l_por_x, l_por_y, r_por_x, r_por_y, target_x, target, y]
-        for i, p in enumerate(target_pos[:, 2:]):
-            self.cal_dot.setPos(p) # Tobii and psychopy have different coord systems
-            self.cal_dot.draw()
-            self.win.flip()
-            self.send_message('validation point {} at position {} {}'.format(i, p[0], p[1]))
-            if paval == 0:
-                k = event.waitKeys()
+        # Go through the targets one by one
+        self.clock.reset()
+        i = 0
+        pos_old = self.final_cal_position
+        validation_done = False
+        validation_data = []
+        xy_pos = []
+        animation_state = 'move'
+        buffer_started = False
+        tick = 0
+        while not validation_done:
+            
+            k = event.getKeys() 
+            
+            # Get current calibration target position
+            pos = target_pos[i, 2:] # Psychopoy and Tobii have different coordinate systems
+            
+            # Animate calibration dots or show static dots?
+            if self.settings.ANIMATE_CALIBRATION:
+                if animation_state == 'move':                    
+                    move_completed = self.animator.move_point(pos_old, (pos[0], pos[1]), tick)
+                    if move_completed:
+                        animation_state = 'static' # or move
+                        tick = 0
+                        self.clock.reset()
+                else:
+                    self.animator.animate_target(0, (pos[0], pos[1]), tick)
             else:
-                core.wait(paval)
-                k = event.getKeys() 
+                animation_state == 'static'
+                self.cal_dot.set_pos(pos)
+                self.cal_dot.draw()        
+                
+            self.win.flip()
+            
+            # Send a message at the onset (first frame) of a new dot
+            # Always happens when tick == 0
+            # animation_state 'static' means that the dot has completed the 
+            # movement to a new location.
+            if tick == 0 and animation_state == 'static':
+                self.send_message('validation point {} at position {} {}'.format(i, pos[0], pos[1]))  
+                
+            # Start collecting validation data for a point 500 ms after its onset
+            if (self.clock.getTime() >= 0.500 and self.clock.getTime() < 0.800) and not buffer_started:
+                self.start_sample_buffer(sample_buffer_length=300)
+                buffer_started = True
+                
+            if self.clock.getTime() >= 0.800 and buffer_started:           
+                sample = self.consume_buffer()
+                self.stop_sample_buffer()
+                buffer_started = False
+            
+            # Time to switch to a new point 
+            if self.settings.AUTO_PACE > 0 or 'space' in k:
+                if self.clock.getTime() > paval:
+                    
+                    # Collect validation data from this point
+                    validation_data.append(sample)
+                    
+                    # Save data as xy list
+                    for s in sample:
+                        xy_pos.append([s['system_time_stamp'], 
+                                       s['left_gaze_point_on_display_area'][0], 
+                                       s['left_gaze_point_on_display_area'][1], 
+                                       s['right_gaze_point_on_display_area'][0], 
+                                       s['right_gaze_point_on_display_area'][1], 
+                                       pos[0], pos[1]])                    
+                    pos_old = pos[:]
+                 
+                    self.clock.reset()
+                    tick = 0
+                    animation_state = 'move'
+                    
+                    
+                    
+                    i += 1
+                    
+                    if i > (np.shape(target_pos)[0] - 1):
+                        break                    
             
             # Abort calibration if esc is pressed (and go back to setup screen)
-            if 'escape' in k:
-                action = 'setup'
+            if 'escape' in k:                
                 return action
-                
+
             # 'r' aborts and restarts calibration 
             if 'r' in k:
                 action = 'cal' 
-                return action
+                return action               
             
-            # Collect data for some time
-            t0 = core.getTime()
-            sample = []
-            while (core.getTime() - t0) < paval:
-                
-                time_stamp = self.gaze_data['device_time_stamp']
-                if time_stamp != old_ts: 
-                    
-                    s = self.get_latest_sample()
-                    sample.append(s)
-                    xy_pos.append([time_stamp, 
-                                   s['left_gaze_point_on_display_area'][0], 
-                                   s['left_gaze_point_on_display_area'][1], 
-                                   s['right_gaze_point_on_display_area'][0], 
-                                   s['right_gaze_point_on_display_area'][1], 
-                                   p[0], p[1]])
-                core.wait(0.001)
-                old_ts = time_stamp
-                
-            validation_data.append(sample)
+            tick += 1
             
+            
+        ##############    
         self.send_message('Validation_end')
-#        self.stop_recording()
         
         self.win.flip()
 
@@ -954,10 +1020,6 @@ class myTobii(object):
         gaze_pos = np.array(xy_pos)
         gaze_pos[:, 1:3] = helpers.tobii2deg(gaze_pos[:, 1:3], self.win.monitor)
         gaze_pos[:, 3:5] = helpers.tobii2deg(gaze_pos[:, 3:5], self.win.monitor)
-
-        # Generate an image of the validation results (if validation was completed)
-#        if len(xy_pos) == len(target_pos):
-#        self.deviations.append([1, 2, 3, 4])
         
         # Compute data quality per validation point
         deviation_l, rms_l = self._compute_data_quality(validation_data, target_pos[:, :2], 'left')
@@ -1007,7 +1069,7 @@ class myTobii(object):
         
         # Show all dots...
         for p in dot_positions:
-            self.cal_dot.setPos(p )
+            self.cal_dot.set_pos(p )
             self.cal_dot.draw()
         
         #... and collected validation samples for left...
@@ -1119,8 +1181,8 @@ class myTobii(object):
         ''' Shows validation image after a validation has been completed
         '''    
         # Center position of presented calibration values
-        x_pos_res = 0.5
-        y_pos_res = -0.4
+        x_pos_res = 0.55
+        y_pos_res = 0.2
         
         self.mouse.setVisible(1)
         
@@ -1312,7 +1374,7 @@ class myTobii(object):
             # Display gaze along with four dots in the corners
             if display_gaze:
                 for i in self.POS_CAL_CHECK_DOTS:
-                    self.setup_dot.setPos(i)
+                    self.setup_dot.set_pos(i)
                     self.setup_dot.draw()
                 self._draw_gaze()
                 
@@ -1361,9 +1423,7 @@ class myTobii(object):
         info['tracking_mode']  = self.tracker.get_eye_tracking_mode()
         info['sampling_frequency']  = self.tracker.get_gaze_output_frequency()
         
-        return info
-#        self.info = info
-   
+        return info   
         
     #%%   
     def get_system_time_stamp(self):
@@ -1386,17 +1446,22 @@ class myTobii(object):
         self.__buffer_active = False
         
     #%%
-    def get_samples_from_buffer(self):
-        ''' Consume all samples '''
-        return self.buf.peek() 
+    def consume_buffer(self):
+        ''' Consume all samples and empty buffer'''
+        return self.buf.get_all() 
+    
+    #%%
+    def peek_buffer(self):
+        ''' Get samples in buffer without emptying the buffer '''
+        return self.buf.peek()     
         
-#    def send_file_log_message(self, msg):
-#        self.fid.write(msg)
     #%%    
-    def send_message(self, msg):
+    def send_message(self, msg, ts=None):
         ''' Sends a message to the data file
         '''       
-        ts = self.get_system_time_stamp()
+        
+        if not ts:
+            ts = self.get_system_time_stamp()
         self.msg_container.append([ts, msg])
         
     #%%
@@ -1637,7 +1702,7 @@ class myTobii(object):
             
             # Draw four dots in the corners
             for i in self.POS_CAL_CHECK_DOTS:
-                self.setup_dot.setPos(i)
+                self.setup_dot.set_pos(i)
                 self.setup_dot.draw()               
             
             # Get position of each eye in track box 
