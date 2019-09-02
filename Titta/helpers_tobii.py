@@ -26,7 +26,7 @@ def tobii2norm(pos):
     Args:   pos: N x 2 array with positions
     '''
     
-    pos_temp = copy.deepcopy(pos[:]) # To avoid that the called parameter is changed
+    pos_temp = copy.deepcopy(pos) # To avoid that the called parameter is changed
     
     # Convert between coordinate system
     pos_temp[:, 0] = 2.0 * (pos_temp[:, 0] - 0.5)
@@ -57,7 +57,7 @@ def tobii2deg(pos, mon):
             screen_height: height of screen in cm            
     '''
     
-    pos_temp = copy.deepcopy(pos[:]) # To avoid that the called parameter is changed
+    pos_temp = copy.deepcopy(pos) # To avoid that the called parameter is changed
     
     # Center
     pos_temp[:, 0] = pos_temp[:, 0] - 0.5

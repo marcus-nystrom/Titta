@@ -10,6 +10,8 @@ os.chdir(curdir)
 sys.path.insert(0,os.path.dirname(curdir)) 
 from Titta import Titta, helpers_tobii as helpers
 
+#%% Setup monitor for test
+
 # Monitor/geometry 
 MY_MONITOR                  = 'testMonitor' # needs to exists in PsychoPy monitor center
 FULLSCREEN                  = True
@@ -22,12 +24,34 @@ mon.setWidth(SCREEN_WIDTH)          # Width of screen (cm)
 mon.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
 mon.setSizePix(SCREEN_RES)
 
-# Parameters
-et_name = 'Tobii Pro Spectrum' 
-# et_name = 'Tobii4C' 
+mon = monitors.Monitor(MY_MONITOR)  # Defined in defaults file
+mon.setWidth(SCREEN_WIDTH)          # Width of screen (cm)
+mon.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
+mon.setSizePix(SCREEN_RES)
 
+# Monitor/geometry 
+MY_MONITOR                  = 'default' # needs to exists in PsychoPy monitor center
+FULLSCREEN_OP                  = False
+SCREEN_RES_OP                  = [1680, 1050]
+SCREEN_WIDTH                = 52.7 # cm
+VIEWING_DIST                = 63 #  # distance from eye to center of screen (cm)
+
+mon_op = monitors.Monitor(MY_MONITOR)  # Defined in defaults file
+mon_op.setWidth(SCREEN_WIDTH)          # Width of screen (cm)
+mon_op.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
+mon_op.setSizePix(SCREEN_RES)
+
+mon_op = monitors.Monitor(MY_MONITOR)  # Defined in defaults file
+mon_op.setWidth(SCREEN_WIDTH)          # Width of screen (cm)
+mon_op.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
+mon_op.setSizePix(SCREEN_RES)
+
+
+
+#%%
+# Parameters
+et_name = 'Spectrum' 
 dummy_mode = False
-bimonocular_calibration = False
      
 # Change any of the default dettings?e
 settings = Titta.get_defaults(et_name)
@@ -43,14 +67,17 @@ tracker.init()
 win = visual.Window(monitor = mon, fullscr = FULLSCREEN,
                     screen=1, size=SCREEN_RES, units = 'deg')
 
+win_op = visual.Window(monitor = mon_op, fullscr = FULLSCREEN_OP,
+                    screen=0, size=SCREEN_RES_OP, units = 'norm')
+
 text = visual.TextStim(win, text='')                    
-                  
+
+                                  
+
+
+
 # Calibrate 
-if bimonocular_calibration:
-    tracker.calibrate(win, eye='left', calibration_number = 'first')
-    tracker.calibrate(win, eye='right', calibration_number = 'second')
-else:
-    tracker.calibrate(win)
+tracker.calibrate(win, win_op)
 
 # Start recording
 tracker.start_recording(gaze_data=True, store_data=True)
