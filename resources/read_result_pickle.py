@@ -6,8 +6,9 @@ Created on Mon March 3 08:39:57 2019
 
 Reads pickle file generated as part of the eye tracker output.
 The pickle contains (in case recorded) information about the eye tracker,
-the calibration/validation results, synchronization data, and eye images (if recorded) 
-in separate .tsv-files.
+the calibration/validation results, 
+synchronization data, eye-tracker data, 
+messages, and eye images (if recorded).
 
 """
 import cPickle as pickle
@@ -22,7 +23,9 @@ import os
 EYE_IMAGE_SIZE_PIX = (175, 496)
 EYE_IMAGE_SIZE_PIX_FULL_FRAME = (512, 640)
     
-f = open("elias.pkl", 'rb')
+f = open("testfile.pkl", 'rb')
+gaze_data = pickle.load(f)
+msg_data = pickle.load(f)
 info = pickle.load(f)
 sync_data_container = pickle.load(f)
 image_data_container = pickle.load(f)

@@ -13,7 +13,7 @@ os.chdir(curdir)
 sys.path.insert(0,os.path.dirname(curdir)) 
 from Titta import Titta, helpers_tobii as helpers
 
-#%% Monitor/geometry 
+#%% Monitor/geometry participant screen
 MY_MONITOR                  = 'testMonitor' # needs to exists in PsychoPy monitor center
 FULLSCREEN                  = True
 SCREEN_RES                  = [1920, 1080]
@@ -25,9 +25,24 @@ mon.setWidth(SCREEN_WIDTH)          # Width of screen (cm)
 mon.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
 mon.setSizePix(SCREEN_RES)
 
+# Monitor/geometry operator screen
+MY_MONITOR_OP                  = 'default' # needs to exists in PsychoPy monitor center
+FULLSCREEN_OP                  = True
+SCREEN_RES_OP                  = [1920, 1080]
+SCREEN_WIDTH_OP                = 52.7 # cm
+VIEWING_DIST_OP                = 63 #  # distance from eye to center of screen (cm)
+
+mon_op = monitors.Monitor(MY_MONITOR_OP)  # Defined in defaults file
+mon_op.setWidth(SCREEN_WIDTH_OP)          # Width of screen (cm)
+mon_op.setDistance(VIEWING_DIST_OP)       # Distance eye / monitor (cm)
+mon_op.setSizePix(SCREEN_RES_OP)
+
 # Window set-up (this color will be used for calibration)
 win = visual.Window(monitor = mon, fullscr = FULLSCREEN,
                     screen=1, size=SCREEN_RES, units = 'deg')
+
+win_op = visual.Window(monitor = mon_op, fullscr = FULLSCREEN_OP,
+                    screen=0, size=SCREEN_RES_OP, units = 'norm')
 
 fixation_point = helpers.MyDot2(win)
 image = visual.ImageStim(image=, units='norm', size = (2, 2))
@@ -51,10 +66,10 @@ tracker.init()
    
 # Calibrate 
 if bimonocular_calibration:
-    tracker.calibrate(win, eye='left', calibration_number = 'first')
-    tracker.calibrate(win, eye='right', calibration_number = 'second')
+    tracker.calibrate(win, win_operator=win_op, eye='left', calibration_number = 'first')
+    tracker.calibrate(win, win_operator=win_op, eye='right', calibration_number = 'second')
 else:
-    tracker.calibrate(win)
+    tracker.calibrate(win, win_operator=win_op)
 
 #%% Record some data
 tracker.start_recording(gaze_data=True, store_data=True)
@@ -78,6 +93,7 @@ tracker.stop_recording(gaze_data=True)
 
 # Close window and save data
 win.close()
+win_op.close()
 tracker.save_data() 
 
 #%% Open pickle and write et-data and messages to tsv-files.

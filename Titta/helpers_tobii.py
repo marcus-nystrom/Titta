@@ -635,5 +635,9 @@ def rms(x):
     rms = np.sqrt(np.mean(np.square(np.diff(x))))
     return rms 
 
+#%%    
+def sd(x):
+    return np.std(x)
+
 #%% 
     

@@ -1061,20 +1061,26 @@ class myTobii(object):
         gaze_pos[:, 3:5] = helpers.tobii2deg(gaze_pos[:, 3:5], self.win.monitor)
         
         # Compute data quality per validation point
-        deviation_l, rms_l = self._compute_data_quality(validation_data, target_pos[:, :2], 'left')
-        deviation_r, rms_r = self._compute_data_quality(validation_data, target_pos[:, :2], 'right')
+        deviation_l, rms_l, sd_l, data_loss_l = self._compute_data_quality(validation_data, target_pos[:, :2], 'left')
+        deviation_r, rms_r, sd_r, data_loss_r = self._compute_data_quality(validation_data, target_pos[:, :2], 'right')
         
         if self.eye == 'left':
             deviation_r = np.nan
             rms_r = np.nan
+            sd_r = np.nan
+            data_loss_r = np.nan
             
         if self.eye == 'right':
             deviation_l = np.nan
-            rms_l = np.nan            
+            rms_l = np.nan     
+            sd_l = np.nan
+            data_loss_l = np.nan            
             
         self.deviations.insert(self.selected_calibration - 1,
                                [np.nanmean(deviation_l), np.nanmean(deviation_r),
-                                np.nanmean(rms_l), np.nanmean(rms_r)])
+                                np.nanmean(rms_l), np.nanmean(rms_r),
+                                np.nanmean(sd_l), np.nanmean(sd_r),
+                                np.nanmean(data_loss_l), np.nanmean(data_loss_r)])
             
         self._generate_validation_image(target_pos[:, 2:], gaze_pos[:, :-2])
         action = 'res' # Show validation results
@@ -1218,7 +1224,8 @@ class myTobii(object):
             rms_per_point.append(np.rad2deg(helpers.rms(angle_between_samples)))
             sd_per_point.append(np.rad2deg(helpers.sd(angle_between_samples)))
             data_loss_point.append(n_invalid_samples / float(i))
-        return deviation_per_point, rms_per_point
+            
+        return deviation_per_point, rms_per_point, sd_per_point, data_loss_point
                             
             
     #%%     
@@ -1255,10 +1262,9 @@ class myTobii(object):
         accuracy_values = []#[0] * len(x_pos)] * nCalibrations
         # print(accuracy_values)
 
-        y_pos = y_pos_res
-        # print(self.deviations)
+        y_pos = y_pos_res[:]
+        
         for i in range(nCalibrations):
-            # print(self.deviations[i])
             select_accuracy_rect.append(visual.Rect(self.win_temp, width= 0.15, 
                                                 height= 0.05, 
                                                 units='norm',
@@ -1294,11 +1300,6 @@ class myTobii(object):
             accuracy_values.append(accuracy_values_j)                 
             y_pos -= 0.06
             
-        # for i in range(nCalibrations):            
-        #     for j, x in enumerate(x_pos): 
-        #         print(i, j, accuracy_values[i][j].text, accuracy_values[i][j].pos)            
-        
-        # print('acc values done')
         
         # Prepare header
         header_text = []    
@@ -1312,10 +1313,8 @@ class myTobii(object):
                                                 pos = (x, y_pos_res + 0.06),
                                                 color = (1, 1, 1)))
                                                 
-        # print('header done')
 
         # Wait for user input
-        # self.selected_calibration = nCalibrations # keep track of which calibration is selected
         selection_done = False
         display_gaze = False
         gaze_button_pressed = False
@@ -1456,7 +1455,9 @@ class myTobii(object):
                 self.win_temp.flip()
                 self.instruction_text.draw()
                 
-            self.win.flip()                 
+            self.win.flip()    
+            if self.win_operator:   
+                self.win_temp.flip()
         
         # Clear screen and return
         self.instruction_text.color = (1, 1, 1)
