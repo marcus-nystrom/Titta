@@ -291,9 +291,10 @@ class myTobii(object):
             self.raw_et_sample_l = visual.Circle(self.win_temp, radius = 0.01, 
                                              fillColor = 'red', units='norm') 
             self.raw_et_sample_r = visual.Circle(self.win_temp, radius = 0.01, 
-                                             fillColor = 'blue', units='norm')    
-            self.current_point = visual.Circle(self.win_temp, radius = 0.05, 
-                                               units='norm')            
+                                             fillColor = 'blue', units='norm')     
+            self.current_point = helpers.MyDot2(self.win_temp, units='norm',
+                                         outer_diameter=0.05, 
+                                         inner_diameter=0.02)            
             
         
       
@@ -407,16 +408,14 @@ class myTobii(object):
             elif 'val' in action:
                 action = self._run_validation()
             elif 'res' in action:
-                action = self._show_validation_screen()
-#            elif 'adv' in action:
-##                action = self._advanced_setup()
-#                action = self._show_eye_image()
-                
+                action = self._show_validation_screen()                
             elif 'done'in action:
                 print('calibration completed')
                 break
             elif 'quit' in action:
-                self.stop_recording()
+                self.calibration.leave_calibration_mode() 
+                self.stop_recording(gaze_data=True,
+                            sync_data=True)
                 self.win.close()
                 if self.win_operator:
                     self.win_operator.close()
@@ -622,9 +621,14 @@ class myTobii(object):
                 image_button_pressed = False                
             
             # Update the screen
-            self.win.flip()
+            self.win.flip()            
             if self.win_operator:            
-                self.win_operator.flip()
+                self.win_temp.flip()            
+
+
+                
+            print(self.win.monitor.getWidth, self.win.monitor.getWidth)
+            # core.wait(2)
             
              
         # Stop streaming of eye images
@@ -634,7 +638,7 @@ class myTobii(object):
         # Clear the screen
         self.win.flip()
         if self.win_operator:            
-            self.win_operator.flip()        
+            self.win_temp.flip()        
         
         return action
                 
@@ -1172,23 +1176,28 @@ class myTobii(object):
         # For each point
         deviation_per_point = []
         rms_per_point = []
+        sd_per_point = []
+        data_loss_point = []
         for p, point_data in enumerate(validation_data):
             
-            #print(point_data)
             val_point_position = self._adcs2ucs(val_point_positions[p])
             
             # For each sample
             deviation_per_sample = []
             angle_between_samples = []
             gaze_vector_old = 0
+            n_invalid_samples = 0
             for i, sample in enumerate(point_data):
-                #print(sample)
+                
                 gaze_vector = (sample[eye + '_gaze_point_in_user_coordinate_system'][0] - 
                                sample[eye + '_gaze_origin_in_user_coordinate_system'][0],
                                sample[eye + '_gaze_point_in_user_coordinate_system'][1] - 
                                sample[eye + '_gaze_origin_in_user_coordinate_system'][1],
                                sample[eye + '_gaze_point_in_user_coordinate_system'][2] - 
                                sample[eye + '_gaze_origin_in_user_coordinate_system'][2]) 
+                
+                if np.any(np.isnan(gaze_vector)):
+                    n_invalid_samples += 1
                 
                 eye_to_valpoint_vector = (val_point_position[0] - 
                                sample[eye + '_gaze_origin_in_user_coordinate_system'][0],
@@ -1207,7 +1216,8 @@ class myTobii(object):
             # Compute averages per point
             deviation_per_point.append(np.rad2deg(np.nanmedian(deviation_per_sample)))
             rms_per_point.append(np.rad2deg(helpers.rms(angle_between_samples)))
-            
+            sd_per_point.append(np.rad2deg(helpers.sd(angle_between_samples)))
+            data_loss_point.append(n_invalid_samples / float(i))
         return deviation_per_point, rms_per_point
                             
             

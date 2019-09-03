@@ -24,33 +24,21 @@ mon.setWidth(SCREEN_WIDTH)          # Width of screen (cm)
 mon.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
 mon.setSizePix(SCREEN_RES)
 
-mon = monitors.Monitor(MY_MONITOR)  # Defined in defaults file
-mon.setWidth(SCREEN_WIDTH)          # Width of screen (cm)
-mon.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
-mon.setSizePix(SCREEN_RES)
-
 # Monitor/geometry 
-MY_MONITOR                  = 'default' # needs to exists in PsychoPy monitor center
-FULLSCREEN_OP                  = False
+MY_MONITOR_OP                  = 'default' # needs to exists in PsychoPy monitor center
+FULLSCREEN_OP                  = True
 SCREEN_RES_OP                  = [1680, 1050]
-SCREEN_WIDTH                = 52.7 # cm
-VIEWING_DIST                = 63 #  # distance from eye to center of screen (cm)
+SCREEN_WIDTH_OP                = 52.7 # cm
+VIEWING_DIST_OP                = 63 #  # distance from eye to center of screen (cm)
 
-mon_op = monitors.Monitor(MY_MONITOR)  # Defined in defaults file
-mon_op.setWidth(SCREEN_WIDTH)          # Width of screen (cm)
-mon_op.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
-mon_op.setSizePix(SCREEN_RES)
-
-mon_op = monitors.Monitor(MY_MONITOR)  # Defined in defaults file
-mon_op.setWidth(SCREEN_WIDTH)          # Width of screen (cm)
-mon_op.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
-mon_op.setSizePix(SCREEN_RES)
-
-
+mon_op = monitors.Monitor(MY_MONITOR_OP)  # Defined in defaults file
+mon_op.setWidth(SCREEN_WIDTH_OP)          # Width of screen (cm)
+mon_op.setDistance(VIEWING_DIST_OP)       # Distance eye / monitor (cm)
+mon_op.setSizePix(SCREEN_RES_OP)
 
 #%%
 # Parameters
-et_name = 'Spectrum' 
+et_name = 'Tobii Pro Spectrum' 
 dummy_mode = False
      
 # Change any of the default dettings?e
