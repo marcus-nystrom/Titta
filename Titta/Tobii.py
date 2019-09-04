@@ -1262,7 +1262,7 @@ class myTobii(object):
         accuracy_values = []#[0] * len(x_pos)] * nCalibrations
         # print(accuracy_values)
 
-        y_pos = y_pos_res[:]
+        y_pos = y_pos_res
         
         for i in range(nCalibrations):
             select_accuracy_rect.append(visual.Rect(self.win_temp, width= 0.15, 

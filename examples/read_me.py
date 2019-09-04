@@ -1,5 +1,5 @@
 # Import modules
-import cPickle as pickle
+import pickle
 import pandas as pd
 from psychopy import visual, monitors
 from psychopy import core, event
@@ -30,7 +30,7 @@ win = visual.Window(monitor = mon, fullscr = FULLSCREEN,
                     screen=1, size=SCREEN_RES, units = 'deg')
 
 fixation_point = helpers.MyDot2(win)
-image = visual.ImageStim(image=, units='norm', size = (2, 2))
+image = visual.ImageStim(win, image='im1.jpeg', units='norm', size = (2, 2))
 
 #%% ET settings
 et_name = 'Tobii Pro Spectrum' 
@@ -89,6 +89,6 @@ msg_data = pickle.load(f)
 df = pd.DataFrame(gaze_data, columns=tracker.header)
 df.to_csv(settings.FILENAME[:-4] + '.tsv', sep='\t')
 df_msg = pd.DataFrame(msg_data,  columns = ['system_time_stamp', 'msg'])
-df_msg.to_csv(self.filename[:-4] + '_msg.tsv', sep='\t')            
+df_msg.to_csv(settings.FILENAME[:-4] + '_msg.tsv', sep='\t')            
 
 core.quit()
