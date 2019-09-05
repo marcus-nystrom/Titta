@@ -5,12 +5,6 @@ from psychopy import visual, monitors
 from psychopy import core, event
 import numpy as np
 import os, sys
-
-#%% Insert the parent directory (where Titta is) to path
-# You can also add the Titta folder in psychopy's PATH variable
-curdir = os.path.dirname(os.path.abspath(__file__))
-os.chdir(curdir) 
-sys.path.insert(0,os.path.dirname(curdir)) 
 from Titta import Titta, helpers_tobii as helpers
 
 #%% Monitor/geometry participant screen

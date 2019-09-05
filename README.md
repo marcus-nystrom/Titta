@@ -18,9 +18,8 @@ functionality.
 
 *Note* that this toolbox is in a beta state. The API may change drastically at any time without notice. Work is ongoing, and code may also be in a broken or untested state without warning. That said, the toolbox has already been used in several projects at the Lund University Humanities Lab, Sweden.
 
-To get started:
-Open a command window where psychopy is installed, so that you have the right python.exe on path. Then execute 
-"python -m pip install tobii_research".
+Installation:
+pip install git+https://github.com/marcus-nystrom/Titta.git#egg=Titta
 
 Tested with PsychoPy v. 3.1.0 using Python 3.6 and Python 2.7.
 
