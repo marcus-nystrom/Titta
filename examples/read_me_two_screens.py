@@ -5,7 +5,13 @@ from psychopy import visual, monitors
 from psychopy import core, event
 import numpy as np
 import os, sys
-from Titta import Titta, helpers_tobii as helpers
+
+# Insert the parent directory (where Titta is) to path
+curdir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(curdir)
+sys.path.insert(0, os.sep.join([os.path.dirname(curdir), 'Titta'])) 
+import Titta
+import helpers_tobii as helpers
 
 #%% Monitor/geometry participant screen
 MY_MONITOR                  = 'testMonitor' # needs to exists in PsychoPy monitor center

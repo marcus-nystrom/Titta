@@ -116,6 +116,7 @@ class Graphics(object):
         self.blue_active = blue_active
         
         self.TEXT_SIZE = 0.04 # Size of text
+        self.TEXT_COLOR = 'white' 
         
         self.ET_SAMPLE_RADIUS = 0.1 # in deg
         
@@ -123,13 +124,14 @@ class Graphics(object):
         self.TARGET_SIZE=0.6 # in deg
         self.TARGET_SIZE_INNER=self.TARGET_SIZE / float(5)  # inner diameter of dot
         
-        self.HEAD_POS_CIRCLE_FIXED_COLOR = blue
-        self.HEAD_POS_CIRCLE_FIXED_RADIUS = 0.25
+        # Theses parameters are changed directly in the EThead class
+        # self.HEAD_POS_CIRCLE_FIXED_COLOR = blue
+        # self.HEAD_POS_CIRCLE_FIXED_RADIUS = 0.25
         
-        self.HEAD_POS_CIRCLE_MOVING_COLOR = yellow
-        self.HEAD_POS_CIRCLE_MOVING_FILLCOLOR = yellow
-        self.HEAD_POS_CIRCLE_MOVING_RADIUS = 0.25
-        self.HEAD_POS_CIRCLE_MOVING_MIN_RADIUS = 0.05
+        # self.HEAD_POS_CIRCLE_MOVING_COLOR = yellow
+        # self.HEAD_POS_CIRCLE_MOVING_FILLCOLOR = yellow
+        # self.HEAD_POS_CIRCLE_MOVING_RADIUS = 0.25
+        # self.HEAD_POS_CIRCLE_MOVING_MIN_RADIUS = 0.05
         
         self.POS_CAL_BUTTON = (0.5, -0.8)
         self.COLOR_CAL_BUTTON =  green

@@ -41,7 +41,7 @@ from PIL import Image
 import tobii_research as tr
 
 import numpy as np
-import scipy.misc
+# import scipy.miscs
 import helpers_tobii as helpers
 # import calibration_self.settings.graphics as self.settings.graphics
 
@@ -196,9 +196,15 @@ class myTobii(object):
                               [-0.45 * ratio, 0.45], [0.45 * ratio, 0.45]]
 
         # Text object to draw text (on buttons)
-        instruction_text = visual.TextStim(self.win,text='',wrapWidth = 1,height = self.settings.graphics.TEXT_SIZE, units='norm')  
+        instruction_text = visual.TextStim(self.win,text='',wrapWidth = 1,
+                                           height = self.settings.graphics.TEXT_SIZE, 
+                                           color = self.settings.graphics.TEXT_COLOR,
+                                           units='norm')  
         self.instruction_text = instruction_text        
-        instruction_text_op = visual.TextStim(self.win_temp,text='',wrapWidth = 1,height = self.settings.graphics.TEXT_SIZE, units='norm')  
+        instruction_text_op = visual.TextStim(self.win_temp,text='',wrapWidth = 1,
+                                              height = self.settings.graphics.TEXT_SIZE, 
+                                              color = self.settings.graphics.TEXT_COLOR,
+                                              units='norm')  
         self.instruction_text_op = instruction_text_op        
 
 
@@ -213,7 +219,9 @@ class myTobii(object):
                                         units='norm', fillColor=self.settings.graphics.COLOR_CAL_BUTTON,
                                         pos=self.settings.graphics.POS_CAL_BUTTON)                
         self.calibrate_button_text = visual.TextStim(self.win_temp, text=self.settings.graphics.CAL_BUTTON_TEXT, 
-                                                     height=self.settings.graphics.TEXT_SIZE, units='norm',
+                                                     height=self.settings.graphics.TEXT_SIZE, 
+                                                     color = self.settings.graphics.TEXT_COLOR,
+                                                     units='norm',
                                                      pos=self.settings.graphics.POS_CAL_BUTTON)
                                                      
         self.recalibrate_button = visual.Rect(self.win_temp, width= self.settings.graphics.WIDTH_RECAL_BUTTON, 
@@ -221,7 +229,9 @@ class myTobii(object):
                                         units='norm', fillColor=self.settings.graphics.COLOR_RECAL_BUTTON,
                                         pos=self.settings.graphics.POS_RECAL_BUTTON) 
         self.recalibrate_button_text = visual.TextStim(self.win_temp, text=self.settings.graphics.RECAL_BUTTON_TEXT, 
-                                                     height=self.settings.graphics.TEXT_SIZE, units='norm',
+                                                     height=self.settings.graphics.TEXT_SIZE, 
+                                                     color = self.settings.graphics.TEXT_COLOR,
+                                                     units='norm',
                                                      pos=self.settings.graphics.POS_RECAL_BUTTON)  
 
         self.revalidate_button = visual.Rect(self.win_temp, width= self.settings.graphics.WIDTH_REVAL_BUTTON, 
@@ -229,7 +239,9 @@ class myTobii(object):
                                         units='norm', fillColor=self.settings.graphics.COLOR_REVAL_BUTTON,
                                         pos=self.settings.graphics.POS_REVAL_BUTTON) 
         self.revalidate_button_text = visual.TextStim(self.win_temp, text=self.settings.graphics.REVAL_BUTTON_TEXT, 
-                                                     height=self.settings.graphics.TEXT_SIZE, units='norm',
+                                                     height=self.settings.graphics.TEXT_SIZE, 
+                                                     color = self.settings.graphics.TEXT_COLOR,
+                                                     units='norm',
                                                      pos=self.settings.graphics.POS_REVAL_BUTTON)                                                     
                                         
         self.setup_button = visual.Rect(self.win_temp, width= self.settings.graphics.WIDTH_SETUP_BUTTON, 
@@ -238,6 +250,7 @@ class myTobii(object):
                                         pos=self.settings.graphics.POS_SETUP_BUTTON)
         self.setup_button_text = visual.TextStim(self.win_temp, text=self.settings.graphics.SETUP_BUTTON_TEXT, 
                                                  height=self.settings.graphics.TEXT_SIZE, units='norm',
+                                                 color = self.settings.graphics.TEXT_COLOR,
                                                  pos=self.settings.graphics.POS_SETUP_BUTTON)             
 
         self.accept_button = visual.Rect(self.win_temp, width= self.settings.graphics.WIDTH_ACCEPT_BUTTON, 
@@ -245,7 +258,9 @@ class myTobii(object):
                                         units='norm', fillColor=self.settings.graphics.COLOR_ACCEPT_BUTTON,
                                         pos=self.settings.graphics.POS_ACCEPT_BUTTON)
         self.accept_button_text = visual.TextStim(self.win_temp, text=self.settings.graphics.ACCEPT_BUTTON_TEXT, 
-                                                  height=self.settings.graphics.TEXT_SIZE, units='norm',
+                                                  height=self.settings.graphics.TEXT_SIZE, 
+                                                  color = self.settings.graphics.TEXT_COLOR,
+                                                  units='norm',
                                                   pos=self.settings.graphics.POS_ACCEPT_BUTTON)             
                                                                         
         self.back_button = visual.Rect(self.win_temp, width= self.settings.graphics.WIDTH_BACK_BUTTON, 
@@ -253,7 +268,9 @@ class myTobii(object):
                                         units='norm', fillColor=self.settings.graphics.COLOR_BACK_BUTTON,
                                         pos=self.settings.graphics.POS_BACK_BUTTON)    
         self.back_button_text = visual.TextStim(self.win_temp, text=self.settings.graphics.BACK_BUTTON_TEXT, 
-                                                height=self.settings.graphics.TEXT_SIZE, units='norm',
+                                                height=self.settings.graphics.TEXT_SIZE, 
+                                                color = self.settings.graphics.TEXT_COLOR,
+                                                units='norm',
                                                 pos=self.settings.graphics.POS_BACK_BUTTON)             
                                                                       
         self.gaze_button = visual.Rect(self.win_temp, width= self.settings.graphics.WIDTH_GAZE_BUTTON, 
@@ -262,6 +279,7 @@ class myTobii(object):
                                         pos=self.settings.graphics.POS_GAZE_BUTTON)   
         self.gaze_button_text = visual.TextStim(self.win_temp, text=self.settings.graphics.GAZE_BUTTON_TEXT, 
                                                 height=self.settings.graphics.TEXT_SIZE, units='norm',
+                                                color = self.settings.graphics.TEXT_COLOR,
                                                 pos=self.settings.graphics.POS_GAZE_BUTTON)   
 
         self.calibration_image = visual.Rect(self.win_temp, width= self.settings.graphics.WIDTH_CAL_IMAGE_BUTTON, 
@@ -271,6 +289,7 @@ class myTobii(object):
         
         self.calibration_image_text = visual.TextStim(self.win_temp, text=self.settings.graphics.CAL_IMAGE_BUTTON_TEXT, 
                                                 height=self.settings.graphics.TEXT_SIZE, units='norm',
+                                                color = self.settings.graphics.TEXT_COLOR,
                                                 pos=self.settings.graphics.POS_CAL_IMAGE_BUTTON)             
                                         
         # Dots for the setup screen
@@ -625,12 +644,6 @@ class myTobii(object):
             if self.win_operator:            
                 self.win_temp.flip()            
 
-
-                
-            print(self.win.monitor.getWidth, self.win.monitor.getWidth)
-            # core.wait(2)
-            
-             
         # Stop streaming of eye images
         self.stop_recording(image_data=True)   
         self.mouse.setVisible(0)
@@ -1076,11 +1089,26 @@ class myTobii(object):
             sd_l = np.nan
             data_loss_l = np.nan            
             
-        self.deviations.insert(self.selected_calibration - 1,
-                               [np.nanmean(deviation_l), np.nanmean(deviation_r),
+        
+        data_quality_values = [np.nanmean(deviation_l), np.nanmean(deviation_r),
                                 np.nanmean(rms_l), np.nanmean(rms_r),
                                 np.nanmean(sd_l), np.nanmean(sd_r),
-                                np.nanmean(data_loss_l), np.nanmean(data_loss_r)])
+                                np.nanmean(data_loss_l), np.nanmean(data_loss_r)]
+        
+        self.deviations.insert(self.selected_calibration - 1,
+                               data_quality_values)
+            
+        self.send_message('validation data quality Dev_L: {}, Dev_R {} \
+                          RMS_L {}, RMS_R {}, SD_L {}, SD_R {}, LOSS_L, LOSS_R' \
+                          .format(data_quality_values[0],
+                                  data_quality_values[1],
+                                  data_quality_values[2],
+                                  data_quality_values[3],
+                                  data_quality_values[4],
+                                  data_quality_values[5],
+                                  data_quality_values[6],
+                                  data_quality_values[7]))  
+            
             
         self._generate_validation_image(target_pos[:, 2:], gaze_pos[:, :-2])
         action = 'res' # Show validation results
@@ -1273,7 +1301,8 @@ class myTobii(object):
             select_rect_text.append(visual.TextStim(self.win_temp,
                                                     text='Select',
                                                     wrapWidth = 1,
-                                                    height = self.settings.graphics.TEXT_SIZE, 
+                                                    height = self.settings.graphics.TEXT_SIZE,
+                                                    color = self.settings.graphics.TEXT_COLOR,
                                                     units='norm',
                                                     pos = (x_pos_res, y_pos)))  
                     
@@ -1287,16 +1316,16 @@ class myTobii(object):
                                                         wrapWidth = 1,
                                                         height = self.settings.graphics.TEXT_SIZE, 
                                                         units='norm',
-                                                        pos = (x, y_pos),
-                                                        color = (1, 1, 1)))                
+                                                        color = self.settings.graphics.TEXT_COLOR,
+                                                        pos = (x, y_pos)))                
                 else:
                     accuracy_values_j.append(visual.TextStim(self.win_temp,
                                                         text='Cal' + str(i+1) + ':',
                                                         wrapWidth = 1,
                                                         height = self.settings.graphics.TEXT_SIZE, 
                                                         units='norm',
-                                                        pos = (x, y_pos),
-                                                        color = (1, 1, 1))) 
+                                                        color = self.settings.graphics.TEXT_COLOR,
+                                                        pos = (x, y_pos))) 
             accuracy_values.append(accuracy_values_j)                 
             y_pos -= 0.06
             
@@ -1311,7 +1340,7 @@ class myTobii(object):
                                                 height = self.settings.graphics.TEXT_SIZE, 
                                                 units='norm',
                                                 pos = (x, y_pos_res + 0.06),
-                                                color = (1, 1, 1)))
+                                                color = self.settings.graphics.TEXT_COLOR))
                                                 
 
         # Wait for user input

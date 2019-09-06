@@ -351,9 +351,9 @@ class EThead(object):
                                                  
         
         # Ellipses for eyes
-        self.eye_l = visual.ShapeStim(win,  lineColor = EYE_COLOR_VALID,
+        self.eye_l = visual.ShapeStim(win,  lineColor = 'white', fillColor='white',
                                          lineWidth=2, units='height')
-        self.eye_r = visual.ShapeStim(win,  lineColor = EYE_COLOR_VALID,
+        self.eye_r = visual.ShapeStim(win,  lineColor = 'white', fillColor='white',
                                          lineWidth=2, units='height')  
         
         # Ellipses for pupils

@@ -26,7 +26,7 @@ mon.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
 mon.setSizePix(SCREEN_RES)
 
 # Window set-up (this color will be used for calibration)
-win = visual.Window(monitor = mon, fullscr = FULLSCREEN,
+win = visual.Window(monitor = mon, fullscr = FULLSCREEN, color=(1, 1, 1),
                     screen=1, size=SCREEN_RES, units = 'deg')
 
 fixation_point = helpers.MyDot2(win)
@@ -39,9 +39,13 @@ et_name = 'Tobii Pro Spectrum'
 dummy_mode = False
 bimonocular_calibration = False
      
-# Change any of the default dettings?e
+# Change any of the default settings?
 settings = Titta.get_defaults(et_name)
 settings.FILENAME = 'testfile.tsv'
+
+# Change the color of the 'start calibration' button
+settings.graphics.COLOR_CAL_BUTTON = 'green'
+settings.graphics.TEXT_COLOR = 'green'
 
 #%% Connect to eye tracker and calibrate
 tracker = Titta.Connect(settings)
@@ -78,7 +82,7 @@ tracker.stop_recording(gaze_data=True)
 
 # Close window and save data
 win.close()
-tracker.save_data(mon)  # Also save screen geometry from the monitor object
+tracker.save_data() 
 
 #%% Open pickle and write et-data and messages to tsv-files.
 f = open(settings.FILENAME[:-4] + '.pkl', 'rb')
