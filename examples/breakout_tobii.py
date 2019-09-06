@@ -11,9 +11,16 @@
  
 import math
 import numpy as np
-from psychopy import core, event, misc, visual, monitors, data, gui
+from psychopy import core, event, misc, visual, monitors, data#, gui
 import pandas as pd
-from Titta import Titta, helpers_tobii as helpers
+import os, sys
+
+# Insert the parent directory (where Titta is) to path
+curdir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(curdir)
+sys.path.insert(0, os.sep.join([os.path.dirname(curdir), 'Titta'])) 
+import Titta
+import helpers_tobii as helpers
 
 
 #%% Monitor/geometry 
@@ -30,28 +37,30 @@ mon.setSizePix(SCREEN_RES)
 
 # Window set-up (this color will be used for calibration)
 win = visual.Window(monitor = mon, fullscr = FULLSCREEN,
-                    screen=1, size=SCREEN_RES, units = 'deg')
+                    screen=1, size=SCREEN_RES, units = 'pix')
 #%%
 # Get exp settings
 settings = Titta.get_defaults('Tobii Pro Spectrum')
              
 # Show dialogue box
 info = {'Enter your name':'your name', 'Eye tracking':[False, True]}
-dictDlg = gui.DlgFromDict(dictionary=info,
-        title='Breakout')
-if dictDlg.OK:
-    print(info)
-else:
-    print('User Cancelled')
-    core.quit()
+info = {'Enter your name':'your name', 'Eye tracking':True}
+
+# dictDlg = gui.DlgFromDict(dictionary=info,
+#         title='Breakout')
+# if dictDlg.OK:
+#     print(info)
+# else:
+#     print('User Cancelled')
+#     core.quit()
     
 info['dateStr']= data.getDateStr()    
 player_name = '_'.join([info['Enter your name'], info['dateStr']])
 
 # Window set-up (the color will be used for calibration)
-win = visual.Window(monitor = mon, screen = 2, 
-                    units = 'pix', fullscr = True,
-                    allowGUI = False)
+#win = visual.Window(monitor = mon, screen = 2, 
+#                    units = 'pix', fullscr = True,
+#                    allowGUI = False)
 
 core.wait(1) 
 mouse = event.Mouse(win=win)
@@ -86,7 +95,7 @@ if eye_tracking:
                                 sync_data=False,
                                 image_data=True,
                                 stream_error_data=False,
-                                write_data=False)
+                                store_data=False)
         
     tracker.start_sample_buffer(sample_buffer_length=10)
     core.wait(1)
@@ -97,8 +106,8 @@ white = (1, 1, 1)
 blue = (0, 0, 1)
  
 
-screen_size = settings.SCREEN_RES
-game_rect = visual.Rect(win, settings.SCREEN_RES[0], settings.SCREEN_RES[1], units = 'pix')
+screen_size = SCREEN_RES
+game_rect = visual.Rect(win, SCREEN_RES[0], SCREEN_RES[1], units = 'pix')
 mouse.setPos((0, -screen_size[1]/2 + 100))
 
 # information about block position
@@ -239,8 +248,7 @@ class Player():
         if eye_tracking:
             
             # Peek in the eye tracker buffer
-            data = tracker.get_samples_from_buffer()
-#            print(data)
+            data = tracker.peek_buffer()
             
             # Convert from Tobii coordinate system to ssv 
             lx = [d['left_gaze_point_on_display_area'][0] for d in data]
@@ -249,7 +257,7 @@ class Player():
 
             # Use the average position (i.e., lowpass filtered)
             pos = (np.mean(rx) + np.mean(lx)) / 2.0 
-            pos = helpers.tobii2pix(np.array([[pos, pos]]), settings.mon)[:, 0]
+            pos = helpers.tobii2pix(np.array([[pos, pos]]), mon)[:, 0]
             pos = pos - screen_size[0] / 2
             
 
