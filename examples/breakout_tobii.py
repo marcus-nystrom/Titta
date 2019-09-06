@@ -40,7 +40,7 @@ win = visual.Window(monitor = mon, fullscr = FULLSCREEN,
                     screen=1, size=SCREEN_RES, units = 'pix')
 #%%
 # Get exp settings
-settings = Titta.get_defaults('Tobii Pro Spectrum')
+settings = Titta.get_defaults('IS4_Large_Peripheral')
              
 # Show dialogue box
 info = {'Enter your name':'your name', 'Eye tracking':[False, True]}

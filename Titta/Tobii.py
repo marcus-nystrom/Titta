@@ -23,7 +23,6 @@ from __future__ import print_function # towards Python 3 compatibility
 from psychopy import visual, core, event
 from collections import deque
 import pandas as pd
-import csv
 import copy
 #import time
 import sys
@@ -69,7 +68,7 @@ class myTobii(object):
     #%%  
     def init(self):
         ''' Apply settings and check capabilities
-        '''
+        '''        
         
         self.filename = self.settings.FILENAME
 		
@@ -103,10 +102,10 @@ class myTobii(object):
                                 These are available: ' + ' '.join([str(m.model) for m in ets]))                
 			
         # Make functions from the EyeTracker object available            
-        self.tracker = tr.EyeTracker(self.settings.TRACKER_ADDRESS) # 
-#        self.rawTracker = rawTracker(self.settings.TRACKER_ADDRESS)
+#        self.tracker = tr.EyeTracker(self.settings.TRACKER_ADDRESS) # 
+        self.rawTracker = rawTracker(self.settings.TRACKER_ADDRESS)
 #        print(self.rawTracker)
-#        self.tracker = self.rawTracker.tracker
+        self.tracker = self.rawTracker.tracker
       
         if self.settings.PACING_INTERVAL < 0.8:
             raise Exception('Calibration pacing interval must be \
@@ -177,6 +176,12 @@ class myTobii(object):
         Fs = self.get_sample_rate()
         if Fs != self.settings.SAMPLING_RATE:
             self.set_sample_rate(self.settings.SAMPLING_RATE)
+            
+        # Set tracking mode
+        try:
+            self.set_eye_tracking_mode(self.settings.TRACKING_MODE)
+        except NameError:
+            print('Tracking mode not found: {}'.format(self.settings.TRACKING_MODE))
         
         
            #%% 
@@ -524,7 +529,8 @@ class myTobii(object):
         self.store_data = False
         
         # Start streaming of eye images
-        self.start_recording(image_data=True, store_data = self.store_data)
+        if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
+            self.start_recording(image_data=True, store_data = self.store_data)
 
         core.wait(0.5)
         
@@ -562,12 +568,13 @@ class myTobii(object):
             k = event.getKeys()
                 
             # Draw setup button information  and check whether is was selected
-            self.setup_button.draw()
-            self.setup_button_text.draw()            
-            if self.settings.graphics.SETUP_BUTTON in k or (self.mouse.isPressedIn(self.setup_button, buttons=[0]) and not image_button_pressed):
-                # Toggle visibility of eye images
-                show_eye_images = not show_eye_images
-                image_button_pressed = True
+            if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
+                self.setup_button.draw()
+                self.setup_button_text.draw()            
+                if self.settings.graphics.SETUP_BUTTON in k or (self.mouse.isPressedIn(self.setup_button, buttons=[0]) and not image_button_pressed):
+                    # Toggle visibility of eye images
+                    show_eye_images = not show_eye_images
+                    image_button_pressed = True
                              
              # Get position of eyes in track box
             sample = self.get_latest_sample()
@@ -645,7 +652,8 @@ class myTobii(object):
                 self.win_temp.flip()            
 
         # Stop streaming of eye images
-        self.stop_recording(image_data=True)   
+        if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
+            self.stop_recording(image_data=True)   
         self.mouse.setVisible(0)
         
         # Clear the screen
@@ -1572,7 +1580,7 @@ class myTobii(object):
         if image_data:
             self.subscribe_to_eye_images()
         if stream_error_data:
-            self.subscribe_to_external_signal()            
+            self.subscribe_to_external_signal()   
             
         self.store_data = store_data
             
@@ -1942,6 +1950,15 @@ class myTobii(object):
         '''Gets the sample rate
         '''
         return self.tracker.get_gaze_output_frequency()
+    
+    #%% 
+    def set_eye_tracking_mode(self, mode):
+        ''' Sets the eye tracking mode. In most eye trackers, this defaults
+        to 'Default'. In the Spectrum, the choices are ['Human', 'Macaque']
+        '''
+        
+        self.tracker.set_eye_tracking_mode(mode)
+
     #%%
     def save_data(self, *argv):
         ''' Saves the data to pickle

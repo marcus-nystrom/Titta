@@ -12,11 +12,12 @@ def get_defaults(et_name):
     
     settings = Settings(et_name)
     
-    if et_name == 'Tobii4C':
+    if et_name == 'IS4_Large_Peripheral':
         settings.SAMPLING_RATE = 90
     elif et_name == 'Tobii Pro Spectrum':
-        settings.SAMPLING_RATE = 600        
-    elif et_name == 'Nano':
+        settings.SAMPLING_RATE = 600    
+        settings.TRACKING_MODE = 'Human'
+    elif et_name == 'Tobii Pro Nano':
         settings.SAMPLING_RATE = 60
     else:
         print('eye tracker type not supported')
@@ -62,6 +63,7 @@ class Settings(object):
         self.TRACKER_ADDRESS  = ''           # If none is given, find one on the network
         self.SAMPLING_RATE = 600             # Set sampling rate of tracker        
         self.eye_tracker_name = et_name
+        self.TRACKING_MODE = 'Default'
         
         # Parameters for calibration
         self.PACING_INTERVAL = 1.0           # How long to present the dot until samples are collected

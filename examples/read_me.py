@@ -15,7 +15,7 @@ import helpers_tobii as helpers
 
 #%% Monitor/geometry 
 MY_MONITOR                  = 'testMonitor' # needs to exists in PsychoPy monitor center
-FULLSCREEN                  = True
+FULLSCREEN                  = False
 SCREEN_RES                  = [1920, 1080]
 SCREEN_WIDTH                = 52.7 # cm
 VIEWING_DIST                = 63 #  # distance from eye to center of screen (cm)
@@ -34,7 +34,7 @@ image = visual.ImageStim(win, image='im1.jpeg', units='norm', size = (2, 2))
 
 #%% ET settings
 et_name = 'Tobii Pro Spectrum' 
-# et_name = 'Tobii4C' 
+et_name = 'IS4_Large_Peripheral' 
 
 dummy_mode = False
 bimonocular_calibration = False
@@ -73,7 +73,6 @@ core.wait(3)
 tracker.send_message('image offset')
 
 win.flip()
-
 tracker.stop_recording(gaze_data=True)
 
 # Close window and save data

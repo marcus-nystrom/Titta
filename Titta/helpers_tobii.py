@@ -338,7 +338,6 @@ class EThead(object):
         
         # Eye parameters
         self.EYE_SIZE = 0.03
-        EYE_COLOR_VALID = green        
         
       
         # Setup control circles for head position
@@ -492,10 +491,10 @@ class EThead(object):
         #%% Compute the position and size of the pupils
 #        print(self.eye_l.pos)
         self.pupil_l.pos = self.eye_l.pos
-        self.pupil_l.vertices = self.eye_l.vertices * (sample['left_pupil_diameter']- 1)**2  / 16
+        self.pupil_l.vertices = self.eye_l.vertices * (sample['left_pupil_diameter']- 1)*2  / 16
         
         self.pupil_r.pos = self.eye_r.pos
-        self.pupil_r.vertices = self.eye_r.vertices * (sample['right_pupil_diameter'] - 1)**2 / 16
+        self.pupil_r.vertices = self.eye_r.vertices * (sample['right_pupil_diameter'] - 1)*2 / 16
         
 #        print(self.eye_l.pos, self.eye_r.pos)
         
