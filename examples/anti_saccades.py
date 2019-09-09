@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from psychopy import visual, core, gui, data, event   , monitors
+from psychopy import visual, core, data, event, monitors # gui
 import socket
 from random import randint, uniform
 import numpy as np
@@ -20,8 +20,8 @@ class ProAntiSaccades(object):
     
     from helpers_tobii import MyDot2
     
-    def __init__(self, win, saccade_amplitude=8, 
-                 duration_central_target = np.array([1, 2]),
+    def __init__(self, win, duration_central_target,
+                 saccade_amplitude=8, 
                  duration_peripheral_target = 1,
                  screen_refresh_rate = 60,
                  Fs = 120,
@@ -121,9 +121,10 @@ class ProAntiSaccades(object):
             else:
                 sa = self.saccade_amplitude
             
+            # Randomly select a duration of the central dot
+            nFrames = np.random.choice(self.duration_central_target)
+            
             # Display a central dot
-            nFrames = np.round(uniform(self.duration_central_target[0],
-                                       self.duration_central_target[1]))
             self.dot_stim.set_pos((0,0))
             
             # Wait for exactly nFrames frames
@@ -166,7 +167,7 @@ class ProAntiSaccades(object):
                         
     
                         xy[iSample,0] = pos[:, 0]
-                        xy[iSample,1] = pos[:, 1]
+                        xy[iSample,1] = pos[:, 1] * -1
 
                         # Draw data sample
                         if iSample > 0:
@@ -249,7 +250,7 @@ class ProAntiSaccades(object):
         break_instruction = ' '.join([self.break_instruction_s, 
                                       str(duration),
                                       self.break_instruction_e])
-        self.instruction_text.setText(break_instruction.decode("utf-8")) # and then a break
+        self.instruction_text.setText(break_instruction) # and then a break
         self.instruction_text.draw()
         self.win.flip()
         core.wait(duration)  
@@ -260,20 +261,62 @@ class ProAntiSaccades(object):
         
     def goodbye(self):   
         ''' Display message '''
-        self.instruction_text.setText(self.goodByeMessage.decode("utf-8")) # and then a break
+        self.instruction_text.setText(self.goodByeMessage) # and then a break
         self.instruction_text.draw()
         self.win.flip()
         core.wait(2)        
         
+#%%
+def foreperiod_central_fixation(numel=1000, mu = 1.5, interval = [1, 3.5]): 
+    ''' Computes the forperiod duration of each trial.
+
+    
+    Args:
+        numel - number of foreperiods to generate
+        mu - mean of foreperiod
+        interval - interval of random part of foreperiod. 
         
+    Returns:
+        
+    '''    
+    forperiod_fixed = interval[0]
+    
+    # Really, really, dirty way to solve it for now!
+    foreperiod_random = np.zeros(numel)
+    while True:
+        foreperiod_random = np.random.exponential(scale = 0.5, size=numel)
+        foreperiod_random = foreperiod_random[foreperiod_random < interval[1]]
+        
+        if np.mean(foreperiod_random) < (mu - interval[0] + 0.001) and \
+           np.mean(foreperiod_random) > (mu - interval[0] - 0.001):
+           break
+       
+    foreperiod = forperiod_fixed + foreperiod_random
+    
+    return foreperiod
+#%%
 #=======================================
 # This is an implementation of the standardized antisaccade test 
 # proposed in the paper Antoniades et al. "An internationally standardised antisaccade protocol", 2013, Vision Research
 # Written by Marcus Nystrom (marcus.nystrom@humlab.lu.se) 2019-09-09
-# Modified by Marcus 2017-11-13
 #======================================= 
 
 
+#Monitor/geometry 
+MY_MONITOR                  = 'testMonitor' # needs to exists in PsychoPy monitor center
+FULLSCREEN                  = False
+SCREEN_RES                  = [1920, 1080]
+SCREEN_WIDTH                = 52.7 # cm
+VIEWING_DIST                = 63 #  # distance from eye to center of screen (cm)
+
+et_name = 'Tobii Pro Spectrum' 
+et_name = 'IS4_Large_Peripheral' 
+
+saccade_amplitude = 8
+duration_central_target = foreperiod_central_fixation(numel=1000, 
+                                                      mu = 1.5, 
+                                                      interval = [1, 3.5])
+duration_peripheral_target = 1
 
 
   
@@ -282,12 +325,13 @@ class ProAntiSaccades(object):
 # ---------------------------------------------
 expName = 'Antisaccades'
 expInfo={'participant':'99', 'dummy_mode':['True', 'False']}
-dlg=gui.DlgFromDict(dictionary=expInfo,title=expName)
-if dlg.OK==False: 
-    core.quit() #user pressed cancel
-expInfo['date'] = data.getDateStr()#add a simple timestamp
-expInfo['computer_ip'] = socket.gethostbyname(socket.gethostname()).split('.')[-1]
-expInfo['expName'] = expName
+expInfo['dummy_mode'] = False
+#dlg=gui.DlgFromDict(dictionary=expInfo,title=expName)
+#if dlg.OK==False: 
+#    core.quit() #user pressed cancel
+#expInfo['date'] = data.getDateStr()#add a simple timestamp
+#expInfo['computer_ip'] = socket.gethostbyname(socket.gethostname()).split('.')[-1]
+#expInfo['expName'] = expName
 
 # ---------------------------------------------
 #---- setup files for saving  
@@ -303,14 +347,8 @@ trialClock =core.Clock() # Init clock
 path = os.getcwd() + "\\log\\"
 if not os.path.isdir(path):
     os.makedirs(path)
-filename='%s_%s_%s' %(expInfo['participant'], expInfo['computer_ip'], expInfo['date'])
- 
-#Monitor/geometry 
-MY_MONITOR                  = 'testMonitor' # needs to exists in PsychoPy monitor center
-FULLSCREEN                  = False
-SCREEN_RES                  = [1920, 1080]
-SCREEN_WIDTH                = 52.7 # cm
-VIEWING_DIST                = 63 #  # distance from eye to center of screen (cm)
+#filename='%s_%s_%s' %(expInfo['participant'], expInfo['computer_ip'], expInfo['date'])
+filename = 'test'
 
 mon = monitors.Monitor(MY_MONITOR)  # Defined in defaults file
 mon.setWidth(SCREEN_WIDTH)          # Width of screen (cm)
@@ -324,8 +362,6 @@ win = visual.Window(monitor = mon, screen = 1,
                     allowGUI = False) 
 
 
-# Connect to eye tracker   
-et_name = 'Tobii Pro Spectrum' 
     
 # Change any of the default dettings?e
 settings = Titta.get_defaults(et_name)
@@ -334,7 +370,7 @@ settings.FILENAME = 'testfile.tsv'
 #%% Connect to eye tracker and calibrate
 tracker = Titta.Connect(settings)
 print(expInfo['dummy_mode'])
-if expInfo['dummy_mode'] == 'True':
+if expInfo['dummy_mode'] == True:
     tracker.set_dummy_mode()
     print('DUMMY_MODE')
 else:
@@ -342,12 +378,8 @@ else:
     tracker.calibrate(win)
     print('ET MODE')
     
- 
-saccade_amplitude = 8
-duration_central_target = np.array([1, 2])
-duration_peripheral_target = 1
 screen_refresh_rate = win.getActualFrameRate()
-eye_tracker_sample_rate = settings.SAMPLING_RATE
+eye_tracker_sample_rate = settings.SAMPLING_RATEs    
     
 # Initiate antisaccade class
 sac = ProAntiSaccades(win, saccade_amplitude=saccade_amplitude, 
@@ -356,7 +388,7 @@ sac = ProAntiSaccades(win, saccade_amplitude=saccade_amplitude,
                  screen_refresh_rate = screen_refresh_rate,
                  Fs = eye_tracker_sample_rate,
                  screen_size = SCREEN_RES,
-                 eye_tracking= expInfo['dummy_mode']=='False',
+                 eye_tracking= expInfo['dummy_mode']==False,
                  tracker=tracker) 
 #-----------------------------
 # Program flow starts here

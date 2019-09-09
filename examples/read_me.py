@@ -34,7 +34,7 @@ image = visual.ImageStim(win, image='im1.jpeg', units='norm', size = (2, 2))
 
 #%% ET settings
 et_name = 'Tobii Pro Spectrum' 
-#et_name = 'IS4_Large_Peripheral' 
+et_name = 'IS4_Large_Peripheral' 
 #et_name = 'Tobii Pro Nano' 
 
 dummy_mode = False
@@ -72,7 +72,7 @@ t = win.flip()
 tracker.send_message('image onset')
 core.wait(3)
 tracker.send_message('image offset')
-
+#
 win.flip()
 tracker.stop_recording(gaze_data=True)
 
