@@ -26,7 +26,7 @@ mon.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
 mon.setSizePix(SCREEN_RES)
 
 # Window set-up (this color will be used for calibration)
-win = visual.Window(monitor = mon, fullscr = FULLSCREEN, color=(1, 1, 1),
+win = visual.Window(monitor = mon, fullscr = FULLSCREEN, color=(-1, -1, -1),
                     screen=1, size=SCREEN_RES, units = 'deg')
 
 fixation_point = helpers.MyDot2(win)
@@ -43,9 +43,9 @@ bimonocular_calibration = False
 settings = Titta.get_defaults(et_name)
 settings.FILENAME = 'testfile.tsv'
 
-# Change the color of the 'start calibration' button
-settings.graphics.COLOR_CAL_BUTTON = 'green'
-settings.graphics.TEXT_COLOR = 'green'
+# # Change the color of the 'start calibration' button
+# settings.graphics.COLOR_CAL_BUTTON = 'green'
+# settings.graphics.TEXT_COLOR = 'green'
 
 #%% Connect to eye tracker and calibrate
 tracker = Titta.Connect(settings)

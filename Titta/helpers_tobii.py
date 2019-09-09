@@ -185,70 +185,7 @@ class MyDot2:
         self.line_vertical.fillColor = 'red'
         self.line_horizontal.lineColor = 'red'        
         
-#%%   
-class MyDot:
-    '''
-    Generates the best fixation target according to Thaler et al. (2013)
-    '''
-    def __init__(self, win, outer_diameter=0.5, inner_diameter=0.1,
-                 outer_color = 'white', inner_color = 'black'):
-        '''
-        Class to generate a stimulus dot with 
-        units are derived from the window
-        '''
 
-        # Set propertis of dot 
-        outer_dot = visual.Circle(win,fillColor = outer_color, radius = outer_diameter/2.0)
-        inner_dot = visual.Circle(win,fillColor = outer_color, radius = inner_diameter/2.0)
-        line_vertical = visual.Rect(win, width=inner_diameter, height=outer_diameter, 
-                                    fillColor=inner_color)
-        line_horizontal = visual.Rect(win, width=outer_diameter, height=inner_diameter, 
-                                    fillColor=inner_color)        
-              
-    
-        self.outer_dot = outer_dot
-        self.inner_dot = inner_dot
-        self.line_vertical = line_vertical
-        self.line_horizontal = line_horizontal
-    
-
-    def set_pos(self,pos):
-        '''
-        sets position of dot
-        pos = [x,y]
-        '''
-        self.outer_dot.pos = pos
-        self.inner_dot.pos = pos
-        self.line_vertical.pos = pos
-        self.line_horizontal.pos = pos        
-        
-    def get_pos(self):
-        '''
-        get position of dot
-        '''
-        pos = self.outer_dot.pos 
-        
-        return pos
-
-    
-    def draw(self):
-        '''
-        draws the dot
-        '''
-        self.outer_dot.draw()
-        self.line_vertical.draw()
-        self.line_horizontal.draw()           
-        self.inner_dot.draw()
-     
-        
-    def invert_color(self):
-        '''
-        inverts the colors of the dot
-        '''
-        temp = self.outer_dot.fillColor 
-        self.outer_dot.fillColor = self.inner_dot.fillColor
-        self.inner_dot.fillColor = temp
-        
 #%%         
 class RingBuffer(object):
     """ A simple ring buffer based on the deque class"""
@@ -332,8 +269,8 @@ class EThead(object):
         
         # Head parameters
         HEAD_POS_CIRCLE_FIXED_COLOR = blue
-        HEAD_POS_CIRCLE_FIXED_RADIUS = 0.25
-        self.HEAD_POS_ELLIPSE_MOVING_HEIGHT = 0.25
+        HEAD_POS_CIRCLE_FIXED_RADIUS = 0.20
+        self.HEAD_POS_ELLIPSE_MOVING_HEIGHT = 0.20
         self.HEAD_POS_ELLIPSE_MOVING_MIN_HEIGHT = 0.05 
         
         # Eye parameters
@@ -437,7 +374,7 @@ class EThead(object):
         self.moving_ellipse.pos = ((avg_pos[0] - 0.5) * -1 - offset[0] , 
                                 (avg_pos[1] - 0.5) * -1 - offset[1]) 
                   
-        self.moving_ellipse.height = (avg_pos[2] - 0.5)*-1 + self.HEAD_POS_ELLIPSE_MOVING_HEIGHT
+        self.moving_ellipse.height = (avg_pos[2] - 0.5)*-1 * 0.5 + self.HEAD_POS_ELLIPSE_MOVING_HEIGHT
 
         # Control min size of head ellipse
         if self.moving_ellipse.height < self.HEAD_POS_ELLIPSE_MOVING_MIN_HEIGHT:

@@ -179,6 +179,7 @@ class myTobii(object):
             
         # Set tracking mode
         try:
+            print('Current tracking mode: {}'.format(self.get_eye_tracking_mode()))
             self.set_eye_tracking_mode(self.settings.TRACKING_MODE)
         except NameError:
             print('Tracking mode not found: {}'.format(self.settings.TRACKING_MODE))
@@ -1106,8 +1107,7 @@ class myTobii(object):
         self.deviations.insert(self.selected_calibration - 1,
                                data_quality_values)
             
-        self.send_message('validation data quality Dev_L: {}, Dev_R {} \
-                          RMS_L {}, RMS_R {}, SD_L {}, SD_R {}, LOSS_L, LOSS_R' \
+        self.send_message('validation data quality Dev_L: {:.2f}, Dev_R: {:.2f} RMS_L: {:.2f}, RMS_R: {:.2f}, SD_L: {:.2f}, SD_R: {:.2f}, LOSS_L: {:.2f}, LOSS_R: {:.2f}' \
                           .format(data_quality_values[0],
                                   data_quality_values[1],
                                   data_quality_values[2],
@@ -1511,11 +1511,13 @@ class myTobii(object):
         
         info = {}
         info['serial_number']  = self.tracker.serial_number
-        info['Address']  = self.tracker.address
-        info['Model']  = self.tracker.model
-        info['Name']  = self.tracker.device_name
+        info['address']  = self.tracker.address
+        info['model']  = self.tracker.model
+        info['name']  = self.tracker.device_name
+        info['firmware_version'] = self.tracker.firmware_version        
         info['tracking_mode']  = self.tracker.get_eye_tracking_mode()
         info['sampling_frequency']  = self.tracker.get_gaze_output_frequency()
+
         
         return info   
         
@@ -1951,6 +1953,12 @@ class myTobii(object):
         '''
         return self.tracker.get_gaze_output_frequency()
     
+    #%% 
+    def get_eye_tracking_mode(self):
+        ''' Gets the eye tracking mode. 
+        '''
+        
+        return self.tracker.get_eye_tracking_mode()    
     #%% 
     def set_eye_tracking_mode(self, mode):
         ''' Sets the eye tracking mode. In most eye trackers, this defaults

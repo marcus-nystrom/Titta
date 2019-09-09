@@ -16,7 +16,7 @@ def get_defaults(et_name):
         settings.SAMPLING_RATE = 90
     elif et_name == 'Tobii Pro Spectrum':
         settings.SAMPLING_RATE = 600    
-        settings.TRACKING_MODE = 'Human'
+        settings.TRACKING_MODE = 'human'
     elif et_name == 'Tobii Pro Nano':
         settings.SAMPLING_RATE = 60
     else:

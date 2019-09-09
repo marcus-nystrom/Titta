@@ -5,7 +5,7 @@ from psychopy import visual, monitors
 from psychopy import core, event
 import numpy as np
 import os, sys
-
+  
 # Insert the parent directory (where Titta is) to path
 curdir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(curdir)
@@ -34,7 +34,8 @@ image = visual.ImageStim(win, image='im1.jpeg', units='norm', size = (2, 2))
 
 #%% ET settings
 et_name = 'Tobii Pro Spectrum' 
-et_name = 'IS4_Large_Peripheral' 
+#et_name = 'IS4_Large_Peripheral' 
+#et_name = 'Tobii Pro Nano' 
 
 dummy_mode = False
 bimonocular_calibration = False
