@@ -178,6 +178,10 @@ class myTobii(object):
             self.set_sample_rate(self.settings.SAMPLING_RATE)
             
         # Set tracking mode
+        assert np.sum([self.settings.TRACKING_MODE in m for m in \
+                       ['human', 'macaque', 'Default']]) > 0, \
+            'The given tracking mode is not allowed. Try [human] or [macaque] \
+            for the Tobii Pro Spectrum, otherwise [Default]'
         try:
             print('Current tracking mode: {}'.format(self.get_eye_tracking_mode()))
             self.set_eye_tracking_mode(self.settings.TRACKING_MODE)
