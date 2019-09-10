@@ -37,7 +37,6 @@ et_name = 'Tobii Pro Spectrum'
 # et_name = 'Tobii Pro Nano' 
 
 dummy_mode = False
-bimonocular_calibration = False
      
 # Change any of the default dettings?e
 settings = Titta.get_defaults(et_name)
@@ -51,11 +50,7 @@ if dummy_mode:
 tracker.init()
    
 # Calibrate 
-if bimonocular_calibration:
-    tracker.calibrate(win, eye='left', calibration_number = 'first')
-    tracker.calibrate(win, eye='right', calibration_number = 'second')
-else:
-    tracker.calibrate(win)
+tracker.calibrate(win)
     
 win.flip()
 #%% Talk to PRo Lab
