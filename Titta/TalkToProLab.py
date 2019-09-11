@@ -164,6 +164,25 @@ class TalkToProLab(threading.Thread):
         
         return response         
     
+    #%%
+    def find_participant(self, participant_name):
+        ''' Finds whether participant_name already has been uploaded to lab
+        
+        Args:
+            participant_name - string with participant name (e.g., P04)
+        
+        Returns:
+            exists - boolean 
+        '''
+        
+        exists = False
+        uploaded_participants = self.list_participants()['participant_list']
+        for m in uploaded_participants:
+            if m['participant_name'] == participant_name: 
+                exists = True
+        
+        return exists
+    
     #%% 
     def list_participants(self):
         ''' Project data API
@@ -172,8 +191,8 @@ class TalkToProLab(threading.Thread):
         request:
         {
         "operation": "ListParticipants"
-        } r
-        esponse:
+        } 
+        response:
         {
         "operation": "ListParticipants",
         "status_code": 0,
@@ -233,7 +252,26 @@ class TalkToProLab(threading.Thread):
         assert response['status_code'] == 0, response
         
         return response      
+       
         
+    #%%
+    def find_media(self, media_name):
+        ''' Finds whether media_name already has been uploaded to lab
+        
+        Args:
+            media_name - string with media name (e.g., image.png)
+        
+        Returns:
+            exists - boolean 
+        '''
+        
+        exists = False
+        uploaded_media = self.list_media()['media_list']
+        for m in uploaded_media:
+            if m['media_name'] == media_name.split('.')[0]:
+                exists = True
+        
+        return exists
         
     #%%
     def upload_media(self, media_name, media_type):

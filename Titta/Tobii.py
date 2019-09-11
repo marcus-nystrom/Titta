@@ -24,7 +24,7 @@ from psychopy import visual, core, event
 from collections import deque
 import pandas as pd
 import copy
-#import time
+import warnings
 import sys
 
 if sys.version_info[0] == 3: # if Python 3:
@@ -624,7 +624,7 @@ class myTobii(object):
             try:
                 self.instruction_text_op.pos = (0, 0.9)
                 self.instruction_text_op.text = ' '.join(['Distance:', 
-                                                       str(int(np.nanmean([l_pos, r_pos])/10.0)), 'cm'])
+                                                           str(int(np.nanmean([l_pos, r_pos])/10.0)), 'cm'])
                 self.instruction_text_op.draw() 
             except:
                 pass

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Import modules
 from psychopy import visual, monitors, core, event
 import numpy as np
@@ -10,7 +12,6 @@ sys.path.insert(0, os.sep.join([os.path.dirname(curdir), 'Titta']))
 import Titta
 import helpers_tobii as helpers
 from TalkToProLab import TalkToProLab
-
 
 #%% Monitor/geometry 
 MY_MONITOR                  = 'testMonitor' # needs to exists in PsychoPy monitor center
@@ -30,6 +31,7 @@ win = visual.Window(monitor = mon, fullscr = FULLSCREEN,
 
 fixation_point = helpers.MyDot2(win)
 image = visual.ImageStim(win, image='im1.jpeg', units='norm', size = (2, 2))
+text = visual.TextStim(win, text='', height=1)   
 
 #%% ET settings
 et_name = 'Tobii Pro Spectrum' 
@@ -38,9 +40,13 @@ et_name = 'Tobii Pro Spectrum'
 
 dummy_mode = False
      
-# Change any of the default dettings?e
+# Change any of the default settings?
 settings = Titta.get_defaults(et_name)
-settings.FILENAME = 'testfile.tsv'
+settings.FILENAME = 'P02.tsv'
+
+# Participant ID and Project name for Lab
+pid = settings.FILENAME[:-4]
+project_name = 'Project35'
 
 
 #%% Connect to eye tracker and calibrate
@@ -49,48 +55,50 @@ if dummy_mode:
     tracker.set_dummy_mode()
 tracker.init()
    
-# Calibrate 
-tracker.calibrate(win)
-    
-win.flip()
-#%% Talk to PRo Lab
 
-text = visual.TextStim(win, text='Switch to Record tab and press space to start the recording', 
-                       height=1)       
-
+#%% Talk to Pro Lab  
 ttl = TalkToProLab()
-participant_info = ttl.add_participant("P02")
 
-# Create psychopy im objects and upload media to Lab                                          
-# Make sure the images have the same resolution as the (second) screen  (1920, 1080)
+# Get project name and make sure the same project is open in Lab
+assert project_name == ttl.get_project_info()['project_name'], "Wrong project opened in Lab. Should be {}".format(project_name)
+
+
+# Make sure that the participant id does not already exist in Lab
+assert not ttl.find_participant(pid), "Participant {} already exists in Lab".format(pid)
+participant_info = ttl.add_participant(pid)
+
+# Create psychopy image objects and upload media to Lab                                          
+# Make sure the images have the same resolution as the screen  
 img = []    
 media_info = []                                        
 for i in (np.arange(3) + 1):
     im_name = ''.join(["im", str(i), ".jpeg"])
     img.append(visual.ImageStim(win, image= im_name))
-    media_info.append(ttl.upload_media("image", im_name))
+    if not ttl.find_media(im_name):  
+        media_info.append(ttl.upload_media(im_name, "image"))
+
+# If the media were uploaded already, just get their names and IDs.
+uploaded_media = ttl.list_media()['media_list']
+for m in uploaded_media:
+    media_info.append(m)      
     
 # Add an AOI to the first image
 aoi_name = 'test'
 aoi_color =  'AAC333'
-key_frame_vertices = ((100, 100),
+vertices = ((100, 100),
                       (100, 200), 
                       (200, 200),
                       (200, 100))
 tag_name = 'test_tag'
 group_name = 'test_group'
-
 ttl.add_aois_to_image(media_info[0]['media_id'], aoi_name, aoi_color, 
-                      key_frame_vertices, tag_name=tag_name, group_name=group_name)    
-    
-# Wait for the user to switch to the Record tab    
-text.draw()
-win.flip()    
-event.waitKeys()    
+                      vertices, tag_name=tag_name, group_name=group_name)    
+
+# Calibrate (must be done independent of Lab)
+tracker.calibrate(win)
+win.flip()
 
 #%% Recording 
-# Would be nice to have it change automatically once a 'start_recording' 
-# command is issued.
 
 # Check that Lab is ready to start a recording
 state = ttl.get_state()
@@ -103,8 +111,6 @@ rec = ttl.start_recording("image_viewing",
                     screen_height=1080)
 
 # Show images. Note: there cannot be any gaps between stimuli on the timeline
-dur = 3
-
 dur = 3
 for i, im in enumerate(img):
     
@@ -121,8 +127,10 @@ for i, im in enumerate(img):
 
     timestamp = ttl.get_time_stamp()
     t_offset = int(timestamp['timestamp'])
+    
 
     if i == len(img) - 1:
+        
         # Send a message indicating what stimulus is shown
         ttl.send_stimulus_event(rec['recording_id'], 
                                 str(t_onset), 
@@ -137,7 +145,6 @@ for i, im in enumerate(img):
 
 ## Stop recording
 ttl.stop_recording()
-
 win.close()
 
 #%% Finalize the recording

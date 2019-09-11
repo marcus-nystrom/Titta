@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from psychopy import visual, core, data, event, monitors # gui
-import socket
+from psychopy import visual, core, data, event, monitors, gui
 from random import randint, uniform
 import numpy as np
 from psychopy import logging
@@ -15,7 +14,6 @@ sys.path.insert(0, os.sep.join([os.path.dirname(curdir), 'Titta']))
 import Titta
 import helpers_tobii as helpers  
 from TalkToProLab import TalkToProLab
-from helpers_tobii import MyDot2
 
 #%%
 class ProAntiSaccades(object):  
@@ -30,7 +28,8 @@ class ProAntiSaccades(object):
                  tracker=None, # Eye tracker object
                  pro_lab_integration=False,
                  upload_media=False,
-                 pid=None):
+                 pid=None,
+                 project_name = None):
         
         self.trialClock = core.Clock() # Init clock
         
@@ -60,24 +59,44 @@ class ProAntiSaccades(object):
         self.duration_peripheral_target = duration_peripheral_target * screen_refresh_rate
             
         #Initialize stimuli used in experiment
-        self.dot_stim = MyDot2(win)
+        self.dot_stim = helpers.MyDot2(win)
         self.et_sample = visual.GratingStim(win, color='black', tex=None, mask='circle',units='pix',size=2)
         self.line = visual.Line(win, start=(-0.5, -0.5), end=(0.5, 0.5), units='pix')
-        self.instruction_text = visual.TextStim(win,text='',wrapWidth = 10,height = 0.5)        
+        self.instruction_text = visual.TextStim(win,text='',wrapWidth = 10,height = 0.5)   
+        
         
         # Connect to Pro Lab and add participant
         if pro_lab_integration:
-            self.ttl = TalkToProLab()
+            self.ttl = TalkToProLab() # Connect to Lab
+            
+            # Get project name and make sure the same project is open in Lab
+            assert project_name == self.ttl.get_project_info()['project_name'], "Wrong project opened in Lab. Should be {}".format(project_name)
+
+            # Make sure the participant not already exists in Lab
+            assert not self.ttl.find_participant(pid), "Participant {} already exists in Lab".format(pid)
+                
             participant_info = self.ttl.add_participant(pid)
             
             if upload_media:
                 self.upload_stimuli()
+            else:
+                # Collect information about the already uploaded stimuli
+                self.stim_info = {}
+                uploaded_media = self.ttl.list_media()['media_list']
+                for m in uploaded_media:
+                    self.stim_info[m['media_name']] = m['media_id']
                 
-            core.wait(1)
+        # Calibrate eye tracker
+        tracker.calibrate(win)
+         
+        # Start recording in Lab
+        if pro_lab_integration:        
             self.rec = self.ttl.start_recording("antisaccade", 
                     participant_info['participant_id'], 
                     screen_width=self.screen_size[0],
                     screen_height=self.screen_size[1])
+            
+            
             
     #%%
     def screenshot_and_upload(self, im_name, im_type):
@@ -123,20 +142,23 @@ class ProAntiSaccades(object):
         
         
         # General settings
-        aoi_color =  'AAC333'
+        aoi_color_left =  'AAC333'
+        aoi_color_right = 'FFD700'
         vertices_left = ((0, 0),
                          (self.screen_size[0]/2.0 - 100, 0), 
                          (self.screen_size[0]/2.0 - 100, self.screen_size[1]),
                          (0, self.screen_size[1]))      
         
-        vertices_right = ((self.screen_size[0], self.screen_size[1]),
-                         (self.screen_size[0]/2.0 + 100, 0), 
-                         (self.screen_size[0]/2.0 + 100, self.screen_size[1]),
-                         (self.screen_size[0], 0))         
+        vertices_right = ((self.screen_size[0]/2.0 + 100, 0), 
+                          (self.screen_size[0], 0),
+                          (self.screen_size[0], self.screen_size[1]),
+                          (self.screen_size[0]/2.0 + 100, self.screen_size[1]))
+                           
         im_type = 'image'
         
         ######### Upload stimulus for central fixation cross
         im_name = 'central_fixation.png'
+        assert not self.ttl.find_media(im_name), "Media {} already exists in Lab".format(im_name)
         self.dot_stim.set_pos((0,0))
         self.dot_stim.draw()
         self.screenshot_and_upload(im_name, im_type)
@@ -145,21 +167,22 @@ class ProAntiSaccades(object):
         ######### Upload stimulus for pro-saccade (target to left)
         # for corrent (left) and incorrect (right) aois
         im_name = 'prosaccade_left.png'
-        self.dot_stim.set_pos((-8,0))
+        assert not self.ttl.find_media(im_name), "Media {} already exists in Lab".format(im_name)        
+        self.dot_stim.set_pos((-self.saccade_amplitude,0))
         self.dot_stim.draw()
         media_info = self.screenshot_and_upload(im_name, im_type)  
         aoi_name = 'left'
         tag_name = 'correct'
         group_name = 'prosaccade'
 
-        self.ttl.add_aois_to_image(media_info['media_id'], aoi_name, aoi_color, 
+        self.ttl.add_aois_to_image(media_info['media_id'], aoi_name, aoi_color_left, 
                               vertices_left, tag_name=tag_name, group_name=group_name)    
               
         aoi_name = 'right'
         tag_name = 'incorrect'
         group_name = 'prosaccade'
 
-        self.ttl.add_aois_to_image(media_info['media_id'], aoi_name, aoi_color, 
+        self.ttl.add_aois_to_image(media_info['media_id'], aoi_name, aoi_color_right, 
                               vertices_right, tag_name=tag_name, group_name=group_name)    
         self.win.clearBuffer()
           
@@ -167,70 +190,74 @@ class ProAntiSaccades(object):
         ######### Upload stimulus for pro-saccade (target to right)
         # for corrent (right) and incorrect (left) aois
         im_name = 'prosaccade_right.png'
-        self.dot_stim.set_pos((8,0))
+        assert not self.ttl.find_media(im_name), "Media {} already exists in Lab".format(im_name)        
+        self.dot_stim.set_pos((self.saccade_amplitude,0))
         self.dot_stim.draw()
         media_info = self.screenshot_and_upload(im_name, im_type)
         aoi_name = 'right'
         tag_name = 'correct'
         group_name = 'prosaccade'
 
-        self.ttl.add_aois_to_image(media_info['media_id'], aoi_name, aoi_color, 
-                              vertices_left, tag_name=tag_name, group_name=group_name)    
+        self.ttl.add_aois_to_image(media_info['media_id'], aoi_name, aoi_color_right, 
+                              vertices_right, tag_name=tag_name, group_name=group_name)    
               
         aoi_name = 'left'
         tag_name = 'incorrect'
         group_name = 'prosaccade'
 
-        self.ttl.add_aois_to_image(media_info['media_id'], aoi_name, aoi_color, 
-                              vertices_right, tag_name=tag_name, group_name=group_name)    
+        self.ttl.add_aois_to_image(media_info['media_id'], aoi_name, aoi_color_left, 
+                              vertices_left, tag_name=tag_name, group_name=group_name)    
         self.win.clearBuffer()
           
         
         ######### Upload stimulus for anti-saccade (target to left)
         # for corrent (left) and incorrect (right) aois
         im_name = 'antisaccade_left.png'
-        self.dot_stim.set_pos((-8,0))
+        assert not self.ttl.find_media(im_name), "Media {} already exists in Lab".format(im_name)        
+        self.dot_stim.set_pos((-self.saccade_amplitude,0))
         self.dot_stim.draw()
         media_info = self.screenshot_and_upload(im_name, im_type)  
         aoi_name = 'left'
         tag_name = 'incorrect'
         group_name = 'antisaccade'
 
-        self.ttl.add_aois_to_image(media_info['media_id'], aoi_name, aoi_color, 
+        self.ttl.add_aois_to_image(media_info['media_id'], aoi_name, aoi_color_left, 
                               vertices_left, tag_name=tag_name, group_name=group_name)    
               
         aoi_name = 'right'
         tag_name = 'correct'
         group_name = 'antisaccade'
 
-        self.ttl.add_aois_to_image(media_info['media_id'], aoi_name, aoi_color, 
+        self.ttl.add_aois_to_image(media_info['media_id'], aoi_name, aoi_color_right, 
                               vertices_right, tag_name=tag_name, group_name=group_name)    
         self.win.clearBuffer()
         
         ######### Upload stimulus for pro-saccade (target to right)
         # for corrent (right) and incorrect (left) aois
         im_name = 'antisaccade_right.png'
-        self.dot_stim.set_pos((8,0))
+        assert not self.ttl.find_media(im_name), "Media {} already exists in Lab".format(im_name)        
+        self.dot_stim.set_pos((self.saccade_amplitude,0))
         self.dot_stim.draw()
         media_info = self.screenshot_and_upload(im_name, im_type)
         aoi_name = 'right'
         tag_name = 'incorrect'
         group_name = 'antisaccade'
 
-        self.ttl.add_aois_to_image(media_info['media_id'], aoi_name, aoi_color, 
-                              vertices_left, tag_name=tag_name, group_name=group_name)    
+        self.ttl.add_aois_to_image(media_info['media_id'], aoi_name, aoi_color_right, 
+                              vertices_right, tag_name=tag_name, group_name=group_name)    
               
         aoi_name = 'left'
         tag_name = 'correct'
         group_name = 'antisaccade'
 
-        self.ttl.add_aois_to_image(media_info['media_id'], aoi_name, aoi_color, 
-                              vertices_right, tag_name=tag_name, group_name=group_name)    
+        self.ttl.add_aois_to_image(media_info['media_id'], aoi_name, aoi_color_left, 
+                              vertices_left, tag_name=tag_name, group_name=group_name)    
         self.win.clearBuffer()
           
         
         ######### Upload stimulus prosaccade trial instruction
         im_name = 'pro_instruction_test.png'
+        assert not self.ttl.find_media(im_name), "Media {} already exists in Lab".format(im_name)        
         ins = self.pro_instr+'\n\n' + self.keypress_test
         self.instruction_text.setText(ins)
         self.instruction_text.draw()  
@@ -239,6 +266,7 @@ class ProAntiSaccades(object):
         
         ######### Upload stimulus prosaccade exp instruction
         im_name = 'pro_instruction_exp.png'
+        assert not self.ttl.find_media(im_name), "Media {} already exists in Lab".format(im_name)       
         ins = self.pro_instr+'\n\n' + self.keypress_exp
         self.instruction_text.setText(ins)
         self.instruction_text.draw()  
@@ -248,6 +276,7 @@ class ProAntiSaccades(object):
         
         ######### Upload stimulus antisaccade trial instruction
         im_name = 'anti_instruction_test.png'
+        assert not self.ttl.find_media(im_name), "Media {} already exists in Lab".format(im_name)        
         ins = self.anti_instr+'\n\n' + self.keypress_test
         self.instruction_text.setText(ins)
         self.instruction_text.draw()
@@ -257,6 +286,7 @@ class ProAntiSaccades(object):
         
         ######### Upload stimulus prosaccade exp instruction
         im_name = 'anti_instruction_exp.png'
+        assert not self.ttl.find_media(im_name), "Media {} already exists in Lab".format(im_name)       
         ins = self.anti_instr+'\n\n' + self.keypress_exp
         self.instruction_text.setText(ins)
         self.instruction_text.draw()  
@@ -266,6 +296,7 @@ class ProAntiSaccades(object):
         
         ######### Upload break instruction
         im_name = 'break_instruction.png'
+        assert not self.ttl.find_media(im_name), "Media {} already exists in Lab".format(im_name)        
         break_instruction = ' '.join([self.break_instruction_s, 
                                       str(5),
                                       self.break_instruction_e])
@@ -277,6 +308,7 @@ class ProAntiSaccades(object):
 
         ######### Goodbye message
         im_name = 'goodbye_instruction.png'
+        assert not self.ttl.find_media(im_name), "Media {} already exists in Lab".format(im_name)        
         self.instruction_text.setText(self.goodByeMessage) # and then a break
         self.instruction_text.draw()      
         media_info = self.screenshot_and_upload(im_name, im_type)
@@ -593,142 +625,105 @@ def foreperiod_central_fixation(numel=1000, mu = 1.5, interval = [1, 3.5]):
 # proposed in the paper Antoniades et al. "An internationally standardised antisaccade protocol", 2013, Vision Research
 # Written by Marcus Nystrom (marcus.nystrom@humlab.lu.se) 2019-09-09
     
-'''
-ToDo: 
-    * check (and add) project name
-    * make sure a participant can't be added twice
-    * make sure the same media can't be added twice
-    * Startup message to open an external presenter project in pro lab, 
-    and go to the record tab.
 
-'''
 #======================================= 
 
 # Run experiment with pro lab integration?
 pro_lab_integration = True
-pro_lab_project_name = 'Project29'
-upload_stimuli = True # Do this only the first time you run
+pro_lab_project_name = 'Project55'
+upload_stimuli = False                      # Do this only the first time you run
 
-#Monitor/geometry 
+# Monitor/geometry 
 MY_MONITOR                  = 'testMonitor' # needs to exists in PsychoPy monitor center
 FULLSCREEN                  = False
 SCREEN_RES                  = [1920, 1080]
-SCREEN_WIDTH                = 52.7 # cm
-VIEWING_DIST                = 63 #  # distance from eye to center of screen (cm)
+SCREEN_WIDTH                = 52.7          # cm
+VIEWING_DIST                = 63            # distance from eye to center of screen (cm)
 
+# Eye tracker
 et_name = 'Tobii Pro Spectrum' 
 # et_name = 'IS4_Large_Peripheral' 
+dummy_mode = False                          # Run eye tracker in dummy mode
 
+# Antisaccade parameters
 saccade_amplitude = 8
 duration_central_target = foreperiod_central_fixation(numel=1000, 
                                                       mu = 1.5, 
                                                       interval = [1, 3.5])
 duration_peripheral_target = 1
 
-  
-# ---------------------------------------------
-
-#---- store info about the experiment
-# ---------------------------------------------
+# Ask user for participant ID
 expName = 'Antisaccades'
-expInfo={'participant':'99', 'dummy_mode':['True', 'False']}
-expInfo['dummy_mode'] = False
-expInfo['participant'] = '99'
-#dlg=gui.DlgFromDict(dictionary=expInfo,title=expName)
-#if dlg.OK==False: 
-#    core.quit() #user pressed cancel
-#expInfo['date'] = data.getDateStr()#add a simple timestamp
-#expInfo['computer_ip'] = socket.gethostbyname(socket.gethostname()).split('.')[-1]
-#expInfo['expName'] = expName
+expInfo={'participant':'01'}
+dlg=gui.DlgFromDict(dictionary=expInfo,title=expName)
+if dlg.OK==False: 
+    core.quit() #user pressed cancel
 
-# ---------------------------------------------
-#---- setup files for saving  
-# ---------------------------------------------
-datapath = os.getcwd() + "\\data\\"
-if not os.path.isdir(datapath):
-    os.makedirs(datapath)
-
-# Initiate clocks
-trialClock =core.Clock() # Init clock
-
-# Log output to a file
-path = os.getcwd() + "\\log\\"
-if not os.path.isdir(path):
-    os.makedirs(path)
-#filename='%s_%s_%s' %(expInfo['participant'], expInfo['computer_ip'], expInfo['date'])
-filename = 'test'
-
-mon = monitors.Monitor(MY_MONITOR)  # Defined in defaults file
-mon.setWidth(SCREEN_WIDTH)          # Width of screen (cm)
-mon.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
+mon = monitors.Monitor(MY_MONITOR)          # Defined in defaults file
+mon.setWidth(SCREEN_WIDTH)                  # Width of screen (cm)
+mon.setDistance(VIEWING_DIST)               # Distance eye / monitor (cm)
 mon.setSizePix(SCREEN_RES)
  
-# Window set-up (the color will be used for calibration)
+# Window set-up 
 win = visual.Window(monitor = mon, screen = 1,  
                     size = SCREEN_RES, 
                     units = 'deg', fullscr = FULLSCREEN,
                     allowGUI = False) 
 
-
-    
 # Change any of the default dettings?e
 settings = Titta.get_defaults(et_name)
 settings.FILENAME = 'testfile.tsv'
 
 #%% Connect to eye tracker and calibrate
 tracker = Titta.Connect(settings)
-print(expInfo['dummy_mode'])
-if expInfo['dummy_mode'] == True:
+if dummy_mode == True:
     tracker.set_dummy_mode()
-    print('DUMMY_MODE')
 else:
     tracker.init()
-    tracker.calibrate(win)
-    print('ET MODE')
     
-screen_refresh_rate = win.getActualFrameRate()
-eye_tracker_sample_rate = settings.SAMPLING_RATE
         
 # Initiate antisaccade class
-sac = ProAntiSaccades(win, saccade_amplitude=saccade_amplitude, 
-                 duration_central_target = duration_central_target,
-                 duration_peripheral_target = duration_peripheral_target,
-                 screen_refresh_rate = screen_refresh_rate,
-                 Fs = eye_tracker_sample_rate,
-                 screen_size = SCREEN_RES,
-                 eye_tracking= expInfo['dummy_mode']==False,
-                 tracker=tracker,
-                 pro_lab_integration=pro_lab_integration,
-                 upload_media=upload_stimuli,
-                 pid = expInfo['participant']) 
-#-----------------------------
-# Program flow starts here
-#-----------------------------
-
-
+try:
+    sac = ProAntiSaccades(win, saccade_amplitude=saccade_amplitude, 
+                     duration_central_target = duration_central_target,
+                     duration_peripheral_target = duration_peripheral_target,
+                     screen_refresh_rate = win.getActualFrameRate(),
+                     Fs = settings.SAMPLING_RATE,
+                     screen_size = SCREEN_RES,
+                     eye_tracking = dummy_mode==False,
+                     tracker=tracker,
+                     pro_lab_integration=pro_lab_integration,
+                     upload_media=upload_stimuli,
+                     pid = expInfo['participant'],
+                     project_name=pro_lab_project_name)    
     
-#-------- RUN THE BLOCKS HERE ---------------
- 
-# An example block
-sac.antisaccades(nTrials=3, practice=True)
-sac.antisaccades(nTrials= 3, practice=False)
-#sac.take_a_break(10, calibrate=False) 
+        
+    #-------- RUN THE BLOCKS HERE ---------------
+     
+    # An example block
+    sac.antisaccades(nTrials=3, practice=True)
+    sac.antisaccades(nTrials= 3, practice=False)
+    #sac.take_a_break(10, calibrate=False) 
+        
+    # # Third block
+    # #sac.antisaccades(nTrials=exp_params.nTrialsAnti, practice=False)
+    # #sac.take_a_break(exp_params.breakDuration, calibrate=False)
     
-# # Third block
-# #sac.antisaccades(nTrials=exp_params.nTrialsAnti, practice=False)
-# #sac.take_a_break(exp_params.breakDuration, calibrate=False)
+    # # Fourth block
+    # sac.antisaccades(nTrials=exp_params.nTrialsAnti, practice=False)
+    # sac.take_a_break(exp_params.breakDuration, calibrate=False)
+    
+    # # Fifth block
+    # sac.prosaccades(nTrials=exp_params.nPracticeTrialsPro, practice=True)
+    # sac.prosaccades(nTrials=exp_params.nTrialsPro, practice=False)
+    
+    #-------- DONE WITH ANTISACCADES ---------------
+    sac.goodbye()
+    
+except Exception as e: 
+    print(e)
+    win.close()
 
-# # Fourth block
-# sac.antisaccades(nTrials=exp_params.nTrialsAnti, practice=False)
-# sac.take_a_break(exp_params.breakDuration, calibrate=False)
-
-# # Fifth block
-# sac.prosaccades(nTrials=exp_params.nPracticeTrialsPro, practice=True)
-# sac.prosaccades(nTrials=exp_params.nTrialsPro, practice=False)
-
-#-------- DONE WITH ANTISACCADES ---------------
-
-sac.goodbye()
  
 # Save data and close connection with eye trackers
 if not expInfo['dummy_mode']:
@@ -736,7 +731,7 @@ if not expInfo['dummy_mode']:
 
 # Close PsychoPy window
 win.close()
-core.quit()
+#core.quit()
 
 #=========================================================
 ''' We recommend 10 practice trials before the first prosaccade block, and 4 before the first anti- 
