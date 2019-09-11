@@ -163,9 +163,80 @@ class TalkToProLab(threading.Thread):
         assert response['status_code'] == 0, response
         
         return response         
+    
+    #%% 
+    def list_participants(self):
+        ''' Project data API
+        Returns information about the participants of the currently opened project in Pro Lab.
+        
+        request:
+        {
+        "operation": "ListParticipants"
+        } r
+        esponse:
+        {
+        "operation": "ListParticipants",
+        "status_code": 0,
+        "participant_list": [{
+        "participant_name": "John Doe",
+        "participant_id": "2A86C895-F8B6-4786-8C4B-CB889C3449F1"
+        }]
+        }        
+        '''
+        
+        response = self.send_message(self.project_address,
+                                     { "operation": "ListParticipants"})
+                    
+        assert response['status_code'] == 0, response
+        
+        return response            
+    
+    #%% 
+    def list_media(self):
+        ''' Project data API
+        Returns information about the uploaded media of the currently opened project in Pro Lab.
+        
+        request:
+        {
+        "operation": "ListMedia"
+        }        
+        
+        response:
+        {
+        "operation": "ListMedia",
+        "status_code": 0,
+        "media_list": [{
+            "media_name": "CuteCats",
+            "media_id": "b2548e0e-4056-4d36-a4f5-86b3194866f7",
+            "mime_type": "image/jpeg",
+            "media_size": 3536263,
+            "width": 2512,
+            "height": 1884,
+            "duration": 0,
+        },
+        {
+            "media_name": "CuteCatsRunningAround",
+            "media_id": "21BA2272-473D-478F-9E23-A1FA8ABFF65D",
+            "md5_checksum": "0dbc22fddaff860ac1bf0d092c909d4e",
+            "mime_type": "video/mp4",
+            "media_size": 3536263,
+            "width": 640,
+            "height": 480,
+            "duration": 5.250
+        }]
+        }   
+        '''
+        
+        response = self.send_message(self.project_address,
+                                     { "operation": "ListMedia"})
+                    
+        assert response['status_code'] == 0, response
+        
+        return response      
+        
         
     #%%
-    def upload_media(self, media_type, media_name):
+    def upload_media(self, media_name, media_type):
         ''' 
         
         Prepares Server to receive media content (image or video) as binary data.
@@ -179,6 +250,11 @@ class TalkToProLab(threading.Thread):
         2. UploadMediaAbort request.
         3. The time between the Server received two consecutive chunks exceeded timeout.  
             -> status 103
+            
+        Args:
+            media_name - name of media.ext (e.g., image.png)
+            media_type - 'image' or 'video'
+            
         
         
         -----        
@@ -207,7 +283,6 @@ class TalkToProLab(threading.Thread):
           
         # Prepare Server to receive media content (image or video) as binary data          
         media_size = len(f)
-        
         response = self.send_message(self.project_address,
                                      {"operation": "UploadMedia",
                                       "mime_type": '/'.join([media_type, 

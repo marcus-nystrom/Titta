@@ -29,7 +29,7 @@ class ProAntiSaccades(object):
                  screen_size = [1680, 1050],
                  tracker=None, # Eye tracker object
                  pro_lab_integration=False,
-                 upload_stimuli=False,
+                 upload_media=False,
                  pid=None):
         
         self.trialClock = core.Clock() # Init clock
@@ -53,7 +53,7 @@ class ProAntiSaccades(object):
         self.screen_size = screen_size
         self.Fs = Fs
         self.pro_lab_integration = pro_lab_integration
-        self.upload_stimuli = upload_stimuli
+        self.upload_media = upload_media
         
         # Target durations in frames
         self.duration_central_target = np.round(duration_central_target * screen_refresh_rate)
@@ -69,13 +69,30 @@ class ProAntiSaccades(object):
         if pro_lab_integration:
             self.ttl = TalkToProLab()
             participant_info = self.ttl.add_participant(pid)
-            upload_stimuli()
             
+            if upload_media:
+                self.upload_stimuli()
+                
+            core.wait(1)
             self.rec = self.ttl.start_recording("antisaccade", 
                     participant_info['participant_id'], 
                     screen_width=self.screen_size[0],
                     screen_height=self.screen_size[1])
-    
+            
+    #%%
+    def screenshot_and_upload(self, im_name, im_type):
+        ''' Takes a screenshot of the backbuffer and uploads media to Pro Lab
+        
+        '''
+        
+        win.getMovieFrame(buffer='back')   
+        win.saveMovieFrames(im_name)  
+        media_info = self.ttl.upload_media(im_name, im_type)   
+        self.stim_info[im_name[:-4]] = media_info['media_id']   
+        
+        return media_info
+        
+    #%%
     def upload_stimuli(self):
         ''' Uploads all relevant stimuli to Pro Lab. They are
         
@@ -96,6 +113,12 @@ class ProAntiSaccades(object):
         
         
         '''
+        
+        self.instruction_text.setText("Uploading media to Lab. Please wait.") # and then a break
+        self.instruction_text.draw() 
+        self.win.flip()
+        
+        
         self.stim_info = {} # Dict to keep track of media id for each stimulus
         
         
@@ -110,25 +133,21 @@ class ProAntiSaccades(object):
                          (self.screen_size[0]/2.0 + 100, 0), 
                          (self.screen_size[0]/2.0 + 100, self.screen_size[1]),
                          (self.screen_size[0], 0))         
-
+        im_type = 'image'
+        
         ######### Upload stimulus for central fixation cross
         im_name = 'central_fixation.png'
         self.dot_stim.set_pos((0,0))
         self.dot_stim.draw()
-        win.getMovieFrame(buffer='back')   
-        win.saveMovieFrames(im_name)  
-        media_info = self.ttl.upload_media(im_name[:-4], im_name)   
-
-        self.stim_info[im_name[:-4]] = media_info['media_id']
+        self.screenshot_and_upload(im_name, im_type)
+        self.win.clearBuffer()
         
         ######### Upload stimulus for pro-saccade (target to left)
         # for corrent (left) and incorrect (right) aois
         im_name = 'prosaccade_left.png'
         self.dot_stim.set_pos((-8,0))
         self.dot_stim.draw()
-        win.getMovieFrame(buffer='back')   
-        win.saveMovieFrames(im_name)  
-        media_info = self.ttl.upload_media(im_name[:-4], im_name)
+        media_info = self.screenshot_and_upload(im_name, im_type)  
         aoi_name = 'left'
         tag_name = 'correct'
         group_name = 'prosaccade'
@@ -142,17 +161,15 @@ class ProAntiSaccades(object):
 
         self.ttl.add_aois_to_image(media_info['media_id'], aoi_name, aoi_color, 
                               vertices_right, tag_name=tag_name, group_name=group_name)    
+        self.win.clearBuffer()
           
-        self.stim_info[im_name[:-4]] = media_info['media_id']
         
         ######### Upload stimulus for pro-saccade (target to right)
         # for corrent (right) and incorrect (left) aois
         im_name = 'prosaccade_right.png'
         self.dot_stim.set_pos((8,0))
         self.dot_stim.draw()
-        win.getMovieFrame(buffer='back')   
-        win.saveMovieFrames(im_name)  
-        media_info = self.ttl.upload_media(im_name[:-4], im_name)
+        media_info = self.screenshot_and_upload(im_name, im_type)
         aoi_name = 'right'
         tag_name = 'correct'
         group_name = 'prosaccade'
@@ -166,17 +183,15 @@ class ProAntiSaccades(object):
 
         self.ttl.add_aois_to_image(media_info['media_id'], aoi_name, aoi_color, 
                               vertices_right, tag_name=tag_name, group_name=group_name)    
+        self.win.clearBuffer()
           
-        self.stim_info[im_name[:-4]] = media_info['media_id']   
         
         ######### Upload stimulus for anti-saccade (target to left)
         # for corrent (left) and incorrect (right) aois
         im_name = 'antisaccade_left.png'
         self.dot_stim.set_pos((-8,0))
         self.dot_stim.draw()
-        win.getMovieFrame(buffer='back')   
-        win.saveMovieFrames(im_name)  
-        media_info = self.ttl.upload_media(im_name[:-4], im_name)
+        media_info = self.screenshot_and_upload(im_name, im_type)  
         aoi_name = 'left'
         tag_name = 'incorrect'
         group_name = 'antisaccade'
@@ -190,17 +205,14 @@ class ProAntiSaccades(object):
 
         self.ttl.add_aois_to_image(media_info['media_id'], aoi_name, aoi_color, 
                               vertices_right, tag_name=tag_name, group_name=group_name)    
-          
-        self.stim_info[im_name[:-4]] = media_info['media_id']
+        self.win.clearBuffer()
         
         ######### Upload stimulus for pro-saccade (target to right)
         # for corrent (right) and incorrect (left) aois
         im_name = 'antisaccade_right.png'
         self.dot_stim.set_pos((8,0))
         self.dot_stim.draw()
-        win.getMovieFrame(buffer='back')   
-        win.saveMovieFrames(im_name)  
-        media_info = self.ttl.upload_media(im_name[:-4], im_name)
+        media_info = self.screenshot_and_upload(im_name, im_type)
         aoi_name = 'right'
         tag_name = 'incorrect'
         group_name = 'antisaccade'
@@ -214,33 +226,33 @@ class ProAntiSaccades(object):
 
         self.ttl.add_aois_to_image(media_info['media_id'], aoi_name, aoi_color, 
                               vertices_right, tag_name=tag_name, group_name=group_name)    
+        self.win.clearBuffer()
           
-        self.stim_info[im_name[:-4]] = media_info['media_id']    
         
         ######### Upload stimulus prosaccade trial instruction
         im_name = 'pro_instruction_test.png'
         ins = self.pro_instr+'\n\n' + self.keypress_test
         self.instruction_text.setText(ins)
         self.instruction_text.draw()  
-        media_info = self.ttl.upload_media(im_name[:-4], im_name)
-        self.stim_info[im_name[:-4]] = media_info['media_id']          
+        media_info = self.screenshot_and_upload(im_name, im_type)         
+        self.win.clearBuffer()
         
         ######### Upload stimulus prosaccade exp instruction
         im_name = 'pro_instruction_exp.png'
         ins = self.pro_instr+'\n\n' + self.keypress_exp
         self.instruction_text.setText(ins)
         self.instruction_text.draw()  
-        media_info = self.ttl.upload_media(im_name[:-4], im_name) 
-        self.stim_info[im_name[:-4]] = media_info['media_id']          
+        media_info = self.screenshot_and_upload(im_name, im_type)         
+        self.win.clearBuffer()
         
         
         ######### Upload stimulus antisaccade trial instruction
         im_name = 'anti_instruction_test.png'
         ins = self.anti_instr+'\n\n' + self.keypress_test
         self.instruction_text.setText(ins)
-        self.instruction_text.draw()  
-        media_info = self.ttl.upload_media(im_name[:-4], im_name)
-        self.stim_info[im_name[:-4]] = media_info['media_id']          
+        self.instruction_text.draw()
+        media_info = self.screenshot_and_upload(im_name, im_type)        
+        self.win.clearBuffer()
         
         
         ######### Upload stimulus prosaccade exp instruction
@@ -248,8 +260,8 @@ class ProAntiSaccades(object):
         ins = self.anti_instr+'\n\n' + self.keypress_exp
         self.instruction_text.setText(ins)
         self.instruction_text.draw()  
-        media_info = self.ttl.upload_media(im_name[:-4], im_name) 
-        self.stim_info[im_name[:-4]] = media_info['media_id']          
+        media_info = self.screenshot_and_upload(im_name, im_type)      
+        self.win.clearBuffer()
         
         
         ######### Upload break instruction
@@ -259,15 +271,18 @@ class ProAntiSaccades(object):
                                       self.break_instruction_e])
         self.instruction_text.setText(break_instruction) # and then a break
         self.instruction_text.draw()
-        media_info = self.ttl.upload_media(im_name[:-4], im_name)
-        self.stim_info[im_name[:-4]] = media_info['media_id']                  
+        media_info = self.screenshot_and_upload(im_name, im_type) 
+        self.win.clearBuffer()
+               
 
         ######### Goodbye message
         im_name = 'goodbye_instruction.png'
         self.instruction_text.setText(self.goodByeMessage) # and then a break
         self.instruction_text.draw()      
-        media_info = self.ttl.upload_media(im_name[:-4], im_name)
-        self.stim_info[im_name[:-4]] = media_info['media_id']  
+        media_info = self.screenshot_and_upload(im_name, im_type)
+        
+        self.win.clearBuffer()
+
         
     #%%    
     def prosaccades(self, nTrials, practice=False):
@@ -317,9 +332,10 @@ class ProAntiSaccades(object):
                 m_info = self.stim_info['anti_instruction_test']
             else:
                 m_info = self.stim_info['anti_instruction_exp']
-                
+            
+            timestamp = int(self.ttl.get_time_stamp()['timestamp'])   
             self.ttl.send_stimulus_event(self.rec['recording_id'],
-                                         str(self.ttl.get_time_stamp()),
+                                         str(timestamp),
                                          m_info) 
             
         event.waitKeys()            
@@ -361,9 +377,10 @@ class ProAntiSaccades(object):
                 self.win.flip()
                 
                 if i == 0 and self.pro_lab_integration:
+                    timestamp = int(self.ttl.get_time_stamp()['timestamp'])   
                     self.ttl.send_stimulus_event(self.rec['recording_id'],
-                                                 str(self.ttl.get_time_stamp()),
-                                                 self.stim_info['central_fixation'])                     
+                                                 str(timestamp),
+                                                 self.stim_info["central_fixation"])                    
                     
             # Display the peripheral dot
             self.dot_stim.set_pos((sa,0))
@@ -372,22 +389,23 @@ class ProAntiSaccades(object):
             
             if self.pro_lab_integration:
                 if 'anti' in task:
+                    timestamp = int(self.ttl.get_time_stamp()['timestamp'])                       
                     if sa < 0:
                         self.ttl.send_stimulus_event(self.rec['recording_id'],
-                                                     str(self.ttl.get_time_stamp()),
-                                                     self.stim_info['antisaccade_right'])     
+                                                     str(timestamp),
+                                                     self.stim_info['antisaccade_left'])     
                     else:
                         self.ttl.send_stimulus_event(self.rec['recording_id'],
-                                                     str(self.ttl.get_time_stamp()),
-                                                     self.stim_info['antisaccade_left'])        
+                                                     str(timestamp),
+                                                     self.stim_info['antisaccade_right'])        
                 else:
                     if sa < 0:
                         self.ttl.send_stimulus_event(self.rec['recording_id'],
-                                                     str(self.ttl.get_time_stamp()),
+                                                     str(timestamp),
                                                      self.stim_info['prosaccade_left'])         
                     else:
                         self.ttl.send_stimulus_event(self.rec['recording_id'],
-                                                     str(self.ttl.get_time_stamp()),
+                                                     str(timestamp),
                                                      self.stim_info['prosaccade_right'])   
             if self.eye_tracking:
 
@@ -434,10 +452,10 @@ class ProAntiSaccades(object):
                     # Was the saccade performed correctly?
                     correct = 1
                     nSamples = 4 
-                    if ('pro' in task and sa > 0 and np.sum(xy[:,0] < -self.screen_size[0]/16)     > nSamples) or \
-                       ('pro' in task and sa < 0 and np.sum(xy[:,0] >  self.screen_size[0]/16)      > nSamples) or \
-                       ('anti' in task and sa < 0 and np.sum(xy[:,0] < -self.screen_size[0]/16)    > nSamples) or \
-                       ('anti' in task and sa > 0 and np.sum(xy[:,0] > self.screen_size[0]/16)     > nSamples):
+                    if ('pro' in task and sa > 0 and np.nansum(xy[:,0] < -self.screen_size[0]/16)     > nSamples) or \
+                       ('pro' in task and sa < 0 and np.nansum(xy[:,0] >  self.screen_size[0]/16)      > nSamples) or \
+                       ('anti' in task and sa < 0 and np.nansum(xy[:,0] < -self.screen_size[0]/16)    > nSamples) or \
+                       ('anti' in task and sa > 0 and np.nansum(xy[:,0] > self.screen_size[0]/16)     > nSamples):
                         correct = 0
                     
                     # Show target +  scanpath + performance feedback to the participant
@@ -508,8 +526,9 @@ class ProAntiSaccades(object):
         self.win.flip()
         
         if self.pro_lab_integration:
+            timestamp = int(self.ttl.get_time_stamp()['timestamp'])               
             self.ttl.send_stimulus_event(self.rec['recording_id'],
-                                         str(self.ttl.get_time_stamp()),
+                                         str(timestamp),
                                          self.stim_info['break_instruction'])         
         core.wait(duration)  
         
@@ -523,17 +542,21 @@ class ProAntiSaccades(object):
         self.instruction_text.setText(self.goodByeMessage) # and then a break
         self.instruction_text.draw()
         self.win.flip()
-        ts = self.ttl.get_time_stamp()
+        
         if self.pro_lab_integration:
+            timestamp = int(self.ttl.get_time_stamp()['timestamp'])               
             self.ttl.send_stimulus_event(self.rec['recording_id'],
-                                         str(ts),
+                                         str(timestamp),
                                          self.stim_info['goodbye_instruction'],
-                                         end_timestamp = str(ts + waitdur * 1000000))         
+                                         end_timestamp = str(timestamp + waitdur * 1000000))         
            
         core.wait(waitdur)      
         
         # Finalize recording
-        self.ttl.finalize_recording(self.rec['recording_id'])        
+        if self.pro_lab_integration:   
+            ## Stop recording
+            self.ttl.stop_recording()
+            self.ttl.finalize_recording(self.rec['recording_id'])        
         
 #%%
 def foreperiod_central_fixation(numel=1000, mu = 1.5, interval = [1, 3.5]): 
@@ -569,11 +592,22 @@ def foreperiod_central_fixation(numel=1000, mu = 1.5, interval = [1, 3.5]):
 # This is an implementation of the standardized antisaccade test 
 # proposed in the paper Antoniades et al. "An internationally standardised antisaccade protocol", 2013, Vision Research
 # Written by Marcus Nystrom (marcus.nystrom@humlab.lu.se) 2019-09-09
+    
+'''
+ToDo: 
+    * check (and add) project name
+    * make sure a participant can't be added twice
+    * make sure the same media can't be added twice
+    * Startup message to open an external presenter project in pro lab, 
+    and go to the record tab.
+
+'''
 #======================================= 
 
 # Run experiment with pro lab integration?
-pro_lab_integration = False
-upload_stimuli = False # Do this only the first time you run
+pro_lab_integration = True
+pro_lab_project_name = 'Project29'
+upload_stimuli = True # Do this only the first time you run
 
 #Monitor/geometry 
 MY_MONITOR                  = 'testMonitor' # needs to exists in PsychoPy monitor center
@@ -583,7 +617,7 @@ SCREEN_WIDTH                = 52.7 # cm
 VIEWING_DIST                = 63 #  # distance from eye to center of screen (cm)
 
 et_name = 'Tobii Pro Spectrum' 
-et_name = 'IS4_Large_Peripheral' 
+# et_name = 'IS4_Large_Peripheral' 
 
 saccade_amplitude = 8
 duration_central_target = foreperiod_central_fixation(numel=1000, 
@@ -593,6 +627,7 @@ duration_peripheral_target = 1
 
   
 # ---------------------------------------------
+
 #---- store info about the experiment
 # ---------------------------------------------
 expName = 'Antisaccades'
@@ -652,7 +687,7 @@ else:
     print('ET MODE')
     
 screen_refresh_rate = win.getActualFrameRate()
-eye_tracker_sample_rate = settings.SAMPLING_RATEs   
+eye_tracker_sample_rate = settings.SAMPLING_RATE
         
 # Initiate antisaccade class
 sac = ProAntiSaccades(win, saccade_amplitude=saccade_amplitude, 
@@ -663,8 +698,8 @@ sac = ProAntiSaccades(win, saccade_amplitude=saccade_amplitude,
                  screen_size = SCREEN_RES,
                  eye_tracking= expInfo['dummy_mode']==False,
                  tracker=tracker,
-                 pro_lab_integration=False,
-                 upload_stimuli=False,
+                 pro_lab_integration=pro_lab_integration,
+                 upload_media=upload_stimuli,
                  pid = expInfo['participant']) 
 #-----------------------------
 # Program flow starts here
