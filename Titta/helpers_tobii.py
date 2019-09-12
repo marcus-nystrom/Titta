@@ -309,7 +309,7 @@ class EThead(object):
         self.head_height = 0.25        
                      
     
-    def update(self, sample, latest_valid_binocular_avg,
+    def update(self, sample, sample_user_pos, latest_valid_binocular_avg,
                previous_binocular_sample_valid,
                latest_valid_roll, 
                latest_valid_yaw, 
@@ -326,6 +326,16 @@ class EThead(object):
                 'right_gaze_origin_in_trackbox_coordinate_system'
                 'left_pupil_diameter'
                 'right_pupil_diameter'
+                
+            sample_user_pos - a dict containing information about the user
+                positioning.
+            
+                relevant info in sample is
+                
+                'left_user_position'  
+                'left_user_position_validity'              
+                'right_user_position' 
+                'right_user_position_validity'                
                 
             eye - track, both eyes, left eye, or right eye
                   the non-tracked eye will be indicated by a cross
@@ -344,9 +354,9 @@ class EThead(object):
             self.eye_r_closed.fillColor = (1, -1, -1)         
         
         #%% 1. Compute the average position of the head ellipse
-        xyz_pos_eye_l = sample['left_gaze_origin_in_trackbox_coordinate_system']
-        xyz_pos_eye_r = sample['right_gaze_origin_in_trackbox_coordinate_system']
-      
+        xyz_pos_eye_l = sample_user_pos['left_user_position']
+        xyz_pos_eye_r = sample_user_pos['right_user_position']     
+        
         # Valid data from the eyes?
         self.right_eye_valid = np.sum(np.isnan(xyz_pos_eye_r)) == 0 # boolean
         self.left_eye_valid = np.sum(np.isnan(xyz_pos_eye_l)) == 0

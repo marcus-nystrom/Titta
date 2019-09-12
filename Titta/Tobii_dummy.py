@@ -55,12 +55,21 @@ class Connect(Thread):
         self.instruction_text.draw()
         self.win.flip()
         core.wait(2)
+        
+    #%%   
+    def get_system_time_stamp(self):
+        ''' Get system time stamp
+        '''
+        
+        print('time_stamp')          
                 
-    #%%  
+    #%%            
     def start_recording(self,   gaze_data=False, 
                                 sync_data=False,
                                 image_data=False,
-                                stream_error_data=False,
+                                stream_errors=False,
+                                external_signal=False,
+                                user_position_guide=False,
                                 store_data=True):
         print('start_recording')      
         
@@ -90,7 +99,7 @@ class Connect(Thread):
             time.sleep(0.01)            
         
     #%% 
-    def send_message(self, msg):
+    def send_message(self, msg, ts=None):
         print(msg)      
         
     #%%
@@ -108,22 +117,29 @@ class Connect(Thread):
         return self.sample
         
     #%%
-    def get_samples_from_buffer(self):
-        ''' Consume all samples '''
-        return self.buf.peek() 
+    def consume_buffer(self):
+        ''' Consume all samples and empty buffer'''
+        return self.buf.get_all() 
+    
+    #%%
+    def peek_buffer(self):
+        ''' Get samples in buffer without emptying the buffer '''
+        return self.buf.peek()  
     
     #%% 
     def stop_sample_buffer(self):
         self.__stop = True
         
-    #%%  
-    def stop_recording(self, gaze_data=False, 
-                       sync_data=False,
-                       image_data=False,
-                       stream_error_data=False):
-        print('send_message')      
+    #%%    
+    def stop_recording(self,    gaze_data=False, 
+                                sync_data=False,
+                                image_data=False,
+                                stream_errors=False,
+                                external_signal=False,
+                                user_position_guide=False):
+        print('stop_recording')      
     #%% 
-    def save_data(self):
+    def save_data(self, *argv):
         print('save_data')      
         
     #%%
