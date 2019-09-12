@@ -41,3 +41,31 @@ The toolbox consists of two main parts:
 The Titta class is the main workhorse of this toolbox, providing a wrapper around the Tobii Pro SDK, and a convenient graphical user interface (rendered through PsychoPy) for participant setup, calibration and validation. Only the `Titta.calibrate()` participant setup and calibration interface requires PsychoPy.
 ### The `TalkToProLab` class
 The `TalkToProLab` class provides an implementation of [Tobii Pro Lab](https://www.tobiipro.com/product-listing/tobii-pro-lab/)'s External Presenter interface, allowing experiments to be created and run from Python with PsychoPy or other presentation methods, while recording, project management, recording playback/visualization and analysis can be performed in Tobii Pro Lab.
+
+## Usage
+As demonstrated in the demo scripts, the toolbox is configured through
+the following interface:
+1. Retrieve (default) settings for eye tracker of interest: `settings =
+Titta.getDefaults('tracker model name');` Supported eye trackers and their corresponding model names in the Tobii Pro SDK/Titta are:
+
+    |Eye tracker|Model name|
+    |---|---|
+    |**Tobii Pro Spectrum**|`Tobii Pro Spectrum`|
+    |Tobii Pro TX300|`Tobii TX300`|
+    |Tobii Pro T60 XL|`Tobii T60 XL`|
+    |**Tobii Pro Nano**|`Tobii Pro Nano`|
+    |Tobii Pro X3-120|`Tobii Pro X3-120 EPU`|
+    |Tobii Pro X2-60|`X2-60_Compact`|
+    |Tobii Pro X2-30|`X2-30_Compact`|
+    |Tobii Pro X60|`Tobii X60`|
+    |Tobii Pro X120|`Tobii X120`|
+    |Tobii Pro T60|`Tobii T60`|
+    |Tobii Pro T120|`Tobii T120`|
+    |**Tobii 4C**|`IS4_Large_Peripheral`|
+  
+    Note that the VR eye trackers are not supported by Titta. Eye tracker marked in **bold** font have been tested.
+  
+2. Change settings from their defaults if wanted.
+3. Create a Titta instance using this settings struct: `tracker = Titta(settings);`
+4. Interact with the eye tracker using the below API.
+5. When calling `Titta.calibrate()`, a participant setup and calibration interface is shown. For each screen, several keyboard hotkeys are available to activate certain functionality. By default, the hotkey for each button is printed in the button's label. It can be configured to different keys with the `settings.UI.button` options [listed below](#supported-options). In addition, a few global hotkeys are available. These are documented below in the API documentation of the `Titta.calibrate()` method.
