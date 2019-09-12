@@ -63,9 +63,9 @@ Titta.getDefaults('tracker model name');` Supported eye trackers and their corre
     |Tobii Pro T120|`Tobii T120`|
     |**Tobii 4C**|`IS4_Large_Peripheral`|
   
-    Note that the VR eye trackers are not supported by Titta. Eye tracker marked in **bold** font have been tested.
+    Eye tracker marked in **bold** font have been tested. Note that the VR eye trackers are not supported by Titta. 
   
 2. Change settings from their defaults if wanted.
 3. Create a Titta instance using this settings struct: `tracker = Titta(settings);`
 4. Interact with the eye tracker using the below API.
-5. When calling `Titta.calibrate()`, a participant setup and calibration interface is shown. For each screen, several keyboard hotkeys are available to activate certain functionality. By default, the hotkey for each button is printed in the button's label. It can be configured to different keys with the `settings.UI.button` options [listed below](#supported-options). In addition, a few global hotkeys are available. These are documented below in the API documentation of the `Titta.calibrate()` method.
+5. When calling `Titta.calibrate()`, a participant setup and calibration interface is shown. For each screen, several keyboard hotkeys are available to activate certain functionality. By default, the hotkey for each button is printed in the button's label. 
