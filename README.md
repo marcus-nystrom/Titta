@@ -31,4 +31,5 @@ Alternatively:
 1. Add Titta to path in PsychoPy (under file->preferences)
 1. Run read_me.py (first change the monitor settings and the eye tracker name in read_me.py).
 
-Tested with PsychoPy v. 3.1.5 on Windows 10 using Python 3.6.
+Tested with PsychoPy v. 3.1.5 on Windows 10 using Python 3.6. Ideally, make sure that the eye tracker is detected and works in 
+the [Tobii Eye Tracker Manager](https://www.tobiipro.com/product-listing/eye-tracker-manager/) before trying to use it with Titta.
