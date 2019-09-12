@@ -1667,7 +1667,7 @@ class myTobii(object):
         self.tracker.subscribe_to(tr.EYETRACKER_EXTERNAL_SIGNAL, self._external_signal_callback, as_dictionary=True)
         
     #%%
-    def usubscribe_from_external_signal(self):
+    def unsubscribe_from_external_signal(self):
         ''' Starts subscribing to gaze data
         '''
         self.tracker.unsubscribe_from(tr.EYETRACKER_EXTERNAL_SIGNAL, self._external_signal_callback) 
