@@ -117,6 +117,10 @@ class myTobii(object):
         self.sync_data_container = []
         self.image_data_container = []
         self.external_signal_container = []
+        self.stream_errors_container = []
+        
+        self.user_position_guide_data = None
+        
         self.all_validation_results = []
 
         # When recording, store data or just it online without storing
@@ -536,6 +540,10 @@ class myTobii(object):
         # Start streaming of eye images
         if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
             self.start_recording(image_data=True, store_data = self.store_data)
+            
+            
+        # Start user positioning guide
+        self.start_recording(user_position_guide=True, store_data = self.store_data)
 
         core.wait(0.5)
         
@@ -583,6 +591,7 @@ class myTobii(object):
                              
              # Get position of eyes in track box
             sample = self.get_latest_sample()
+            sample_user_position = self.get_latest_user_position_guide_sample()
             
             # Draw et head on participant screen
             latest_valid_bincular_avg, \
@@ -590,6 +599,7 @@ class myTobii(object):
             latest_valid_yaw, \
             latest_valid_roll, \
             offset = et_head.update(sample,
+                                    sample_user_position,
                                     latest_valid_bincular_avg,    
                                     previous_binocular_sample_valid,
                                     latest_valid_yaw, 
@@ -604,11 +614,12 @@ class myTobii(object):
                 latest_valid_yaw, \
                 latest_valid_roll, \
                 offset = et_head_op.update(sample,
-                                        latest_valid_bincular_avg,    
-                                        previous_binocular_sample_valid,
-                                        latest_valid_yaw, 
-                                        latest_valid_roll, 
-                                        offset, eye=self.eye)         
+                                           sample_user_position,
+                                           latest_valid_bincular_avg,    
+                                           previous_binocular_sample_valid,
+                                           latest_valid_yaw, 
+                                           latest_valid_roll, 
+                                           offset, eye=self.eye)         
                 et_head_op.draw()              
                         
             # Draw instruction
@@ -660,6 +671,9 @@ class myTobii(object):
         if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
             self.stop_recording(image_data=True)   
         self.mouse.setVisible(0)
+        
+        # Stop user position guide
+        self.stop_recording(user_position_guide=True)
         
         # Clear the screen
         self.win.flip()
@@ -1569,12 +1583,20 @@ class myTobii(object):
         ''' Gets the most recent sample 
         '''
         return self.gaze_data
+    
+    #%%
+    def get_latest_user_position_guide_sample(self):
+        ''' Gets the most recent sample 
+        '''
+        return self.user_position_guide_data    
 
     #%%            
     def start_recording(self,   gaze_data=False, 
                                 sync_data=False,
                                 image_data=False,
-                                stream_error_data=False,
+                                stream_errors=False,
+                                external_signal=False,
+                                user_position_guide=False,
                                 store_data=True):
         ''' Starts recording 
         '''
@@ -1585,7 +1607,11 @@ class myTobii(object):
             self.subscribe_to_time_synchronization_data()
         if image_data:
             self.subscribe_to_eye_images()
-        if stream_error_data:
+        if stream_errors:
+            self.subscribe_to_stream_errors()    
+        if user_position_guide:
+            self.subscribe_to_user_position_guide()                
+        if external_signal:
             self.subscribe_to_external_signal()   
             
         self.store_data = store_data
@@ -1595,7 +1621,9 @@ class myTobii(object):
     def stop_recording(self,    gaze_data=False, 
                                 sync_data=False,
                                 image_data=False,
-                                stream_error_data=False):    
+                                stream_errors=False,
+                                external_signal=False,
+                                user_position_guide=False):
         ''' Stops recording
         '''        
         
@@ -1605,24 +1633,42 @@ class myTobii(object):
             self.unsubscribe_from_time_synchronization_data()
         if image_data:
             self.unsubscribe_from_eye_images()   
-        if stream_error_data:
-            self.usubscribe_from_external_signal()                
+        if stream_errors:
+            self.unsubscribe_from_stream_errors()  
+        if user_position_guide:
+            self.unsubscribe_from_user_position_guide()                
+        if external_signal:
+            self.unsubscribe_from_external_signal()   
             
         # Stop writing to file            
         self.store_data = False          
  
     #%%
+    def _user_position_guide_callback(self, user_position_data):
+        ''' Callback function for external signals        
+        '''
+        
+        self.user_position_guide_data = user_position_data
+        
+    #%%
+    def subscribe_to_user_position_guide(self):
+        ''' Starts subscribing to gaze data
+        '''
+        self.tracker.subscribe_to(tr.EYETRACKER_USER_POSITION_GUIDE, self._user_position_guide_callback, as_dictionary=True)
+        
+    #%%
+    def unsubscribe_from_user_position_guide(self):
+        ''' Starts subscribing to gaze data
+        '''
+        self.tracker.unsubscribe_from(tr.EYETRACKER_USER_POSITION_GUIDE, self._user_position_guide_callback) 
+        
+    #%%
     def _external_signal_callback(self, callback_object):
         ''' Callback function for external signals        
         '''
         
-        if self.store_data:
-            gdata = (callback_object['device_time_stamp'],
-                     callback_object['system_time_stamp'],
-                     callback_object['value'],
-                     callback_object['change_type'])
-                     
-            self.external_signal_container.append(gdata)
+        if self.store_data:                    
+            self.external_signal_container.append(callback_object)
         
     #%%
     def subscribe_to_external_signal(self):
@@ -1839,7 +1885,6 @@ class myTobii(object):
                 
             self.win.flip()
 
-#        self.stop_recording()
         self.stop_recording(image_data=True)            
         self.mouse.setVisible(0)
         
@@ -1865,18 +1910,6 @@ class myTobii(object):
             self.eye_image_stim_l.draw()          
             self.eye_image_stim_r.draw()
 
-#    #%% 
-#    def _update_eye_textures(self):
-#        ''' Updates eye textures as soon as a eye image callback is called
-#        '''
-##        pass
-#        im_arr, im_id = self.get_latest_eye_image()
-#            
-#        if im_id['camera_id'] == 0:
-#            self.eye_image_stim_l.image = im_arr
-#        elif im_id['camera_id'] == 1:
-#            self.eye_image_stim_r.image = im_arr    
-        
                
     #%%    
     def _eye_image_callback(self, im):
@@ -1890,14 +1923,6 @@ class myTobii(object):
         
         # Make eye image dict available to rest of class
         self.eye_image.append(im)
-        
-        
-#       # If in advanced setup mode, put image in texture to be displayed
-#        if self.action == 'adv':
-#            print('here')
-#            self._update_eye_textures()
-##            self.eye_image_stim_l.draw()
-##            self.eye_image_stim_r.draw()
                         
         # Store image dict in list, if self.store_data = True
         if self.store_data:
@@ -1934,13 +1959,20 @@ class myTobii(object):
     def unsubscribe_from_time_synchronization_data(self):
         self.tracker.unsubscribe_from(tr.EYETRACKER_TIME_SYNCHRONIZATION_DATA)
         
+    #%%   
+    def _stream_errors_callback(self, stream_errors):
+        ''' Callback for stream_errors
+        '''
+        if self.store_data:
+            self.stream_errors_container.append(stream_errors)
+            
     #%%    
-    def subscribe_to_eyetracker_stream_errors(self):
+    def subscribe_to_stream_errors(self):
         self.tracker.subscribe_to(tr.EYETRACKER_STREAM_ERRORS,
-                                  self._stream_error_callback, as_dictionary=True)
+                                  self._stream_errors_callback, as_dictionary=True)
     #%%    
-    def unsubscribe_from_eyetracker_stream_errors(self):
-        self.tracker.unsubscribe_from(tr.EYETRACKER_TIME_SYNCHRONIZATION_DATA)
+    def unsubscribe_from_stream_errors(self):
+        self.tracker.unsubscribe_from(tr.EYETRACKER_STREAM_ERRORS)
         
     #%%      
     def set_sample_rate(self, Fs):
@@ -2003,6 +2035,7 @@ class myTobii(object):
             pickle.dump(self.msg_container, fp)            
             pickle.dump(self.external_signal_container, fp)
             pickle.dump(self.sync_data_container, fp)
+            pickle.dump(self.stream_errors_container, fp)            
             pickle.dump(self.image_data_container, fp)
             pickle.dump(self.calibration_history(), fp)
             pickle.dump(self.system_info(), fp)
@@ -2013,8 +2046,6 @@ class myTobii(object):
             
             for arg in argv: 
                 pickle.dump(arg, fp)
-            
-
 
     
     #%%    
