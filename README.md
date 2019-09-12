@@ -18,8 +18,17 @@ functionality.
 
 *Note* that this toolbox is in a beta state. The API may change drastically at any time without notice. Work is ongoing, and code may also be in a broken or untested state without warning. That said, the toolbox has already been used in several projects at the Lund University Humanities Lab, Sweden.
 
-Installation:
-pip install git+https://github.com/marcus-nystrom/Titta.git#egg=Titta
+To get started on Windows:
+1. Download [PsychoPy](https://www.psychopy.org)
+1. Open the command window
+	1. Go the the PsychoPy folder (e.g., C:\Program Files (x86)\PsychoPy3)
+	1. type 'python -m pip install git+https://github.com/marcus-nystrom/Titta.git#egg=Titta' 
+1. Download the 'examples' folder and run read_me.py (first change the monitor settings and the eye tracker name in read_me.py).
+	
+Alternatively:
+1. Download [PsychoPy](https://www.psychopy.org)
+1. Download or clone the Titta folder
+1. Add Titta to path in PsychoPy (under file->preferences)
+1. Run read_me.py (first change the monitor settings and the eye tracker name in read_me.py).
 
-Tested with PsychoPy v. 3.1.0 using Python 3.6 and Python 2.7.
-
+Tested with PsychoPy v. 3.1.5 on Windows 10 using Python 3.6.

@@ -34,15 +34,15 @@ class Connect(object):
         
         if isinstance(in_arg, str):
             if 'dummy' in in_arg:
-                import Tobii_dummy
+                from titta import Tobii_dummy
                 self.__class__ = Tobii_dummy.Connect
                 self.__class__.__init__(self)  
             else:            
-                import Tobii
+                from titta import Tobii
                 self.__class__ = Tobii.myTobii
                 self.__class__.__init__(self, in_arg)
         else:
-            import Tobii
+            from titta import Tobii
             self.__class__ = Tobii.myTobii
             self.__class__.__init__(self, in_arg)
             

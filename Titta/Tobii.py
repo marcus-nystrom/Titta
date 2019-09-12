@@ -6,9 +6,6 @@ Created on Thu Jun 01 14:11:57 2017
 
 ToDO: 
     * Integrate raw classes
-    * Test monocular calibrations (calibration mode cannot exit until both eyes done)
-        Use flags
-       hide data from the eye that is not calibrated (DONE!)
     *	Align validation screen with Matlab interface
     * Select calibration with arrow keys
 	* self.tracker = tr.EyeTracker(self.settings.TRACKER_ADDRESS - add better error message if this call fails
@@ -16,7 +13,6 @@ ToDO:
     * make sure that pressing 'r' during validation, restarts a validition when in validation mode
     (i.e., when the validation button has been pressed)
     * CHANGE NAMES TO THOSE IN SDK
-    * Dump everything to pickle - get textfile later through - read pickle
 """
 from __future__ import print_function # towards Python 3 compatibility
 
@@ -24,11 +20,9 @@ from psychopy import visual, core, event
 from collections import deque
 import pandas as pd
 import copy
-import warnings
 import sys
 
 if sys.version_info[0] == 3: # if Python 3:
-    #from io import StringIO
     from io import BytesIO as StringIO
     import pickle
 else: # else Python 2
@@ -36,13 +30,9 @@ else: # else Python 2
     import cPickle as pickle
 
 from PIL import Image
-#import base64
 import tobii_research as tr
-
 import numpy as np
-# import scipy.miscs
-import helpers_tobii as helpers
-# import calibration_self.settings.graphics as self.settings.graphics
+from titta import helpers_tobii as helpers
 
     
 #%%    

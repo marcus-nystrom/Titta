@@ -8,10 +8,9 @@ import os, sys
 # Insert the parent directory (where Titta is) to path
 curdir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(curdir)
-sys.path.insert(0, os.sep.join([os.path.dirname(curdir), 'Titta'])) 
-import Titta
-import helpers_tobii as helpers
-from TalkToProLab import TalkToProLab
+sys.path.insert(0, os.sep.join([os.path.dirname(curdir)])) 
+from titta import Titta, helpers_tobii as helpers
+from titta.TalkToProLab import TalkToProLab
 
 #%% Monitor/geometry 
 MY_MONITOR                  = 'testMonitor' # needs to exists in PsychoPy monitor center
@@ -36,7 +35,7 @@ dummy_mode = False
      
 # Change any of the default settings?
 settings = Titta.get_defaults(et_name)
-settings.FILENAME = 'P007.tsv'
+settings.FILENAME = 'P008.tsv'
 
 # Participant ID and Project name for Lab
 pid = settings.FILENAME[:-4]
