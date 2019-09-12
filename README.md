@@ -13,6 +13,7 @@ https://github.com/marcus-nystrom/Titta.
 
 Titta is licensed under the Creative Commons Attribution 4.0 (CC BY 4.0) license.
 
+## To get started
 To get started on Windows:
 1. Download [PsychoPy (version 3.1.5 or higher](https://www.psychopy.org)
 1. Download and install [git](https://www.git-scm.com/downloads)
@@ -33,3 +34,10 @@ Alternatively:
 
 Tested with PsychoPy v. 3.1.5 on Windows 10 using Python 3.6. Ideally, make sure that the eye tracker is detected and works in 
 the [Tobii Eye Tracker Manager](https://www.tobiipro.com/product-listing/eye-tracker-manager/) before trying to use it with Titta.
+
+## Contents
+The toolbox consists of two main parts:
+### The `Titta` class
+The Titta class is the main workhorse of this toolbox, providing a wrapper around the Tobii Pro SDK, and a convenient graphical user interface (rendered through PsychoPy) for participant setup, calibration and validation. Only the `Titta.calibrate()` participant setup and calibration interface requires PsychoPy.
+### The `TalkToProLab` class
+The `TalkToProLab` class provides an implementation of [Tobii Pro Lab](https://www.tobiipro.com/product-listing/tobii-pro-lab/)'s External Presenter interface, allowing experiments to be created and run from Python with PsychoPy or other presentation methods, while recording, project management, recording playback/visualization and analysis can be performed in Tobii Pro Lab.
