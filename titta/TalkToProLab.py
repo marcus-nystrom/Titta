@@ -416,7 +416,7 @@ class TalkToProLab(threading.Thread):
         a = (media_id, aoi_name, aoi_color, str(key_frame_active).lower(),
                                 key_frame_seconds) + \
                                 tuple([x for b in key_frame_vertices for x in b]) + \
-                                (tag_name, group_name, tag_name, merge_mode)
+                                (group_name, tag_name, merge_mode)
                                 
         
                
@@ -435,9 +435,7 @@ class TalkToProLab(threading.Thread):
                         '''
                                                 ]
                                         }],
-                                "tags": [{
-                                            "tag_name": "%s"
-                                            },
+                                "tags": [
                                          {
                                             "group_name": "%s",
                                             "tag_name": "%s"
