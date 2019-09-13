@@ -444,7 +444,7 @@ class ProAntiSaccades(object):
                 if practice: 
                 
                     self.tracker.send_message('_'.join(['START_TRIAL_PRACTICE', task, str(sa), str(i)]))
-                    trialClock.reset()
+                    self.trialClock.reset()
                     t = 0
                     iSample = 0
                     nSampleToCollect = np.round(self.Fs * self.duration_peripheral_target / self.screen_refresh_rate) 
@@ -452,7 +452,7 @@ class ProAntiSaccades(object):
                     xy = np.empty([int(nSampleToCollect),2])
 
                     while t < (self.duration_peripheral_target / float(self.screen_refresh_rate)) and iSample < nSampleToCollect:
-                        t = trialClock.getTime()
+                        t = self.trialClock.getTime()
                         
                         # Get et sample and convert to pixels
                         et_sample = self.tracker.get_latest_sample()
@@ -629,8 +629,8 @@ def foreperiod_central_fixation(numel=1000, mu = 1.5, interval = [1, 3.5]):
 
 # Run experiment with pro lab integration?
 pro_lab_integration = True
-pro_lab_project_name = 'Project55'
-upload_stimuli = False                      # Do this only the first time you run
+pro_lab_project_name = 'Project56'
+upload_stimuli = True                      # Do this only the first time you run
 
 # Monitor/geometry 
 MY_MONITOR                  = 'testMonitor' # needs to exists in PsychoPy monitor center
@@ -725,7 +725,7 @@ except Exception as e:
 
  
 # Save data and close connection with eye trackers
-if not expInfo['dummy_mode']:
+if not dummy_mode:
     tracker.save_data()
 
 # Close PsychoPy window
