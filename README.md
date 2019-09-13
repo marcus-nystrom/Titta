@@ -32,6 +32,12 @@ Alternatively:
 1. Add the downloaded Titta-folder to path in PsychoPy (under file->preferences)
 1. Run read_me.py (first change the monitor settings and the eye tracker name in read_me.py).
 
+### To get started with the Tobii Pro Lab integration
+1. Open read_read_me_TalkToProLab.py in PsychoPy.
+1. Download [Tobii Pro Lab](https://www.tobiipro.com/product-listing/tobii-pro-lab/)
+1. Open a new External Presenter Project in Pro Lab. The Project name must be the same as the project name in read_read_me_TalkToProLab.py.
+1. In PsychoPy, run read_read_me_TalkToProLab.py (first change the monitor settings and the eye tracker name).
+
 Tested with PsychoPy v. 3.1.5 on Windows 10 using Python 3.6. Ideally, make sure that the eye tracker is detected and works in 
 the [Tobii Eye Tracker Manager](https://www.tobiipro.com/product-listing/eye-tracker-manager/) before trying to use it with Titta.
 
