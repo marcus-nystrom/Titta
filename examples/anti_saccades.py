@@ -66,14 +66,8 @@ class ProAntiSaccades(object):
         
         # Connect to Pro Lab and add participant
         if pro_lab_integration:
-            self.ttl = TalkToProLab() # Connect to Lab
-            
-            # Get project name and make sure the same project is open in Lab
-            assert project_name == self.ttl.get_project_info()['project_name'], "Wrong project opened in Lab. Should be {}".format(project_name)
-
-            # Make sure the participant not already exists in Lab
-            assert not self.ttl.find_participant(pid), "Participant {} already exists in Lab".format(pid)
-                
+            self.ttl = TalkToProLab(project_name) # Connect to Lab
+                          
             participant_info = self.ttl.add_participant(pid)
             
             if upload_media:
@@ -587,7 +581,8 @@ class ProAntiSaccades(object):
         if self.pro_lab_integration:   
             ## Stop recording
             self.ttl.stop_recording()
-            self.ttl.finalize_recording(self.rec['recording_id'])        
+            self.ttl.finalize_recording(self.rec['recording_id'])  
+            self.ttl.disconnect()
         
 #%%
 def foreperiod_central_fixation(numel=1000, mu = 1.5, interval = [1, 3.5]): 
@@ -629,7 +624,7 @@ def foreperiod_central_fixation(numel=1000, mu = 1.5, interval = [1, 3.5]):
 
 # Run experiment with pro lab integration?
 pro_lab_integration = True
-pro_lab_project_name = 'Project56'
+pro_lab_project_name = None                # or specify a specific project name
 upload_stimuli = True                      # Do this only the first time you run
 
 # Monitor/geometry 

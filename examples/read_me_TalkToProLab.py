@@ -35,11 +35,10 @@ dummy_mode = False
      
 # Change any of the default settings?
 settings = Titta.get_defaults(et_name)
-settings.FILENAME = 'P008.tsv'
+settings.FILENAME = '4.tsv'
 
 # Participant ID and Project name for Lab
 pid = settings.FILENAME[:-4]
-project_name = 'Project75'
 
 
 #%% Connect to eye tracker and calibrate
@@ -51,15 +50,7 @@ tracker.init()
 
 #%% Talk to Pro Lab  
 ttl = TalkToProLab()
-
-# Get project name and make sure the same project is open in Lab
-assert project_name == ttl.get_project_info()['project_name'], "Wrong project opened in Lab. Should be {}".format(project_name)
-
-
-# Make sure that the participant id does not already exist in Lab
-assert not ttl.find_participant(pid), "Participant {} already exists in Lab".format(pid)
 participant_info = ttl.add_participant(pid)
-    
     
 try:
     # Window set-up (this color will be used for calibration)
@@ -76,6 +67,8 @@ try:
     media_info = []                                        
     for im_name in im_names:
         img.append(visual.ImageStim(win, image = im_name))
+        
+        # Upload media (if not already uploaded)
         if not ttl.find_media(im_name):  
             media_info.append(ttl.upload_media(im_name, "image"))
     
@@ -161,3 +154,4 @@ win.close()
 #%% Finalize the recording
 # Finalize recording
 ttl.finalize_recording(rec['recording_id'])
+ttl.disconnect()
