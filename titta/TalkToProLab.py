@@ -30,19 +30,25 @@ class TalkToProLab(threading.Thread):
     """     
     
     #%%
-    def __init__(self):
+    def __init__(self, project_name=None):
         
         # Connect to servers
         self.clock_address = create_connection('ws://localhost:8080/clock?client_id=RemoteClient')
         self.external_presenter_address = create_connection('ws://localhost:8080/record/externalpresenter?client_id=RemoteClient')
         self.project_address = create_connection('ws://localhost:8080/project?client_id=RemoteClient')
+        
+        # Make sure the desired project is opened (if project name is given)
+        if project_name:
+            assert project_name == self.get_project_info()['project_name'], \
+            "Wrong project opened in Lab. Should be {}".format(project_name)
+
             
         # Start new thread that takes care of keeping the connection alive
         threading.Thread.__init__(self)
         self.__stop = False
         self.start()
 
-    #%%
+    #%%s
     def run(self):
         ''' Ping/pong the server every 15 s to keep the connection alive.
         Starts the thread that keeps the connection alive.
@@ -135,6 +141,9 @@ class TalkToProLab(threading.Thread):
         "status_code": 0,
         "participant_id": "2A86C895-F8B6-4786-8C4B-CB889C3449F1"}
         '''   
+        
+        # Make sure that the participant id does not already exist in Lab
+        assert not self.find_participant(participant_name), "Participant {} already exists in Lab".format(participant_name)
         
         response = self.send_message(self.project_address,
                                      {"operation": "AddParticipant",
@@ -330,14 +339,18 @@ class TalkToProLab(threading.Thread):
         assert response['status_code'] == 0, response
           
         # Send data to server (Should be sent in 64KB chunks)
-#        c_idx = np.arange(0, 64000, media_size)
-#        for i in np.arange(len(c_idx))[:-1]:
-#            self.project_address.send_binary(f[c_idx[i] : c_idx[i + 1]])
-        self.project_address.send_binary(f)        
+        c_idx = np.arange(0, media_size, 64000)
+        for i in np.arange(len(c_idx))[:-1]:
+            self.project_address.send_binary(f[c_idx[i] : (c_idx[i + 1])])    
+            
+        # Send last bits
+        self.project_address.send_binary(f[c_idx[-1] : media_size])  
+            
+      
+        # self.project_address.send_binary(f)        
                       
         # Wait for verification that all bytes were received by lab
         response =  json.loads(self.project_address.recv())
-        
         '''
         response:
         {
@@ -657,6 +670,14 @@ class TalkToProLab(threading.Thread):
         
         # Stop ping ponging to keep the connection alive
         self.__stop = True
+        
+    #%% 
+    def disconnect(self):
+        ''' Closes the websocket connection
+        '''
+        self.clock_address.close()
+        self.external_presenter_address.close()
+        self.project_address.close()
         
         
         
