@@ -19,6 +19,7 @@ end
 cd ..;  cd msgs_ophak;          dirs.msgsO      = cd;
 cd ..;
 cd ..;  cd function_library;    dirs.funclib    = cd;
+cd ..;  cd results;             dirs.out        = cd;
 cd ..;
 addpath(genpath(dirs.funclib));                 % add dirs to path
 
@@ -48,7 +49,10 @@ if 0
     nfiles  = length(files);
 end
 
-lastRead= '';
+% create textfile and open for writing fixations
+fid = fopen(fullfile(dirs.out,'allfixations.txt'),'w');
+fprintf(fid,'File\tFixStart\tFixEnd\tFixDur\tXPos\tYPos\tRMSxy\tBCEA\tFixRangeX\tFixRangeY\n');
+
 for p=1:nfiles
     fprintf('%s:\n',files(p).fname);
     % load data
@@ -100,6 +104,11 @@ for p=1:nfiles
     dat.fix         = fix;
     dat.I2MCopt     = opt;
     save(fullfile(dirs.fix,[files(p).fname '.mat']),'dat');
+    
+    % also store to text file
+    for f=1:numel(fix.start)
+        fprintf(fid,'%s\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\n',files(p).fname, [fix.startT(f) fix.endT(f) fix.dur(f) fix.xpos(f) fix.ypos(f) fix.RMSxy(f), fix.BCEA(f), fix.fixRangeX(f), fix.fixRangeY(f)]);
+    end
 end
 
 rmpath(genpath(dirs.funclib));                  % cleanup path
