@@ -1,0 +1,1 @@
+Download I2MC from https://github.com/royhessels/I2MC, and extract in this folder
