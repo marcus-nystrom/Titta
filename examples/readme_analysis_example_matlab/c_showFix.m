@@ -38,7 +38,6 @@ if 0
 end
 
 fhndl   = -1;
-lastRead= '';
 for p=1:nfiles
     % load fix data
     dat  = load(fullfile(dirs.fix,[files(p).fname '.mat'])); dat = dat.dat;
