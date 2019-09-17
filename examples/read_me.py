@@ -29,7 +29,8 @@ win = visual.Window(monitor = mon, fullscr = FULLSCREEN,
                     screen=1, size=SCREEN_RES, units = 'deg')
 
 fixation_point = helpers.MyDot2(win)
-image = visual.ImageStim(win, image='im1.jpeg', units='norm', size = (2, 2))
+im_name = 'im1.jpeg'
+image = visual.ImageStim(win, image=im_name, units='norm', size = (2, 2))
 
 #%% ET settings
 et_name = 'Tobii Pro Spectrum' 
@@ -62,15 +63,15 @@ tracker.start_recording(gaze_data=True, store_data=True)
 # Present fixation dot and wait for one second
 fixation_point.draw()
 t = win.flip()
-tracker.send_message('fixation target onset')
+tracker.send_message('fix on')
 core.wait(1)
-tracker.send_message('fixation target offset')
+tracker.send_message('fix off')
 
 image.draw()
 t = win.flip()
-tracker.send_message('image onset')
+tracker.send_message(''.join(['stim on: ', im_name]))
 core.wait(3)
-tracker.send_message('image offset')
+tracker.send_message(''.join(['stim off: ', im_name]))
 #
 win.flip()
 tracker.stop_recording(gaze_data=True)
