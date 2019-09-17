@@ -30,24 +30,29 @@ class TalkToProLab(threading.Thread):
     """     
     
     #%%
-    def __init__(self, project_name=None):
+    def __init__(self, project_name=None, dummy_mode=False):
         
-        # Connect to servers
-        self.clock_address = create_connection('ws://localhost:8080/clock?client_id=RemoteClient')
-        self.external_presenter_address = create_connection('ws://localhost:8080/record/externalpresenter?client_id=RemoteClient')
-        self.project_address = create_connection('ws://localhost:8080/project?client_id=RemoteClient')
-        
-        # Make sure the desired project is opened (if project name is given)
-        if project_name:
-            assert project_name == self.get_project_info()['project_name'], \
-            "Wrong project opened in Lab. Should be {}".format(project_name)
-
+        if dummy_mode:
+            import TalkToProLab_dummy
+            self.__class__ = TalkToProLab_dummy.TalkToProLab_dummy
+            self.__class__.__init__(self) 
+        else:
+            # Connect to servers
+            self.clock_address = create_connection('ws://localhost:8080/clock?client_id=RemoteClient')
+            self.external_presenter_address = create_connection('ws://localhost:8080/record/externalpresenter?client_id=RemoteClient')
+            self.project_address = create_connection('ws://localhost:8080/project?client_id=RemoteClient')
             
-        # Start new thread that takes care of keeping the connection alive
-        threading.Thread.__init__(self)
-        self.__stop = False
-        self.start()
-
+            # Make sure the desired project is opened (if project name is given)
+            if project_name:
+                assert project_name == self.get_project_info()['project_name'], \
+                "Wrong project opened in Lab. Should be {}".format(project_name)
+    
+                
+            # Start new thread that takes care of keeping the connection alive
+            threading.Thread.__init__(self)
+            self.__stop = False
+            self.start()
+ 
     #%%s
     def run(self):
         ''' Ping/pong the server every 15 s to keep the connection alive.

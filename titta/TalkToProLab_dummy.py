@@ -6,21 +6,12 @@ Created on Thu Dec  6 14:37:06 2018
 ToDo: upload information in chunks of 64 KB
 """
 
-# import relevant libs
-from websocket import create_connection
-import json
-import time
-import numpy as np
-
-    
-
-
-class TalkToProLab(object):
+class TalkToProLab_dummy(object):
     """ A dummy class for talking to Tobii Pro Lab. 
     """     
     
     #%%
-    def __init__(self, project_name=None):
+    def __init__(self):
         
         print('Dummy class init')
 
