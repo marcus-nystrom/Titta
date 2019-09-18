@@ -7,7 +7,7 @@ Created on Thu Jun 01 14:11:57 2017
 
 from psychopy import visual, core, event
 import time
-import helpers_tobii as helpers
+from titta import helpers_tobii as helpers
 from threading import Thread
 import numpy as np
 

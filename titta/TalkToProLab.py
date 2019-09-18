@@ -33,7 +33,7 @@ class TalkToProLab(threading.Thread):
     def __init__(self, project_name=None, dummy_mode=False):
         
         if dummy_mode:
-            import TalkToProLab_dummy
+            from titta import TalkToProLab_dummy
             self.__class__ = TalkToProLab_dummy.TalkToProLab_dummy
             self.__class__.__init__(self) 
         else:

@@ -56,7 +56,7 @@ class TalkToProLab_dummy(object):
         
         print('get_time_stamp')
 
-        return {"operation": "GetTimestamp", "status_code": 0, "timestamp": "dummy_ts"}  
+        return {"operation": "GetTimestamp", "status_code": 0, "timestamp": "10000"}  
     #%%
     def add_participant(self, participant_name):
         ''' Project data API
@@ -252,8 +252,12 @@ class TalkToProLab_dummy(object):
         
         print('upload_media')
         
-        return {"operation": "UploadMedia",
-                "status_code": 0}
+        return {
+                "operation": "UploadMedia",
+                "status_code": 0,
+                "md5_checksum": "dummy_md5_checksum",
+                "media_id": "dummy_media_id"
+        }
           
     #%% TODO: remove?
     def upload_media_abort(self):

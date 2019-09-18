@@ -32,16 +32,18 @@ et_name = 'Tobii Pro Spectrum'
 # et_name = 'Tobii Pro Nano' 
 
 dummy_mode = False
+project_name = None # None or a project name that is open in Pro Lab.
+                    # If None, the currently opened project is used.
      
 # Change any of the default settings?
 settings = Titta.get_defaults(et_name)
-settings.FILENAME = '4.tsv'
+settings.FILENAME = '09.tsv'
 
 # Participant ID and Project name for Lab
 pid = settings.FILENAME[:-4]
 
 
-#%% Connect to eye tracker and calibrate
+#%% Connect to eye tracker and calibrate (you need to do this outside of lab)
 tracker = Titta.Connect(settings)
 if dummy_mode:
     tracker.set_dummy_mode()
@@ -49,7 +51,8 @@ tracker.init()
    
 
 #%% Talk to Pro Lab  
-ttl = TalkToProLab()
+ttl = TalkToProLab(project_name=project_name,
+                   dummy_mode=dummy_mode)
 participant_info = ttl.add_participant(pid)
     
 try:

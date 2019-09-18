@@ -467,7 +467,7 @@ class myTobii(object):
     #%% 
     def set_dummy_mode(self):
         # Set current class to Dummy class
-        import Tobii_dummy
+        from titta import Tobii_dummy
         self.__class__ = Tobii_dummy.Connect
         self.__class__.__init__(self)     
 		
