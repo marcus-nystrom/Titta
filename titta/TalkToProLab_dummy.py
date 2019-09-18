@@ -39,7 +39,7 @@ class TalkToProLab_dummy(object):
         '''
         print('get_api_version')
 
-        return None        
+        return {'operation': 'GetApiVersion', 'status_code': 0, 'version': 'dummy'}        
         
     #%%          
     def get_time_stamp(self):
@@ -57,7 +57,7 @@ class TalkToProLab_dummy(object):
         
         print('get_time_stamp')
 
-        return None  
+        return {"operation": "GetTimestamp", "status_code": 0, "timestamp": "dummy_ts"}  
     #%%
     def add_participant(self, participant_name):
         ''' Project data API
@@ -73,7 +73,8 @@ class TalkToProLab_dummy(object):
         
         print('add_participant')
 
-        return None    
+        return {"operation": "AddParticipant", "status_code": 0, 
+                "participant_id": "dummy_participant_id"}    
         
     #%%
     def get_project_info(self):
@@ -89,7 +90,10 @@ class TalkToProLab_dummy(object):
         '''    
         print('get_project_info')
 
-        return None       
+        return {"operation": "GetProjectInfo",
+                "status_code": 0,
+                "project_id": "dummy_project_id",
+                "project_name": "dummy_name"}       
     
     #%%
     def find_participant(self, participant_name):
@@ -128,7 +132,14 @@ class TalkToProLab_dummy(object):
         
         print('find_participant')
         
-        return None          
+        return {
+                "operation": "ListParticipants",
+                "status_code": 0,
+                "participant_list": [{
+                        "participant_name": "dummy_participant",
+                        "participant_id": "dummy_participant_id"
+                        }]
+                }          
     
     #%% 
     def list_media(self):
@@ -168,7 +179,19 @@ class TalkToProLab_dummy(object):
         
         print('list_media')
         
-        return None   
+        return {
+                "operation": "ListMedia",
+                "status_code": 0,
+                "media_list": [{
+                    "media_name": "dummy_media_name_1",
+                    "media_id": "dummy_media_id_1",
+                    "mime_type": "image/jpeg",
+                    "media_size": 3536263,
+                    "width": 2512,
+                    "height": 1884,
+                    "duration": 0,
+                                }]
+                }     
        
         
     #%%
@@ -184,7 +207,7 @@ class TalkToProLab_dummy(object):
         
         print('find_media')
         
-        return None
+        return False
         
     #%%
     def upload_media(self, media_name, media_type):
@@ -230,7 +253,8 @@ class TalkToProLab_dummy(object):
         
         print('upload_media')
         
-        return None
+        return {"operation": "UploadMedia",
+                "status_code": 0}
           
     #%% TODO: remove?
     def upload_media_abort(self):
@@ -245,7 +269,8 @@ class TalkToProLab_dummy(object):
                 
         print('upload_media_abort')
         
-        return None
+        return {"operation": "UploadMediaAbort",
+                "status_code": 0}
  
     #%%
     def add_aois_to_image(self, media_id, aoi_name, aoi_color, 
@@ -282,7 +307,9 @@ class TalkToProLab_dummy(object):
         
         print('add_aois_to_image')
         
-        return None
+        return {"operation": "sendAois",
+                "imported_aoi_count": 1
+                } 
     
    #%%
     def add_aois_to_video(self, media_id, aoi_name, aoi_color, 
@@ -337,7 +364,11 @@ class TalkToProLab_dummy(object):
 		
         print('get_state')
         
-        return None
+        return {
+                "operation": "GetState",
+                "status_code": 0,
+                "state": "ready"
+                }
 
     #%%           
     def start_recording(self, recording_name, participant_id, screen_width,
@@ -363,7 +394,9 @@ class TalkToProLab_dummy(object):
         
         print('start_recording')
         
-        return None
+        return {"operation": "StartRecording",
+                "status_code": 0,
+                "recording_id": "dummy_recording_id"}
     #%%           
     def stop_recording(self):
         ''' External presenter API     
@@ -378,7 +411,8 @@ class TalkToProLab_dummy(object):
         
         print('stop_recording')
         
-        return None
+        return {"operation": "StopRecording",
+                "status_code": 0}
         
     #%%           
     def send_stimulus_event(self, recording_id, start_timestamp, 
@@ -420,7 +454,11 @@ class TalkToProLab_dummy(object):
         response:
         {"operation": "SendCustomEvent",
         "status_code": 0}
-        '''          
+        
+        '''         
+        
+        print('send_custom_event')
+        
     #%%           
     def finalize_recording(self, recording_id):
         ''' Finalizes the recording and makes it ready for analysis in the 
@@ -443,9 +481,7 @@ class TalkToProLab_dummy(object):
         '''             
         
         print('finalize_recording')
-        
-        return None
-        
+                
         
     #%% 
     def disconnect(self):
