@@ -6,6 +6,15 @@ Created on Thu Dec  6 14:37:06 2018
 ToDo: upload information in chunks of 64 KB
 """
 
+status_codes = {0: 'Operation successful',
+                100: 'Bad request',
+                101: 'Invalid parameter',
+                102: 'Operation was unsuccessful',
+                103: 'Operation cannot be executed in current state',
+                104: 'Access to the service is forbidden',
+                105: 'Authorization during connection to a service has not been provided',
+                201: 'Recording finalization failed'}
+
 class TalkToProLab_dummy(object):
     """ A dummy class for talking to Tobii Pro Lab. 
     """     
@@ -14,16 +23,6 @@ class TalkToProLab_dummy(object):
     def __init__(self):
         
         print('Dummy class init')
-
-            
-    #%% 
-    def send_message(self, address, msg_dict, to_json=True):
-        ''' Send message to server and return response
-        '''
-        
-        print('send_message')
-    
-        return None
 
     #%%
     def get_api_version(self):
@@ -488,8 +487,6 @@ class TalkToProLab_dummy(object):
         ''' Closes the websocket connection
         '''
         print('disconnect')
-        
-        return None
-        
+                
         
         
