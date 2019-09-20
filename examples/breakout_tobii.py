@@ -11,7 +11,7 @@
  
 import math
 import numpy as np
-from psychopy import core, event, misc, visual, monitors, data#, gui
+from psychopy import core, event, misc, visual, monitors, data, gui
 import pandas as pd
 import os, sys
 
@@ -35,80 +35,69 @@ mon.setWidth(SCREEN_WIDTH)          # Width of screen (cm)
 mon.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
 mon.setSizePix(SCREEN_RES)
 
-# Window set-up (this color will be used for calibration)
-win = visual.Window(monitor = mon, fullscr = FULLSCREEN,
-                    screen=1, size=SCREEN_RES, units = 'pix')
-#%%
+
+#%% Connect to eye tracker and open PsychoPy window
 # Get exp settings
-settings = Titta.get_defaults('IS4_Large_Peripheral')
+settings = Titta.get_defaults('Tobii Pro Spectrum')
              
 # Show dialogue box
 info = {'Enter your name':'your name', 'Eye tracking':[False, True]}
-info = {'Enter your name':'your name', 'Eye tracking':True}
+# info = {'Enter your name':'your name', 'Eye tracking':True}
 
-# dictDlg = gui.DlgFromDict(dictionary=info,
-#         title='Breakout')
-# if dictDlg.OK:
-#     print(info)
-# else:
-#     print('User Cancelled')
-#     core.quit()
+dictDlg = gui.DlgFromDict(dictionary=info,
+        title='Breakout')
+if dictDlg.OK:
+    print(info)
+else:
+    print('User Cancelled')
+    core.quit()
     
 info['dateStr']= data.getDateStr()    
 player_name = '_'.join([info['Enter your name'], info['dateStr']])
-
-# Window set-up (the color will be used for calibration)
-#win = visual.Window(monitor = mon, screen = 2, 
-#                    units = 'pix', fullscr = True,
-#                    allowGUI = False)
-
-core.wait(1) 
-mouse = event.Mouse(win=win)
-mouse.setVisible(False)
-
-instruction_text = visual.TextStim(win,text='', wrapWidth = 600, height = 20)  
-#instruction_text.pos = (1680/2 - 100, 1050/2 - 30)
 
                     
 c = core.Clock()
 my_clock = core.Clock()
          
-if info['Eye tracking']:
-    eye_tracking = True 
+if info['Eye tracking'] == True:
+    dummy_mode = False 
 else:
-    eye_tracking = False
+    dummy_mode = True
 
-### Setup a PsychoPy window for calibration
-if eye_tracking:
-  
-    # Change any of the default dettings?
-    settings.FILENAME = 'my_test.tsv'
+# Change any of the default dettings?
+settings.FILENAME = 'my_test.tsv'
+
+# Connect to eye tracker
+tracker = Titta.Connect(settings) 
+print(dummy_mode)
+if dummy_mode:
+    tracker.set_dummy_mode()
+tracker.init()
+
+# Window set-up (this color will be used for calibration)
+win = visual.Window(monitor = mon, fullscr = FULLSCREEN,
+                    screen=1, size=SCREEN_RES, units = 'pix')
+
+# mouse = event.Mouse(win=win)
+# mouse.setVisible(False)
+instruction_text = visual.TextStim(win,text='', wrapWidth = 600, height = 20)     
     
-    # Connect to eye tracker
-    tracker = Titta.Connect(settings) 
-    tracker.init()
+tracker.calibrate(win)
     
-    tracker.calibrate(win)
-        
-    # Start eye tracker
-    tracker.start_recording(gaze_data=True, 
-                                sync_data=False,
-                                image_data=True,
-                                stream_error_data=False,
-                                store_data=False)
-        
-    tracker.start_sample_buffer(sample_buffer_length=10)
-    core.wait(1)
+# Start eye tracker
+tracker.start_recording(gaze_data=True,
+                        store_data=False)
+    
+tracker.start_sample_buffer(sample_buffer_length=10)
 
 # Define some colors
 black = (0, 0, 0)
 white = (1, 1, 1)
 blue = (0, 0, 1)
  
-
 screen_size = SCREEN_RES
 game_rect = visual.Rect(win, SCREEN_RES[0], SCREEN_RES[1], units = 'pix')
-mouse.setPos((0, -screen_size[1]/2 + 100))
+# mouse.setPos((0, -screen_size[1]/2 + 100))
 
 # information about block position
 nBlockRows = 3
@@ -119,7 +108,7 @@ blockcount = 16.0
 block_width = screen_size[0] / blockcount
 block_height = screen_size[1] / 20.0
 
-
+#%%
 def generate_blocks():
     blocks = []
     top = screen_size[1] / 2.0 - block_height * 2
@@ -133,11 +122,10 @@ def generate_blocks():
 #            block.image.draw()
         # Move the top of the next row down
         top -= block_height - 2
-        print(top)
         
     return blocks
  
- 
+#%% 
 class Block():
     """This class represents each block that will get knocked out by the ball
     """
@@ -223,7 +211,7 @@ class Ball():
             return True
         else:
             return False
- 
+#%% 
 class Player():
     """ This class represents the bar at the bottom that the
     player controls. """
@@ -244,26 +232,20 @@ class Player():
   
     def update(self):
         """ Update the player position. """
+                    
+        # Peek in the eye tracker buffer
+        data = tracker.peek_buffer()
         
-        if eye_tracking:
-            
-            # Peek in the eye tracker buffer
-            data = tracker.peek_buffer()
-            
-            # Convert from Tobii coordinate system to ssv 
-            lx = [d['left_gaze_point_on_display_area'][0] for d in data]
-            rx = [d['right_gaze_point_on_display_area'][0] for d in data]
-#            print(lx, rx)
+        # Convert from Tobii coordinate system to ssv 
+        lx = [d['left_gaze_point_on_display_area'][0] for d in data]
+        rx = [d['right_gaze_point_on_display_area'][0] for d in data]
 
-            # Use the average position (i.e., lowpass filtered)
-            pos = (np.mean(rx) + np.mean(lx)) / 2.0 
+        # Use the average position (i.e., lowpass filtered)
+        pos = np.nanmean([np.nanmean(rx), np.nanmean(lx)])
+        if not dummy_mode:
             pos = helpers.tobii2pix(np.array([[pos, pos]]), mon)[:, 0]
             pos = pos - screen_size[0] / 2
             
-
-        else:
-            # Get where the mouse is
-            pos = mouse.getPos()[0]
 
         # Set the left side of the player bar to the mouse/gaze position
         if pos > (screen_size[0] / 2 - self.width/2.0):
@@ -276,7 +258,7 @@ class Player():
         # Update position of player
         self.image.pos = (pos, self.fixed_y)
 
- 
+#%% 
 # Create the player paddle object
 player = Player()
 ball = Ball()
@@ -382,10 +364,9 @@ try:
     core.wait(3)
 
     # Stop eye tracker and clean up 
-    if eye_tracking:
-        tracker.stop_sample_buffer()
-        tracker.stop_recording()
-        tracker.de_init()
+    tracker.stop_sample_buffer()
+    tracker.stop_recording(gaze_data=True)
+    tracker.de_init()
 
     # Write results to data frame
     df_player = pd.DataFrame({'Name':[player_name], 'Score':[score]})
@@ -394,7 +375,7 @@ try:
     with open('highscore.csv', 'a') as f:
         df_player.to_csv(f, sep='\t', header=False)
 except Exception as e: 
-    mouse.setVisible (True)
+    # mouse.setVisible (True)
     win.close()
     print(e)
 
