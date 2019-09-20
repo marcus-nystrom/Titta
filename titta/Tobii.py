@@ -171,11 +171,12 @@ class myTobii(object):
         if Fs != self.settings.SAMPLING_RATE:
             self.set_sample_rate(self.settings.SAMPLING_RATE)
             
-        # Set tracking mode
-        assert np.sum([self.settings.TRACKING_MODE in m for m in \
-                       ['human', 'macaque', 'Default']]) > 0, \
-            'The given tracking mode is not allowed. Try [human] or [macaque] \
-            for the Tobii Pro Spectrum, otherwise [Default]'
+        # Assert that the selected tracking mode is supported
+        assert np.any([tracking_mode == self.settings.TRACKING_MODE \
+                        for tracking_mode in self.get_all_eye_tracking_modes()]), \
+            "The given tracking mode is not supported. \
+            Supported are: {}".format(self.tracker.get_all_eye_tracking_modes())
+            
         try:
             print('Current tracking mode: {}'.format(self.get_eye_tracking_mode()))
             self.set_eye_tracking_mode(self.settings.TRACKING_MODE)
@@ -1979,6 +1980,12 @@ class myTobii(object):
         '''
         return self.tracker.get_gaze_output_frequency()
     
+    #%% 
+    def get_all_eye_tracking_modes(self):
+        ''' Gets a tuple of eye tracking modes supported by the eye tracker.
+        '''
+        
+        return self.tracker.get_all_eye_tracking_modes()     
     #%% 
     def get_eye_tracking_mode(self):
         ''' Gets the eye tracking mode. 
