@@ -23,14 +23,8 @@ mon = monitors.Monitor(MY_MONITOR)  # Defined in defaults file
 mon.setWidth(SCREEN_WIDTH)          # Width of screen (cm)
 mon.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
 mon.setSizePix(SCREEN_RES)
-
-# Window set-up (this color will be used for calibration)
-win = visual.Window(monitor = mon, fullscr = FULLSCREEN,
-                    screen=1, size=SCREEN_RES, units = 'deg')
-
-fixation_point = helpers.MyDot2(win)
 im_name = 'im1.jpeg'
-image = visual.ImageStim(win, image=im_name, units='norm', size = (2, 2))
+
 
 #%% ET settings
 et_name = 'Tobii Pro Spectrum' 
@@ -49,6 +43,13 @@ tracker = Titta.Connect(settings)
 if dummy_mode:
     tracker.set_dummy_mode()
 tracker.init()
+
+# Window set-up (this color will be used for calibration)
+win = visual.Window(monitor = mon, fullscr = FULLSCREEN,
+                    screen=1, size=SCREEN_RES, units = 'deg')
+
+fixation_point = helpers.MyDot2(win)
+image = visual.ImageStim(win, image=im_name, units='norm', size = (2, 2))
    
 # Calibrate 
 if bimonocular_calibration:
