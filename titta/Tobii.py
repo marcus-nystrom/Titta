@@ -51,19 +51,16 @@ class myTobii(object):
             settings.RECORD_EYE_IMAGES_DURING_CALIBRATION = False
 
         self.settings = settings
+		
+        # Remove empty spaces (if any are given)
+        self.settings.TRACKER_ADDRESS = self.settings.TRACKER_ADDRESS.replace(" ", "")        
         
-        # Initiate direct access to barebone SDK functionallity
-        self.rawSDK = rawSDK()
         
     #%%  
     def init(self):
         ''' Apply settings and check capabilities
         '''        
         
-        self.filename = self.settings.FILENAME
-		
-        # Remove empty spaces (if any are given)
-        self.settings.TRACKER_ADDRESS = self.settings.TRACKER_ADDRESS.replace(" ", "")
         
         # If no tracker address is give, find it automatically
         k = 0
@@ -90,12 +87,6 @@ class myTobii(object):
             else:
                 raise Exception('The desired eye tracker not found. \
                                 These are available: ' + ' '.join([str(m.model) for m in ets]))                
-			
-        # Make functions from the EyeTracker object available            
-#        self.tracker = tr.EyeTracker(self.settings.TRACKER_ADDRESS) # 
-        self.rawTracker = rawTracker(self.settings.TRACKER_ADDRESS)
-#        print(self.rawTracker)
-        self.tracker = self.rawTracker.tracker
       
         if self.settings.PACING_INTERVAL < 0.8:
             raise Exception('Calibration pacing interval must be \
@@ -165,6 +156,10 @@ class myTobii(object):
         # are put into the buffer or not
         self.__buffer_active = False 
         self.buf = []        
+        
+        # Initiate direct access to barebone SDK functionallity
+        self.rawTracker = rawTracker(self.settings.TRACKER_ADDRESS)
+        self.tracker = self.rawTracker.tracker        
                 
         # set sampling frequency
         Fs = self.get_sample_rate()
@@ -173,13 +168,13 @@ class myTobii(object):
             
         # Assert that the selected tracking mode is supported
         assert np.any([tracking_mode == self.settings.TRACKING_MODE \
-                        for tracking_mode in self.get_all_eye_tracking_modes()]), \
+                        for tracking_mode in self.tracker.get_all_eye_tracking_modes()]), \
             "The given tracking mode is not supported. \
             Supported are: {}".format(self.tracker.get_all_eye_tracking_modes())
             
         try:
-            print('Current tracking mode: {}'.format(self.get_eye_tracking_mode()))
-            self.set_eye_tracking_mode(self.settings.TRACKING_MODE)
+            print('Current tracking mode: {}'.format(self.tracker.get_eye_tracking_mode()))
+            self.tracker.set_eye_tracking_mode(self.settings.TRACKING_MODE)
         except NameError:
             print('Tracking mode not found: {}'.format(self.settings.TRACKING_MODE))
         
@@ -1979,26 +1974,6 @@ class myTobii(object):
         '''Gets the sample rate
         '''
         return self.tracker.get_gaze_output_frequency()
-    
-    #%% 
-    def get_all_eye_tracking_modes(self):
-        ''' Gets a tuple of eye tracking modes supported by the eye tracker.
-        '''
-        
-        return self.tracker.get_all_eye_tracking_modes()     
-    #%% 
-    def get_eye_tracking_mode(self):
-        ''' Gets the eye tracking mode. 
-        '''
-        
-        return self.tracker.get_eye_tracking_mode()    
-    #%% 
-    def set_eye_tracking_mode(self, mode):
-        ''' Sets the eye tracking mode. In most eye trackers, this defaults
-        to 'Default'. In the Spectrum, the choices are ['Human', 'Macaque']
-        '''
-        
-        self.tracker.set_eye_tracking_mode(mode)
 
     #%%
     def save_data(self, *argv):
@@ -2027,7 +2002,7 @@ class myTobii(object):
         # df_msg.to_csv(self.filename[:-4] + '_msg.tsv', sep='\t')            
         
         # Dump other collected information to file
-        with open(self.filename[:-4] + '.pkl','wb') as fp:
+        with open(self.settings.FILENAME[:-4] + '.pkl','wb') as fp:
             pickle.dump(self.gaze_data_container, fp)
             pickle.dump(self.msg_container, fp)            
             pickle.dump(self.external_signal_container, fp)
@@ -2049,21 +2024,7 @@ class myTobii(object):
     def de_init(self):
         '''
         '''
-        
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-class rawSDK(object):
-    ''' Access Tobii SDK’s EyeTrackingOperations instance to call 
-    its functions directly
-    '''
-        
-    def __init__(self):
-        pass
-        
-    def find_all_eye_trackers(self):
-        return tr.find_all_eye_trackers()
-    
-    def get_system_time_stamp(self):
-        return tr.get_system_time_stamp()    
+         
     
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 class rawTracker(object):
@@ -2151,13 +2112,7 @@ class rawTracker(object):
             Float with the current gaze output frequency.
         '''
         return self.tracker.get_gaze_output_frequency()
-    
-    def get_hmd_lens_configuration(self):
-        ''' Gets the current lens configuration of the HMD based eye tracker.
-        The lens configuration describes how the lenses of the HMD device are 
-        positioned.
-        '''
-        return self.tracker.get_hmd_lens_configuration()
+
     
     def get_track_box(self):
         ''' Gets the track box of the eye tracker.
@@ -2197,25 +2152,17 @@ class rawTracker(object):
             print("This eye tracker doesn't support changing the device name.")
         except tr.EyeTrackerLicenseError:
             print("You need a higher level license to change the device name.")        
-       
-    def set_display_area(self):
-        return self.tracker.set_display_area
     
-    def set_eye_tracking_mode(self):
-        return self.tracker.set_eye_tracking_mode
+    def set_eye_tracking_mode(self, mode):
+        '''Sets the eye tracking mode of the eye tracker.
+        '''
+        return self.tracker.set_eye_tracking_mode(mode)
     
-    def set_gaze_output_frequency(self):
-        return self.tracker.set_gaze_output_frequency
-    
-    def set_hmd_lens_configuration(self):
-        return self.tracker.set_hmd_lens_configuration
-    
-    def subscribe_to(self):
-        return self.tracker.subscribe_to
-    
-    def unsubscribe_from(self):
-        return self.tracker.unsubscribe_from
-    
+    def set_gaze_output_frequency(self, Fs):
+        ''' Sets the gaze output frequency of the eye tracker.
+        '''
+        return self.tracker.set_gaze_output_frequency(Fs)
+
     #%% DATA FIELDS
     
     def address(self):

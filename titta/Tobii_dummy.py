@@ -109,10 +109,8 @@ class Connect(Thread):
         '''
         x, y = self.mouse.getPos()
         
-        self.sample['left_gaze_point_on_display_area_x'] = x
-        self.sample['left_gaze_point_on_display_area_y'] = y
-        self.sample['right_gaze_point_on_display_area_x'] = x
-        self.sample['right_gaze_point_on_display_area_y'] = y
+        self.sample['left_gaze_point_on_display_area'] = (x, y)
+        self.sample['right_gaze_point_on_display_area'] = (x, y)
         
         return self.sample
         
