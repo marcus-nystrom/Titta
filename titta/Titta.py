@@ -19,6 +19,22 @@ def get_defaults(et_name):
         settings.TRACKING_MODE = 'human'
     elif et_name == 'Tobii Pro Nano':
         settings.SAMPLING_RATE = 60
+    elif et_name == 'Tobii TX300':
+        settings.SAMPLING_RATE = 300
+    elif et_name == 'Tobii T60 XL':
+        settings.SAMPLING_RATE = 60
+    elif et_name == 'Tobii Pro X3-120 EPU':
+        settings.SAMPLING_RATE = 120
+    elif et_name == 'X2-60_Compact':
+        settings.SAMPLING_RATE = 60
+    elif et_name == 'Tobii X60':
+        settings.SAMPLING_RATE = 60     
+    elif et_name == 'Tobii X120':
+        settings.SAMPLING_RATE = 120   
+    elif et_name == 'Tobii T60':
+        settings.SAMPLING_RATE = 60   
+    elif et_name == 'Tobii T120':
+        settings.SAMPLING_RATE = 120           
     else:
         print('eye tracker type not supported')
         core.quit()
