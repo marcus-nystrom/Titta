@@ -1983,24 +1983,6 @@ class myTobii(object):
         *argv refers to additional information you want to add to the same pickle
         '''
         
-        # # Save gaze data. If 32 bit Python version, Pandas throws a Memory error if
-        # # gaze_data_container > 2 GB. Therefore the csv-module is used instead.
-        # if sys.version_info >= (3,0,0):
-        #     df = pd.DataFrame(self.gaze_data_container, columns=self.header)
-        #     df.to_csv(self.filename[:-4] + '.tsv', sep='\t')
-        # else:        
-        #     print(sys.getsizeof(self.gaze_data_container))
-        #     with open(self.filename[:-4] + '.tsv', 'wb') as csv_file:
-        #         csv_writer = csv.writer(csv_file, delimiter='\t')
-        #         csv_writer.writerow(self.header)
-        #         for row in self.gaze_data_container:
-        #             csv_writer.writerow(row)          
-            
-        # # Save messages
-        # df_msg = pd.DataFrame(self.msg_container,  columns = ['system_time_stamp', 
-        #                                                       'msg'])
-        # df_msg.to_csv(self.filename[:-4] + '_msg.tsv', sep='\t')            
-        
         # Dump other collected information to file
         with open(self.settings.FILENAME[:-4] + '.pkl','wb') as fp:
             pickle.dump(self.gaze_data_container, fp)
@@ -2011,6 +1993,7 @@ class myTobii(object):
             pickle.dump(self.image_data_container, fp)
             pickle.dump(self.calibration_history(), fp)
             pickle.dump(self.system_info(), fp)
+            pickle.dump(self.settings, fp)
             python_version = '.'.join([str(sys.version_info[0]), 
                                   str(sys.version_info[1]),
                                   str(sys.version_info[2])])
