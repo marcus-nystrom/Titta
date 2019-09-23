@@ -24,15 +24,19 @@ EYE_IMAGE_SIZE_PIX = (175, 496)
 EYE_IMAGE_SIZE_PIX_FULL_FRAME = (512, 640)
     
 f = open("testfile.pkl", 'rb')
-gaze_data = pickle.load(f)
-msg_data = pickle.load(f)
-info = pickle.load(f)
+gaze_data_container = pickle.load(f)
+msg_container = pickle.load(f)
+external_signal_container = pickle.load(f)
 sync_data_container = pickle.load(f)
+stream_errors_container = pickle.load(f)
 image_data_container = pickle.load(f)
 calibration_history = pickle.load(f)
 system_info = pickle.load(f)
+settings = pickle.load(f)
+python_version = pickle.load(f)
 f.close()
-
+            
+            
 #%% Save eye images to file
 list_of_images = []
 for i, eye_image in enumerate(image_data_container):
@@ -63,20 +67,4 @@ for i, eye_image in enumerate(image_data_container):
     temp_im = StringIO(eye_image['image_data'])
     tim = Image.open(temp_im)
     tim.save(os.getcwd() + os.sep + 'images' + os.sep + str(eye_image['system_time_stamp']) + ".gif","GIF")
-#    nparr = np.array(list(tim.getdata()))
-#        
-#    # Full frame or zoomed in image
-#    if eye_image['image_type'] == 'eye_image_type_full':
-#        eye_image_size = EYE_IMAGE_SIZE_PIX_FULL_FRAME
-#    else:
-#        eye_image_size = EYE_IMAGE_SIZE_PIX
-#            #tim.save("temp_small.gif","GIF")  
-#            
-#    nparr = np.reshape(nparr, eye_image_size)
-##    list_of_images.append(np.expand_dims(nparr, axis=2))
-#    list_of_images.append(tim)
-    
-#    plt.imshow(nparr)
-    
-#clip = mpy.ImageSequenceClip(os.getcwd() + os.sep + 'images' , fps=5)   
-#clip.preview(fps=25) 
+
