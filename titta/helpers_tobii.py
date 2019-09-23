@@ -7,7 +7,7 @@ Created on Tue Jun 06 16:20:36 2017
 from psychopy import visual
 from collections import deque
 import numpy as np
-from psychopy.tools.monitorunittools import cm2deg
+from psychopy.tools.monitorunittools import cm2deg, deg2pix
 import copy
 from matplotlib.patches import Ellipse
 import sys
@@ -41,12 +41,14 @@ def norm2tobii(pos):
     y = -1 in PsychoPy coordinates means bottom of screen
     Args:   pos: N x 2 array with positions
     '''
-    
+    pos_temp = copy.deepcopy(pos) # To avoid that the called parameter is changed
+
     # Convert between coordinate system
-    pos[:, 0] = pos[:, 0] / 2.0 + 0.5
-    pos[:, 1] = pos[:, 1] / -2.0 + 0.5
+    pos_temp[:, 0] = pos_temp[:, 0] / 2.0 + 0.5
+    pos_temp[:, 1] = pos_temp[:, 1]/ -2.0 + 0.5
     
-    return pos
+    
+    return pos_temp 
     
 def tobii2deg(pos, mon):
     ''' Converts Tobiis coordinate system [0, 1 to degrees.
@@ -72,13 +74,22 @@ def tobii2deg(pos, mon):
     pos_deg = cm2deg(pos_temp, mon, correctFlat=False)    
     return pos_deg
     
-def deg2tobii(pos):
+def deg2tobii(pos, mon):
     ''' Converts from degrees to Tobiis coordinate system [0, 1].
     Note that the Tobii coordinate system start in the upper left corner
     and the PsychoPy coordinate system in the center
     '''
     
-    return
+    # First convert from deg to pixels
+    pos[:, 0] = deg2pix(pos[:, 0], mon, correctFlat=False)
+    pos[:, 1] = deg2pix(pos[:, 1], mon, correctFlat=False)
+    
+    # Then normalize data -1,1
+    pos[:, 0] = pos[:, 0] / float(mon.getSizePix()[0])/2
+    pos[:, 1] = pos[:, 1] / float(mon.getSizePix()[1])/2
+    
+    #.. finally shift to tobii coordinate system
+    return norm2tobii(pos)
     
 def tobii2pix(pos, mon):
     ''' Converts from  Tobiis coordinate system [0, 1] to pixles.
@@ -94,6 +105,18 @@ def tobii2pix(pos, mon):
                
     # Convert to deg.
     return pos
+
+def pix2tobii(pos, mon):
+    ''' Converts from PsychoPy pixels to Tobiis coordinate system [0, 1].
+    Note that the Tobii coordinate system start in the upper left corner
+    and the PsychoPy coordinate system in the center
+    '''
+    # Normalize data -1,1
+    pos[:, 0] = pos[:, 0] / (float(mon.getSizePix()[0]) / 2.0)
+    pos[:, 1] = pos[:, 1] / (float(mon.getSizePix()[1]) / 2.0)
+    
+    #.. finally shift to tobii coordinate system
+    return norm2tobii(pos)
 #%%
 class MyDot2:
     '''

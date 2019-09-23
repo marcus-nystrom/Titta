@@ -36,7 +36,7 @@ class Connect(Thread):
         print('is connected')      
     
     #%% Init calibration
-    def calibrate(self, win, eye='right', calibration_number='first'):
+    def calibrate(self, win, eye='both', calibration_number='first'):
         ''' Master function for setup and calibration
         '''
         
@@ -49,9 +49,11 @@ class Connect(Thread):
         self.win = win
         
         # Mouse object
-        self.mouse = event.Mouse()        
+        self.mouse = event.Mouse()    
+        self.mouse.setPos([0,0])
+        self.mouse.setVisible(0)
         
-        self.instruction_text.text = 'Calibration Dummy mode: ' + eye + ' eye'
+        self.instruction_text.text = 'Calibration Dummy mode'
         self.instruction_text.draw()
         self.win.flip()
         core.wait(2)
@@ -109,8 +111,21 @@ class Connect(Thread):
         '''
         x, y = self.mouse.getPos()
         
-        self.sample['left_gaze_point_on_display_area'] = (x, y)
-        self.sample['right_gaze_point_on_display_area'] = (x, y)
+        # Convert mouse position in current psychopy units to Tobii's
+        # norm coordinate system (currently supports 'norm' and 'deg')
+        
+        if self.win.units == 'norm':
+            xy = helpers.norm2tobii(np.array([x, y],ndmin=2))
+        elif self.win.units == 'deg':
+            xy = helpers.deg2tobii(np.array([x, y],ndmin=2), self.win.monitor)    
+        elif self.win.units == 'pix':
+            xy = helpers.pix2tobii(np.array([x, y],ndmin=2), self.win.monitor)            
+        else:
+            raise IOError ('Invalid unit of PsychoPy screen: Titta in dummy mode currently \
+                           supports "norm", "pix", and "deg".')            
+        
+        self.sample['left_gaze_point_on_display_area'] = (xy[0, 0], xy[0, 1])
+        self.sample['right_gaze_point_on_display_area'] = (xy[0, 0], xy[0, 1])
         
         return self.sample
         
@@ -142,6 +157,7 @@ class Connect(Thread):
         
     #%%
     def de_init(self):
+        self.mouse.setVisible(1)
         print('de_init')      
     
     #%% 

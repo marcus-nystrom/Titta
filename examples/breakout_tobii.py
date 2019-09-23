@@ -5,6 +5,8 @@
  Simpson College Computer Science
  http://programarcadegames.com/
  http://simpson.edu/computer-science/
+ 
+ Adaped to PsychoPy by Marcus Nyström.
 """
  
 # --- Import libraries used for this program
@@ -41,8 +43,7 @@ mon.setSizePix(SCREEN_RES)
 settings = Titta.get_defaults('Tobii Pro Spectrum')
              
 # Show dialogue box
-info = {'Enter your name':'your name', 'Eye tracking':[False, True]}
-# info = {'Enter your name':'your name', 'Eye tracking':True}
+info = {'Enter your name':'your name', 'Dummy mode':[False, True]}
 
 dictDlg = gui.DlgFromDict(dictionary=info,
         title='Breakout')
@@ -59,18 +60,12 @@ player_name = '_'.join([info['Enter your name'], info['dateStr']])
 c = core.Clock()
 my_clock = core.Clock()
          
-if info['Eye tracking'] == True:
-    dummy_mode = False 
-else:
-    dummy_mode = True
-
 # Change any of the default dettings?
 settings.FILENAME = 'my_test.tsv'
 
 # Connect to eye tracker
 tracker = Titta.Connect(settings) 
-print(dummy_mode)
-if dummy_mode:
+if info['Dummy mode'] == 'True':
     tracker.set_dummy_mode()
 tracker.init()
 
@@ -240,11 +235,11 @@ class Player():
         lx = [d['left_gaze_point_on_display_area'][0] for d in data]
         rx = [d['right_gaze_point_on_display_area'][0] for d in data]
 
+        # print(lx)
         # Use the average position (i.e., lowpass filtered)
         pos = np.nanmean([np.nanmean(rx), np.nanmean(lx)])
-        if not dummy_mode:
-            pos = helpers.tobii2pix(np.array([[pos, pos]]), mon)[:, 0]
-            pos = pos - screen_size[0] / 2
+        pos = helpers.tobii2pix(np.array([[pos, pos]]), mon)[:, 0]
+        pos = pos - screen_size[0] / 2
             
 
         # Set the left side of the player bar to the mouse/gaze position
