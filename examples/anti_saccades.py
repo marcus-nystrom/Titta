@@ -5,12 +5,6 @@ from psychopy import visual, core, data, event, monitors, gui
 from random import randint, uniform
 import numpy as np
 from psychopy import logging
-import os, sys
-
-# Insert the parent directory (where Titta is) to path
-curdir = os.path.dirname(os.path.abspath(__file__))
-os.chdir(curdir)
-sys.path.insert(0, os.sep.join([os.path.dirname(curdir)])) 
 from titta import Titta, helpers_tobii as helpers
 from titta.TalkToProLab import TalkToProLab
 

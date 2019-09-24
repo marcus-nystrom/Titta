@@ -3,18 +3,12 @@
 # Import modules
 from psychopy import visual, monitors, core, event
 import numpy as np
-import os, sys
-  
-# Insert the parent directory (where Titta is) to path
-curdir = os.path.dirname(os.path.abspath(__file__))
-os.chdir(curdir)
-sys.path.insert(0, os.sep.join([os.path.dirname(curdir)])) 
 from titta import Titta, helpers_tobii as helpers
 from titta.TalkToProLab import TalkToProLab
 
 #%% Monitor/geometry 
 MY_MONITOR                  = 'testMonitor' # needs to exists in PsychoPy monitor center
-FULLSCREEN                  = False
+FULLSCREEN                  = True
 SCREEN_RES                  = [1920, 1080]
 SCREEN_WIDTH                = 52.7 # cm
 VIEWING_DIST                = 63 #  # distance from eye to center of screen (cm)

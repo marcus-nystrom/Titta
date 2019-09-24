@@ -15,12 +15,6 @@ import math
 import numpy as np
 from psychopy import core, event, misc, visual, monitors, data, gui
 import pandas as pd
-import os, sys
-
-# Insert the parent directory (where Titta is) to path
-curdir = os.path.dirname(os.path.abspath(__file__))
-os.chdir(curdir)
-sys.path.insert(0, os.sep.join([os.path.dirname(curdir), 'Titta'])) 
 from titta import Titta, helpers_tobii as helpers
 
 

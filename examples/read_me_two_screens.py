@@ -4,12 +4,6 @@ import pandas as pd
 from psychopy import visual, monitors
 from psychopy import core, event
 import numpy as np
-import os, sys
-
-# Insert the parent directory (where Titta is) to path
-curdir = os.path.dirname(os.path.abspath(__file__))
-os.chdir(curdir)
-sys.path.insert(0, os.sep.join([os.path.dirname(curdir)])) 
 from titta import Titta, helpers_tobii as helpers
 
 #%% Monitor/geometry participant screen
