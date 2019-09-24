@@ -6,7 +6,7 @@
  http://programarcadegames.com/
  http://simpson.edu/computer-science/
  
- Adaped to PsychoPy by Marcus Nyström.
+ Adaped to PsychoPy by Marcus Nystrom.
 """
  
 # --- Import libraries used for this program
@@ -21,8 +21,7 @@ import os, sys
 curdir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(curdir)
 sys.path.insert(0, os.sep.join([os.path.dirname(curdir), 'Titta'])) 
-import Titta
-import helpers_tobii as helpers
+from titta import Titta, helpers_tobii as helpers
 
 
 #%% Monitor/geometry 
