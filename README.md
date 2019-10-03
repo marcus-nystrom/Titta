@@ -15,7 +15,7 @@ Titta is licensed under the Creative Commons Attribution 4.0 (CC BY 4.0) license
 
 ## To get started
 To get started on Windows:
-1. Download [PsychoPy (version 3.1.5 or higher](https://www.psychopy.org)
+1. Download [PsychoPy (version 3.1.5 or higher)](https://www.psychopy.org)
 1. Download and install [git](https://www.git-scm.com/downloads)
 1. Open the command window
 	1. Go the the PsychoPy folder (e.g., C:\Program Files (x86)\PsychoPy3)
@@ -23,7 +23,7 @@ To get started on Windows:
 1. Download the 'examples' folder and run read_me.py (first change the monitor settings and the eye tracker name in read_me.py).
 	
 Alternatively:
-1. Download [PsychoPy (version 3.1.5 or higher](https://www.psychopy.org)
+1. Download [PsychoPy (version 3.1.5 or higher)](https://www.psychopy.org)
 1. Install websocket-client (for Tobii Pro Lab integration)
 	1. Open the command window
 	1. Go the the PsychoPy folder (e.g., C:\Program Files (x86)\PsychoPy3)
@@ -60,16 +60,16 @@ Titta.getDefaults('tracker model name');` Supported eye trackers and their corre
     |Tobii Pro TX300|`Tobii TX300`|
     |Tobii Pro T60 XL|`Tobii T60 XL`|
     |**Tobii Pro Nano**|`Tobii Pro Nano`|
-    |Tobii Pro X3-120|`Tobii Pro X3-120 EPU`|
+    |**Tobii Pro X3-120**|`Tobii Pro X3-120`|
     |Tobii Pro X2-60|`X2-60_Compact`|
-    |Tobii Pro X2-30|`X2-30_Compact`|
+    |**Tobii Pro X2-30**|`X2-30_Compact`|
     |Tobii Pro X60|`Tobii X60`|
     |Tobii Pro X120|`Tobii X120`|
     |Tobii Pro T60|`Tobii T60`|
     |Tobii Pro T120|`Tobii T120`|
     |**Tobii 4C**|`IS4_Large_Peripheral`|
   
-    Eye tracker marked in **bold** font have been tested. Note that the VR eye trackers are not supported by Titta. 
+    Eye trackers marked in **bold** font have been tested. Note that the VR eye trackers are not supported by Titta. 
   
 2. Change settings from their defaults if wanted.
 3. Create a Titta instance using this settings struct: `tracker = Titta(settings);`

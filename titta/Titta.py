@@ -25,8 +25,12 @@ def get_defaults(et_name):
         settings.SAMPLING_RATE = 60
     elif et_name == 'Tobii Pro X3-120 EPU':
         settings.SAMPLING_RATE = 120
+    elif et_name == 'Tobii Pro X3-120':
+        settings.SAMPLING_RATE = 120        
     elif et_name == 'X2-60_Compact':
         settings.SAMPLING_RATE = 60
+    elif et_name == 'X2-30_Compact':
+        settings.SAMPLING_RATE = 40        
     elif et_name == 'Tobii X60':
         settings.SAMPLING_RATE = 60     
     elif et_name == 'Tobii X120':
