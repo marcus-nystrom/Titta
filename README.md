@@ -60,7 +60,7 @@ Titta.getDefaults('tracker model name');` Supported eye trackers and their corre
     |Tobii Pro TX300|`Tobii TX300`|
     |Tobii Pro T60 XL|`Tobii T60 XL`|
     |**Tobii Pro Nano**|`Tobii Pro Nano`|
-    |**Tobii Pro X3-120**|`Tobii Pro X3-120`|
+    |**Tobii Pro X3-120**|`Tobii Pro X3-120` or `Tobii Pro X3-120 EPU`|
     |Tobii Pro X2-60|`X2-60_Compact`|
     |**Tobii Pro X2-30**|`X2-30_Compact`|
     |Tobii Pro X60|`Tobii X60`|
