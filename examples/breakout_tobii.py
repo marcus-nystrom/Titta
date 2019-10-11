@@ -13,6 +13,7 @@
  
 import math
 import numpy as np
+import os
 from psychopy import core, event, misc, visual, monitors, data, gui
 import pandas as pd
 from titta import Titta, helpers_tobii as helpers
@@ -326,8 +327,12 @@ while not exit_program:
         ball.speed *= 1.1
         my_clock.reset()
 
+# Stop eye tracker and clean up 
+tracker.stop_sample_buffer()
+tracker.stop_recording(gaze_data=True)
+tracker.de_init()
+    
 try:
-    df = pd.read_csv('highscore.csv', sep='\t')
         
     # Blink GAME OVER and show score
     instruction_text.pos = (0, 0)
@@ -339,6 +344,12 @@ try:
         core.wait(0.3)
         win.flip()
         core.wait(0.3)
+    
+    # Check if highscore-file exists, otherwise create it
+    if os.path.isfile('highscore.csv'):
+        df = pd.read_csv('highscore.csv', sep='\t')        
+    else:
+        pd.DataFrame([['testname', 0]], columns=['Name', 'Score']).to_csv('highscore.csv', sep='\t')
         
     instruction_text.draw()
     instruction_text.pos = (0, - 100)
@@ -350,11 +361,6 @@ try:
     win.flip()
 
     core.wait(3)
-
-    # Stop eye tracker and clean up 
-    tracker.stop_sample_buffer()
-    tracker.stop_recording(gaze_data=True)
-    tracker.de_init()
 
     # Write results to data frame
     df_player = pd.DataFrame({'Name':[player_name], 'Score':[score]})
