@@ -347,16 +347,18 @@ try:
     
     # Check if highscore-file exists, otherwise create it
     if os.path.isfile('highscore.csv'):
-        df = pd.read_csv('highscore.csv', sep='\t')        
+        df = pd.read_csv('highscore.csv', sep='\t')   
+        highscore = np.max(np.array(df['Score']))
     else:
         pd.DataFrame([['testname', 0]], columns=['Name', 'Score']).to_csv('highscore.csv', sep='\t')
+        highscore = 0
         
     instruction_text.draw()
     instruction_text.pos = (0, - 100)
     instruction_text.text = 'Your score: ' + str(score)
     instruction_text.draw()
     instruction_text.pos = (0, - 200)
-    instruction_text.text = 'High score: ' + str(np.max(np.array(df['Score'])))          
+    instruction_text.text = 'High score: ' +  str(highscore)
     instruction_text.draw()
     win.flip()
 
