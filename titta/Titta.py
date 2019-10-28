@@ -167,14 +167,14 @@ class Graphics(object):
         self.WIDTH_RECAL_BUTTON = 0.30
         self.HEIGHT_RECAL_BUTTON = 0.08
         self.RECAL_BUTTON = 'c'
-        self.RECAL_BUTTON_TEXT = 'calibrate (c)'
+        self.RECAL_BUTTON_TEXT = 're-calibrate (c)'
         
         self.POS_REVAL_BUTTON = (-0.21, -0.8)
         self.COLOR_REVAL_BUTTON =  red
         self.WIDTH_REVAL_BUTTON = 0.30
         self.HEIGHT_REVAL_BUTTON = 0.08
         self.REVAL_BUTTON = 'v'
-        self.REVAL_BUTTON_TEXT = 'validate (v)'
+        self.REVAL_BUTTON_TEXT = 're-validate (v)'
         
         # Button for showing eye images
         self.POS_SETUP_BUTTON = (-0.5, -0.8)
