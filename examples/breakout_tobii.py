@@ -37,7 +37,7 @@ mon.setSizePix(SCREEN_RES)
 settings = Titta.get_defaults('Tobii Pro Spectrum')
              
 # Show dialogue box
-info = {'Enter your name':'your name', 'Dummy mode':[False, True]}
+info = {'Enter your name':'your name', 'Device':['Eye tracker','Mouse']}
 
 dictDlg = gui.DlgFromDict(dictionary=info,
         title='Breakout')
@@ -59,7 +59,7 @@ settings.FILENAME = 'my_test.tsv'
 
 # Connect to eye tracker
 tracker = Titta.Connect(settings) 
-if info['Dummy mode'] == 'True':
+if info['Device'] == 'Mouse':
     tracker.set_dummy_mode()
 tracker.init()
 
