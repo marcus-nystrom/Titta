@@ -1,6 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+'''
+To run the antisaccade demo:
+    * Open an External Presenter project in Tobii Pro Lab. Go to the Record tab.
+    * Run anti_saccades.py (this script). The first time you run it, set
+      upload_stimuli = True (see below), to upload relevant stimuli to lab. 
+      You only need to upload stimuli once. The second time you run anti_saccades.py
+      set upload_stimuli to False, otherwise an error will appear.
+      
+'''
+
+
+
 from psychopy import visual, core, data, event, monitors, gui
 from random import randint, uniform
 import numpy as np
@@ -618,8 +630,9 @@ def foreperiod_central_fixation(numel=1000, mu = 1.5, interval = [1, 3.5]):
 
 # Run experiment with pro lab integration?
 pro_lab_integration = True
-pro_lab_project_name = None                # or specify a specific project name
-upload_stimuli = True                      # Do this only the first time you run
+pro_lab_project_name = None                # Specific project name. 'None' means
+                                           # the the currently opened project is used.
+upload_stimuli = True                      # Set to True only the first time you run
 
 # Monitor/geometry 
 MY_MONITOR                  = 'testMonitor' # needs to exists in PsychoPy monitor center
@@ -711,6 +724,8 @@ try:
 except Exception as e: 
     print(e)
     win.close()
+    sac.ttl.stop_recording()
+    sac.ttl.disconnect()
 
  
 # Save data and close connection with eye trackers
