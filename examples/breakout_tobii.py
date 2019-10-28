@@ -353,6 +353,9 @@ try:
         pd.DataFrame([['testname', 0]], columns=['Name', 'Score']).to_csv('highscore.csv', sep='\t')
         highscore = 0
         
+    if score >= highscore:
+        highscore = score
+        
     instruction_text.draw()
     instruction_text.pos = (0, - 100)
     instruction_text.text = 'Your score: ' + str(score)
