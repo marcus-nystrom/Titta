@@ -13,13 +13,13 @@ import numpy as np
 
 win = visual.Window(size = [1280, 1024], units='norm',
                     fullscr=False)    
-win = visual.Window()                    
+#win = visual.Window()                    
         
 nCalibrations = 2
 selected_calibration = 0
-deviations = [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]]
+deviations = [[1, 2.0987, 3, 4, 5], [6, 7, 8, 9, 10]]
 
-TEXT_SIZE = 0.04
+TEXT_SIZE = 0.03
 TEXT_COLOR = 'white' 
 blue_active = tuple(np.array([11, 122, 244]) / 255.0 * 2 - 1)
 blue = tuple(np.array([37, 97, 163]) / 255.0 * 2 - 1)
@@ -39,8 +39,8 @@ select_accuracy_rect = []
 select_rect_text = []
 accuracy_values = []
 
-r=visual.Circle(win, radius=0.1)
-r.draw()
+#r=visual.Circle(win, radius=0.1)
+#r.draw()
 
 y_pos = y_pos_res
 
@@ -52,7 +52,7 @@ for i in range(nCalibrations):
                                         height= 0.05, 
                                         units='norm',
                                         pos = (x_pos_res, y_pos)))
-                                        
+                  
     select_rect_text.append(visual.TextStim(win,
                                             text='Select',
                                             wrapWidth = 1,
@@ -63,12 +63,12 @@ for i in range(nCalibrations):
             
     
     accuracy_values_L.append(visual.TextStim(win,
-                                        text='{4}  {0:.2f}  {0:.2f}  {0:.2f}  {0:.2f}'.format(
+                                        text='{0:^15} {1:^15.2f}  {2:^15.2f}  {2:^15.2f}  {3:^15.2f}'.format(
+                                              'Cal' + str(i+1) + ':',
                                               deviations[i][0],
                                               deviations[i][1],
                                               deviations[i][2],
-                                              deviations[i][3],
-                                              'Cal' + str(i+1) + ':'),
+                                              deviations[i][3]),
                                         wrapWidth = 1,
                                         height = TEXT_SIZE, 
                                         units='norm',
@@ -116,11 +116,12 @@ for i in range(nCalibrations):
 header_text = []    
 y_pos = y_pos_res
 
-header_text = visual.TextStim(win,text='  '.join(header),
+header_text = visual.TextStim(win,text='{0:^15} {1:^15}  {2:^15}  {2:^15}  {3:^15}'.format(header[0],
+                              header[1],header[2],header[3],header[4]),
                                         wrapWidth = 1,
                                         height = TEXT_SIZE, 
                                         units='norm',
-                                        pos = (x_pos[2], y_pos_res + 0.06),
+                                        pos = (x_pos[1], y_pos_res + 0.06),
                                         color = TEXT_COLOR)
 header_text.draw()                                        
                                         
