@@ -459,6 +459,7 @@ def stim_slideshow(fname, stim_type = 'text',
         win.flip()
         
         event.waitKeys()        
+            
                 
             
 #%% Start of lab
@@ -575,7 +576,7 @@ elif 'Images' in myDlg.data[0]:
                    stim_type = 'image')    
 elif 'Text' in myDlg.data[0]:
     # display_fixation_cross()
-    files = glob.glob(os.getcwd() + os.sep + 'texts' + os.sep + '*.png')
+    files = glob.glob(os.getcwd() + os.sep + 'texts' + os.sep + '*.bmp')
     random.shuffle(files)
     stim_slideshow(files[0], duration=None, show_results=True,
                    stim_type = 'text')    
