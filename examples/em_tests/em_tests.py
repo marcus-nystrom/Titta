@@ -182,12 +182,14 @@ def sinusoid_pursuit(nCycles=1, cps=1, amp=1, show_results=False, blank_screen=F
         df = read_et_data()
         
         # Create a figure and put it on the left side
-        fig, ax = plt.subplots()
-        mngr = plt.get_current_fig_manager()
-        mngr.window.setGeometry = (mon.getSizePix()[0] / 2.0 - mon.getSizePix()[0] / 4.0, 
-                                   mon.getSizePix()[1] / 2.0, 
-                                   mon.getSizePix()[0] / 4.0, 
-                                   mon.getSizePix()[1] / 4.0)
+        plt.figure()
+        plt.subplot(2, 1, 1)
+        # fig, ax = plt.subplots()
+        # mngr = plt.get_current_fig_manager()
+        # mngr.window.setGeometry = (mon.getSizePix()[0] / 2.0 - mon.getSizePix()[0] / 4.0, 
+        #                            mon.getSizePix()[1] / 2.0, 
+        #                            mon.getSizePix()[0] / 4.0, 
+        #                            mon.getSizePix()[1] / 4.0)
 
         p = np.vstack((t, y))
         pos_norm =  helpers.norm2tobii(p.T)   
@@ -200,12 +202,12 @@ def sinusoid_pursuit(nCycles=1, cps=1, amp=1, show_results=False, blank_screen=F
         
         
         # Gaze over time
-        fig, ax = plt.subplots()
-        mngr = plt.get_current_fig_manager()
-        mngr.window.setGeometry = (mon.getSizePix()[0] / 2.0 + mon.getSizePix()[0] / 4.0, 
-                                   mon.getSizePix()[1] / 2.0, 
-                                   mon.getSizePix()[0] / 4.0, 
-                                   mon.getSizePix()[1] / 4.0)       
+        plt.subplot(2, 1, 2)
+        # mngr = plt.get_current_fig_manager()
+        # mngr.window.setGeometry = (mon.getSizePix()[0] / 2.0 + mon.getSizePix()[0] / 4.0, 
+        #                            mon.getSizePix()[1] / 2.0, 
+        #                            mon.getSizePix()[0] / 4.0, 
+        #                            mon.getSizePix()[1] / 4.0)       
 
         
         # Plot dot location
@@ -528,7 +530,7 @@ if dummy_mode:
 tracker.init()
 
 win = visual.Window(monitor = mon, fullscr = FULLSCREEN,
-                    screen=0, size=SCREEN_RES, units = 'deg')
+                    screen=1, size=SCREEN_RES, units = 'deg')
                     
 win.size = SCREEN_RES      
 print(win.size, SCREEN_RES)
