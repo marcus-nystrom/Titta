@@ -43,6 +43,61 @@ dummy_mode = False
 from titta import Titta, helpers_tobii as helpers    
 import tobii_research as tr
 
+#%%
+def smooth(x, window_len=11, window='bartlett'):
+    """smooth the data using a window with requested size.
+    
+    This method is based on the convolution of a scaled window with the signal.
+    The signal is prepared by introducing reflected copies of the signal 
+    (with the window size) in both ends so that transient parts are minimized
+    in the begining and end part of the output signal.
+    
+    input:
+        x: the input signal 
+        window_len: the dimension of the smoothing window; should be an odd integer
+        window: the type of window from 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'
+            flat window will produce a moving average smoothing.
+
+    output:
+        the smoothed signal
+        
+    example:
+
+    t=linspace(-2,2,0.1)
+    x=sin(t)+randn(len(t))*0.1
+    y=smooth(x)
+    
+    see also: 
+    
+    numpy.hanning, numpy.hamming, numpy.bartlett, numpy.blackman, numpy.convolve
+    scipy.signal.lfilter
+ 
+    TODO: the window parameter could be the window itself if an array instead of a string
+    NOTE: length(output) != length(input), to correct this: return y[(window_len/2-1):-(window_len/2)] instead of just y.
+    """
+
+    if x.ndim != 1:
+        raise(ValueError, "smooth only accepts 1 dimension arrays.")
+
+    if x.size < window_len:
+        raise(ValueError, "Input vector needs to be bigger than window size.")
+
+    if window_len<3:
+        return x
+
+    if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
+        raise(ValueError, "Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
+
+
+    s=np.r_[x[window_len-1:0:-1],x,x[-1:-window_len:-1]]
+    #print(len(s))
+    if window == 'flat': #moving average
+        w=np.ones(window_len,'d')
+    else:
+        w=eval('np.'+window+'(window_len)')
+
+    y=np.convolve(w/w.sum(),s,mode='valid')
+    return y[(int(window_len/2)):-(int(window_len/2))]
  
 #%% 
 def plot_et_data(df, plot_type = 'xy'):
@@ -60,6 +115,15 @@ def plot_et_data(df, plot_type = 'xy'):
                'right_gaze_point_on_display_area_y']])
     xy_r = helpers.tobii2deg(xy_r, settings.mon)
     
+    # Lowpass filter if fixational eye movements
+    if 'fixation' in myDlg.data[0]:
+        xy_r[:, 0] = smooth(xy_r[:, 0])
+        xy_r[:, 1] = smooth(xy_r[:, 1])
+        
+        xy_l[:, 0] = smooth(xy_l[:, 0])
+        xy_l[:, 1] = smooth(xy_l[:, 1])
+        
+        
     if plot_type == 'xy':
         plt.plot(xy_l[:, 0], 
                  xy_l[:, 1], '.', ms=2, c='r', label='Left eye')
@@ -183,14 +247,7 @@ def sinusoid_pursuit(nCycles=1, cps=1, amp=1, show_results=False, blank_screen=F
         
         # Create a figure and put it on the left side
         plt.figure()
-        plt.subplot(2, 1, 1)
-        # fig, ax = plt.subplots()
-        # mngr = plt.get_current_fig_manager()
-        # mngr.window.setGeometry = (mon.getSizePix()[0] / 2.0 - mon.getSizePix()[0] / 4.0, 
-        #                            mon.getSizePix()[1] / 2.0, 
-        #                            mon.getSizePix()[0] / 4.0, 
-        #                            mon.getSizePix()[1] / 4.0)
-
+        plt.subplot(2, 1, 1, adjustable='box', aspect=1.3)
         p = np.vstack((t, y))
         pos_norm =  helpers.norm2tobii(p.T)   
         pos_norm = helpers.tobii2deg(pos_norm, settings.mon)
@@ -198,18 +255,12 @@ def sinusoid_pursuit(nCycles=1, cps=1, amp=1, show_results=False, blank_screen=F
         plt.plot(pos_norm[:, 0], pos_norm[:, 1], '-', c='k', 
                  label='Stimulus (dot) position')
         
-        plot_et_data(df, plot_type = 'xy')        
+        plot_et_data(df, plot_type = 'xy')     
+        #plt.axis('image')
         
         
         # Gaze over time
-        plt.subplot(2, 1, 2)
-        # mngr = plt.get_current_fig_manager()
-        # mngr.window.setGeometry = (mon.getSizePix()[0] / 2.0 + mon.getSizePix()[0] / 4.0, 
-        #                            mon.getSizePix()[1] / 2.0, 
-        #                            mon.getSizePix()[0] / 4.0, 
-        #                            mon.getSizePix()[1] / 4.0)       
-
-        
+        plt.subplot(2, 1, 2)        
         # Plot dot location
         tt =  np.array(df['system_time_stamp'])
         tt =   (tt - tt[0]) / 1000.0 / 1000.0
@@ -219,6 +270,9 @@ def sinusoid_pursuit(nCycles=1, cps=1, amp=1, show_results=False, blank_screen=F
                  label='Stimulus (dot) position')
         
         plot_et_data(df, plot_type = 'tx')
+        
+        mng = plt.get_current_fig_manager()
+        mng.window.state('zoomed')
         plt.show()
         
         
@@ -229,7 +283,10 @@ def present_dots(dot_positions, duration=1, show_results=False):
         dot_positions - list of dot locations [[x, y], [x, y],...]
     '''            
     
-    ins = 'Look at the dot(s) \n(Press space to start).'
+    if 'fixation' in myDlg.data[0]:
+        ins = 'Carefully look at the dot for ' + str(duration) + 's \n(Press space to start).'
+    else:
+        ins = 'Look at the dot(s) \n(Press space to start).'
     instruction_text.setText(ins) # "Stare" nystagmus
     instruction_text.draw()
     win.flip()
@@ -269,15 +326,18 @@ def present_dots(dot_positions, duration=1, show_results=False):
         
         # xy-plot
         plt.figure()
+        plt.subplot(2, 1, 1, adjustable='box', aspect=1.3)
         #print(dot_positions)
         dot_positions = helpers.norm2tobii(np.array(dot_positions))  
         dot_positions = helpers.tobii2deg(dot_positions, settings.mon)
         plt.plot(dot_positions[:, 0],
                  dot_positions[:, 1], 'o', ms=10, label='Stimulus dots')
         plot_et_data(df, plot_type = 'xy')
+        #plt.axis('image')
+
         
         # tx, ty plot
-        plt.figure()
+        plt.subplot(2, 1, 2)
 #        ta = np.linspace(tt.min(), tt.max(), len(dot_positions))
         s = len(tt) / len(dot_positions)
         m = np.min([len(tt), len(dot_positions[:, 0].repeat(s))])
@@ -287,10 +347,11 @@ def present_dots(dot_positions, duration=1, show_results=False):
 #        m = np.min([len(tt), len(dot_positions[:, 1].repeat(s))])        
 #        plt.plot(tt, dot_positions[:, 1].repeat(s, axis=0)[:m])
         plot_et_data(df, plot_type = 'tx')
-        plt.show()
         
-            
-
+        
+        mng = plt.get_current_fig_manager()
+        mng.window.state('zoomed')
+        plt.show()
         
 #%% OKN
 def okn(temporal_frequency,okn_dur,screen_Fs,direction='R',show_instruction=True):
@@ -338,7 +399,7 @@ def okn(temporal_frequency,okn_dur,screen_Fs,direction='R',show_instruction=True
             i-=temporal_frequency/screen_Fs  
         else:
             okn_stim.setPhase((i,0))
-            i+=temporal_frequency/screen_Fs                   
+            i+=temporal_frequency/screen_Fs 
             
         okn_stim.draw()
         win.flip()
@@ -351,22 +412,24 @@ def okn(temporal_frequency,okn_dur,screen_Fs,direction='R',show_instruction=True
             
     # Stop eye tracker
     if eye_tracking:
-        tracker.stop_recording(gaze_data=True)              
+        tracker.stop_recording(gaze_data=True) 
         
         df = read_et_data()
         tt =  np.array(df['system_time_stamp'])
         tt =   (tt - tt[0]) / 1000.0 / 1000.0
         
-        
         win.close()
         
         # xy-plot
         plt.figure()
-        plot_et_data(df, plot_type = 'xy')    
+        plt.subplot(2, 1, 1, adjustable='box', aspect=1.3)
+        plot_et_data(df, plot_type = 'xy')   
         
         # xy-plot
-        plt.figure()
+        plt.subplot(2, 1, 2)
         plot_et_data(df, plot_type = 't')    
+        mng = plt.get_current_fig_manager()
+        mng.window.state('zoomed')
         plt.show()
 
 
@@ -518,6 +581,11 @@ mon.setSizePix(SCREEN_RES)
 # Change any of the default dettings?
 settings = Titta.get_defaults(et_name)
 settings.FILENAME = 'testfile.tsv'
+
+# Switch to 1200 Hz if fixational eye movements
+if 'fixation' in myDlg.data[0]:
+    settings.SAMPLING_RATE = 1200
+    
 settings.mon = mon
 settings.SCREEN_HEIGHT = SCREEN_HEIGHT
 
@@ -567,7 +635,7 @@ elif '5. Pursuit' in myDlg.data[0]:
 elif 'Static dots' in myDlg.data[0]:
     present_dots(dot_positions, duration=1, show_results=True)    
 elif 'fixation' in myDlg.data[0]:
-    present_dots([[0, 0]], duration=20, show_results=True)        
+    present_dots([[0, 0]], duration=10, show_results=True)        
 elif 'Images' in myDlg.data[0]:
     # display_fixation_cross()
     files = glob.glob(os.getcwd() + os.sep + 'images' + os.sep + '*.bmp')
