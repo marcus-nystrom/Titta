@@ -408,32 +408,44 @@ class myTobii(object):
         self.start_recording(store_data=False, 
                              gaze_data=True,
                              sync_data=True)
-        
-        # Enter calibration mode if binocular calibration or if first 
-        # bi-monocular calibration
-        if self.eye == 'both' or self.calibration_number == 'first':
-            self.calibration.enter_calibration_mode()
+            
+        calibration_started = False
         
         while True:
             self.action = action
-            print(action)
             if 'setup' in action:
                 action = self._check_head_position()
             elif 'cal' in action:   
+                
+                # Enter calibration mode if binocular calibration or if first 
+                # bi-monocular calibration
+                if not calibration_started:
+                    if self.eye == 'both' or self.calibration_number == 'first':
+                        self.calibration.enter_calibration_mode()  
                 
                 # Default to last calibration when a new 
                 # Calibration is run
                 self.selected_calibration = len(self.deviations) + 1                                        
                 action = self._run_calibration()
+                calibration_started = True
             elif 'val' in action:
                 action = self._run_validation()
             elif 'res' in action:
                 action = self._show_validation_screen()                
             elif 'done'in action:
                 print('calibration completed')
+                
+                # Leave calibration mode if binocular calibration or if second 
+                # bi-monocular calibration
+                if calibration_started:
+                    if self.eye == 'both' or self.calibration_number == 'second':
+                        self.calibration.leave_calibration_mode()       
+                    
+                # Break out of loop
                 break
             elif 'quit' in action:
-                self.calibration.leave_calibration_mode() 
+                if calibration_started:
+                    self.calibration.leave_calibration_mode() 
                 self.stop_recording(gaze_data=True,
                             sync_data=True)
                 self.win.close()
@@ -444,12 +456,7 @@ class myTobii(object):
                 pass
             
             
-            core.wait(0.1)
-    
-        # Leave calibration mode if binocular calibration or if second 
-        # bi-monocular calibration
-        if self.eye == 'both' or self.calibration_number == 'second':
-            self.calibration.leave_calibration_mode()          
+            core.wait(0.1)        
         
         self.stop_recording(gaze_data=True,
                             sync_data=True)
