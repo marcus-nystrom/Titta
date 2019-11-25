@@ -13,6 +13,7 @@ ToDO:
     * make sure that pressing 'r' during validation, restarts a validition when in validation mode
     (i.e., when the validation button has been pressed)
     * CHANGE NAMES TO THOSE IN SDK
+    * Change enter_calibration_mode (such that the most recent calibration is perserved)
 """
 from __future__ import print_function # towards Python 3 compatibility
 
@@ -411,7 +412,7 @@ class myTobii(object):
         # Enter calibration mode if binocular calibration or if first 
         # bi-monocular calibration
         if self.eye == 'both' or self.calibration_number == 'first':
-            self.calibration.enter_calibration_mode()                
+            self.calibration.enter_calibration_mode()
         
         while True:
             self.action = action
