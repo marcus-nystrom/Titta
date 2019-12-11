@@ -664,6 +664,7 @@ if eye_tracking:
     #tracker.stop_sample_buffer()
     tracker.stop_recording(gaze_data=True)
     tracker.de_init()    
+    
 #win.close()
 #core.quit()
 

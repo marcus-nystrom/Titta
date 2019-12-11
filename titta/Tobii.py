@@ -62,7 +62,23 @@ class myTobii(object):
         ''' Apply settings and check capabilities
         '''        
         
-        
+        # Update the number of calibration point (if changed by the user)
+        if self.settings.N_CAL_TARGETS == 13:
+            self.settings.CAL_POS_TOBII = self.settings.CAL_TARGETS[:]
+        elif self.settings.N_CAL_TARGETS == 9:
+            self.settings.CAL_POS_TOBII = self.settings.CAL_TARGETS[[0, 1, 2, 5, 6, 7, 10, 11, 12]]
+        elif self.settings.N_CAL_TARGETS == 5:
+            self.settings.CAL_POS_TOBII = self.settings.CAL_TARGETS[[0, 2, 6, 10, 12]]    
+        elif self.settings.N_CAL_TARGETS == 3:
+            self.settings.CAL_POS_TOBII = self.settings.CAL_TARGETS[[0, 6, 12]]    
+        elif self.settings.N_CAL_TARGETS == 1:
+            self.settings.CAL_POS_TOBII = self.settings.CAL_TARGETS[[6]]    
+        elif self.settings.N_CAL_TARGETS == 0:
+            self.settings.CAL_POS_TOBII = np.array([])   
+        else:
+            raise ValueError('Unvalid number of calibration points')
+            
+            
         # If no tracker address is give, find it automatically
         k = 0
         while len(self.settings.TRACKER_ADDRESS) == 0 and k < 4:
@@ -356,9 +372,11 @@ class myTobii(object):
             
         # Generate coordinates for calibration in PsychoPy and 
         # Tobii coordinate system
-        CAL_POS_DEG = helpers.tobii2deg(self.settings.CAL_POS_TOBII, win.monitor)
+        if self.settings.N_CAL_TARGETS > 0:
+            CAL_POS_DEG = helpers.tobii2deg(self.settings.CAL_POS_TOBII, win.monitor)
+            self.CAL_POS = np.hstack((self.settings.CAL_POS_TOBII, CAL_POS_DEG))
+        
         VAL_POS_DEG = helpers.tobii2deg(self.settings.VAL_POS_TOBII, win.monitor)
-        self.CAL_POS = np.hstack((self.settings.CAL_POS_TOBII, CAL_POS_DEG))
         self.VAL_POS = np.hstack((self.settings.VAL_POS_TOBII, VAL_POS_DEG))        
             
         # Create a temp variable for screen object
@@ -425,8 +443,15 @@ class myTobii(object):
                 
                 # Default to last calibration when a new 
                 # Calibration is run
-                self.selected_calibration = len(self.deviations) + 1                                        
-                action = self._run_calibration()
+                self.selected_calibration = len(self.deviations) + 1   
+
+                # Run calibration only if number of targets exceeds 0
+                if self.settings.N_CAL_TARGETS > 0:                
+                    action = self._run_calibration()
+                else:
+                    self.final_cal_position = ()
+                    action = 'val'
+                    
                 calibration_started = True
             elif 'val' in action:
                 action = self._run_validation()
@@ -722,22 +747,22 @@ class myTobii(object):
             
         self.store_data = True
         
-        cal_pos=self.CAL_POS
         paval=self.settings.PACING_INTERVAL
         
         # Optional start recording of eye images
         if self.settings.RECORD_EYE_IMAGES_DURING_CALIBRATION or self.win_operator:
             self.start_recording(image_data=True)            
         
-        np.random.shuffle(cal_pos)
-                
+
+                          
         core.wait(0.5)     
         self.send_message('Calibration_start')
-
         
         action = 'setup'
-        
+            
         # Go through the targets one by one
+        cal_pos=self.CAL_POS        
+        np.random.shuffle(cal_pos)
         t0 = self.clock.getTime()
         i = 0
         pos_old = [0, 0]
@@ -804,7 +829,7 @@ class myTobii(object):
                         if self.calibration.collect_data(tobii_data[0], tobii_data[1]) != tr.CALIBRATION_STATUS_SUCCESS:
                             self.calibration.collect_data(tobii_data[0], tobii_data[1])           
                             
-                    if i == 5:
+                    if i == self.settings.N_CAL_TARGETS:
                         self.final_cal_position = copy.deepcopy(pos)
                         break
                     
@@ -833,8 +858,6 @@ class myTobii(object):
         self.calibration_results = calibration_result
         print("Compute and apply returned {0} and collected at {1} points.".
               format(calibration_result.status, len(calibration_result.calibration_points)))       
-        
-
         
         # Accept of redo the calibration?
         if 'success' in calibration_result.status:   
@@ -992,7 +1015,12 @@ class myTobii(object):
         # Go through the targets one by one
         self.clock.reset()
         i = 0
-        pos_old = self.final_cal_position
+        
+        if self.settings.N_CAL_TARGETS == 0:
+            pos_old = [0, 0]
+        else:
+            pos_old = self.final_cal_position
+            
         validation_done = False
         validation_data = []
         xy_pos = []
@@ -1395,8 +1423,9 @@ class myTobii(object):
             self.gaze_button.draw()
             self.gaze_button_text.draw() 
             
-            self.calibration_image.draw()
-            self.calibration_image_text.draw()             
+            if self.settings.N_CAL_TARGETS > 0:
+                self.calibration_image.draw()
+                self.calibration_image_text.draw()             
            
             # Draw header
             [h.draw() for h in header_text]
@@ -1478,20 +1507,21 @@ class myTobii(object):
                 self._draw_gaze()
                 
             # Show calibration image or validation image
-            if self.settings.graphics.CAL_IMAGE_BUTTON in k or (self.mouse.isPressedIn(self.calibration_image, buttons=[0])and not cal_image_button_pressed):
-                
-                # Toggle the state of the button
-                show_validation_image = not show_validation_image
-                
-                # If validation image show, switch to calibration and vice versa
-                if show_validation_image:
-                    fname = 'validation_image' + str(self.selected_calibration)+'.png'
-                    self.accuracy_image.image = fname                
-                else:
-                    fname = 'calibration_image' + str(self.selected_calibration)+'.png'
-                    self.accuracy_image.image = fname                     
-
-                cal_image_button_pressed = True
+            if self.settings.N_CAL_TARGETS > 0:
+                if self.settings.graphics.CAL_IMAGE_BUTTON in k or (self.mouse.isPressedIn(self.calibration_image, buttons=[0])and not cal_image_button_pressed):
+                    
+                    # Toggle the state of the button
+                    show_validation_image = not show_validation_image
+                    
+                    # If validation image show, switch to calibration and vice versa
+                    if show_validation_image:
+                        fname = 'validation_image' + str(self.selected_calibration)+'.png'
+                        self.accuracy_image.image = fname                
+                    else:
+                        fname = 'calibration_image' + str(self.selected_calibration)+'.png'
+                        self.accuracy_image.image = fname                     
+    
+                    cal_image_button_pressed = True
                 
             # Wait for release of show gaze_button
             if not np.any(self.mouse.getPressed()):

@@ -18,7 +18,7 @@ mon.setWidth(SCREEN_WIDTH)          # Width of screen (cm)
 mon.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
 mon.setSizePix(SCREEN_RES)
 im_name = 'im1.jpeg'
-
+ 
 
 #%% ET settings
 et_name = 'Tobii Pro Spectrum' 
@@ -26,11 +26,12 @@ et_name = 'Tobii Pro Spectrum'
 # et_name = 'Tobii Pro Nano' 
 
 dummy_mode = False
-bimonocular_calibration = False
+bimonocular_calibration = True
      
 # Change any of the default dettings?e
 settings = Titta.get_defaults(et_name)
 settings.FILENAME = 'testfile.tsv'
+settings.N_CAL_TARGETS = 0
 
 #%% Connect to eye tracker and calibrate
 tracker = Titta.Connect(settings)
