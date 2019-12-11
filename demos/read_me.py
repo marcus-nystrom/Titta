@@ -31,7 +31,7 @@ bimonocular_calibration = True
 # Change any of the default dettings?e
 settings = Titta.get_defaults(et_name)
 settings.FILENAME = 'testfile.tsv'
-settings.N_CAL_TARGETS = 0
+settings.N_CAL_TARGETS = 5
 
 #%% Connect to eye tracker and calibrate
 tracker = Titta.Connect(settings)
