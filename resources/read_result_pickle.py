@@ -11,14 +11,21 @@ synchronization data, eye-tracker data,
 messages, and eye images (if recorded).
 
 """
-import cPickle as pickle
-from cStringIO import StringIO
+
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 import moviepy.editor as mpy
 import os
+import sys
 
+if sys.version_info[0] == 3: # if Python 3:
+    from io import BytesIO as StringIO
+    import pickle
+else: # else Python 2
+    from cStringIO import StringIO
+    import cPickle as pickle
+    
 
 EYE_IMAGE_SIZE_PIX = (175, 496)
 EYE_IMAGE_SIZE_PIX_FULL_FRAME = (512, 640)
@@ -34,6 +41,10 @@ calibration_history = pickle.load(f)
 system_info = pickle.load(f)
 settings = pickle.load(f)
 python_version = pickle.load(f)
+
+# And additional stuff if you pickeled something optional during the 
+# call to 'save_data()'
+
 f.close()
             
             
