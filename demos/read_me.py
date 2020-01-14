@@ -26,7 +26,7 @@ et_name = 'Tobii Pro Spectrum'
 # et_name = 'Tobii Pro Nano' 
 
 dummy_mode = False
-bimonocular_calibration = True
+bimonocular_calibration = False
      
 # Change any of the default dettings?e
 settings = Titta.get_defaults(et_name)
@@ -41,7 +41,7 @@ tracker.init()
 
 # Window set-up (this color will be used for calibration)
 win = visual.Window(monitor = mon, fullscr = FULLSCREEN,
-                    screen=1, size=SCREEN_RES, units = 'deg')
+                    screen=0, size=SCREEN_RES, units = 'deg')
 
 fixation_point = helpers.MyDot2(win)
 image = visual.ImageStim(win, image=im_name, units='norm', size = (2, 2))
