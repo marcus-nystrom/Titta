@@ -688,7 +688,7 @@ class myTobii(object):
 
         # Stop streaming of eye images
         if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
-            self.stop_recording(image_data=True)   
+            self.stop_recording(image_data=True) 
         self.mouse.setVisible(0)
         
         # Stop user position guide
@@ -715,7 +715,7 @@ class myTobii(object):
         # self.bg.draw()
         
         # Draw current target (red cicle)
-        self.current_point.pos = helpers.tobii2norm(np.expand_dims(pos, axis=0))
+        self.current_point.set_pos(helpers.tobii2norm(np.expand_dims(pos, axis=0)))
         self.current_point.draw()
         
         # Draw data for the left and right eyes
@@ -1162,7 +1162,7 @@ class myTobii(object):
         action = 'res' # Show validation results
         
         # Stop recording of eye images    
-        if self.settings.RECORD_EYE_IMAGES_DURING_CALIBRATION:
+        if self.settings.RECORD_EYE_IMAGES_DURING_CALIBRATION or self.win_operator:
             self.stop_recording(image_data=True) 
                     
         self.store_data = False
@@ -1401,7 +1401,7 @@ class myTobii(object):
         # If there's an operator screen, just show a message 'please wait...'
         # on the participant screen
         if self.win_operator:
-            self.instruction_text = 'Please wait...'
+            self.instruction_text.text = 'Please wait...'
               
         while not selection_done:
                         
@@ -1535,9 +1535,7 @@ class myTobii(object):
                 self.instruction_text.draw()
                 
             self.win.flip()    
-            if self.win_operator:   
-                self.win_temp.flip()
-        
+
         # Clear screen and return
         self.instruction_text.color = (1, 1, 1)
         self.win.flip()

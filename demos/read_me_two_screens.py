@@ -8,7 +8,7 @@ from titta import Titta, helpers_tobii as helpers
 
 #%% Monitor/geometry participant screen
 MY_MONITOR                  = 'testMonitor' # needs to exists in PsychoPy monitor center
-FULLSCREEN                  = True
+FULLSCREEN                  = False
 SCREEN_RES                  = [1920, 1080]
 SCREEN_WIDTH                = 52.7 # cm
 VIEWING_DIST                = 63 #  # distance from eye to center of screen (cm)
@@ -20,7 +20,7 @@ mon.setSizePix(SCREEN_RES)
 
 # Monitor/geometry operator screen
 MY_MONITOR_OP                  = 'default' # needs to exists in PsychoPy monitor center
-FULLSCREEN_OP                  = True
+FULLSCREEN_OP                  = False
 SCREEN_RES_OP                  = [1920, 1080]
 SCREEN_WIDTH_OP                = 52.7 # cm
 VIEWING_DIST_OP                = 63 #  # distance from eye to center of screen (cm)
@@ -32,10 +32,10 @@ mon_op.setSizePix(SCREEN_RES_OP)
 
 # Window set-up (this color will be used for calibration)
 win = visual.Window(monitor = mon, fullscr = FULLSCREEN,
-                    screen=0, size=SCREEN_RES, units = 'deg')
+                    screen=1, size=SCREEN_RES, units = 'deg')
 
 win_op = visual.Window(monitor = mon_op, fullscr = FULLSCREEN_OP,
-                    screen=1, size=SCREEN_RES_OP, units = 'norm')
+                    screen=0, size=SCREEN_RES_OP, units = 'norm')
 
 fixation_point = helpers.MyDot2(win)
 image = visual.ImageStim(win, image='im1.jpeg', units='norm', size = (2, 2))
@@ -98,6 +98,6 @@ msg_data = pickle.load(f)
 df = pd.DataFrame(gaze_data, columns=tracker.header)
 df.to_csv(settings.FILENAME[:-4] + '.tsv', sep='\t')
 df_msg = pd.DataFrame(msg_data,  columns = ['system_time_stamp', 'msg'])
-df_msg.to_csv(settings.filename[:-4] + '_msg.tsv', sep='\t')            
+df_msg.to_csv(settings.FILENAME[:-4] + '_msg.tsv', sep='\t')            
 
 core.quit()
