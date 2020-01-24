@@ -4,7 +4,7 @@ that integrates with PsychToolbox is also available from
 https://github.com/dcnieho/Titta
 
 Cite as:
-Niehorster, D.C., Andersson, R., & Nyström, M., (in prep). Titta: A
+Niehorster, D.C., Andersson, R., & Nyström, M., (in press). Titta: A
 toolbox for creating Psychtoolbox and Psychopy experiments with Tobii eye
 trackers.
 
