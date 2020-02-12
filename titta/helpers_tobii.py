@@ -565,9 +565,9 @@ class AnimatedCalibrationDisplay(object):
         self.target.set_size(2)
         
         # How many ticks should the movement be (one screen unit in one second)?
-        n_steps = self.screen_refresh_rate / 2
-        step_pos_x = np.linspace(old_position[0], new_position[0], n_steps)
-        step_pos_y = np.linspace(old_position[1], new_position[1], n_steps)
+        n_steps = int(self.screen_refresh_rate / 2)
+        step_pos_x = np.linspace(int(old_position[0]), int(new_position[0]), n_steps)
+        step_pos_y = np.linspace(int(old_position[1]), int(new_position[1]), n_steps)
         
         if tick >= len(step_pos_x):
             move_completed = True
