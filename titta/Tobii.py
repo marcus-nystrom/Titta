@@ -2012,15 +2012,23 @@ class myTobii(object):
         return self.tracker.get_gaze_output_frequency()
 
     #%%
-    def save_data(self, *argv):
+    def save_data(self, *argv, filename=None):
         ''' Saves the data to pickle
         If you want to read the pickle, see the 'resources' folder
         
+        Args:
+            filename - if a filename is given, it overrides the name stored in 
+            settings (self.settings.FILENAME). Should be a string, e.g., 'fp1'
         *argv refers to additional information you want to add to the same pickle
         '''
         
+        if filename:
+            fname = filename
+        else:
+            fname = self.settings.FILENAME[:-4]
+        
         # Dump other collected information to file
-        with open(self.settings.FILENAME[:-4] + '.pkl','wb') as fp:
+        with open(fname + '.pkl','wb') as fp:
             pickle.dump(self.gaze_data_container, fp)
             pickle.dump(self.msg_container, fp)            
             pickle.dump(self.external_signal_container, fp)
@@ -2037,6 +2045,15 @@ class myTobii(object):
             
             for arg in argv: 
                 pickle.dump(arg, fp)
+                
+        # Clear data containers
+        self.gaze_data_container = []
+        self.msg_container = []
+        self.sync_data_container = []
+        self.image_data_container = []
+        self.external_signal_container = []
+        self.stream_errors_container = []
+        self.all_validation_results = []        
 
     
     #%%    
