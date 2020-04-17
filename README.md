@@ -25,7 +25,7 @@ Alternatively:
 1. Install websocket-client (for Tobii Pro Lab integration)
 	1. Open the command window
 	1. Go the the PsychoPy folder (e.g., C:\Program Files (x86)\PsychoPy3)
-	1. type 'python -m pip install websocket-client
+	1. type 'python -m pip install websocket-client (if you use the Pro Lab integration)
 1. Download or clone the Titta folder
 1. Add the downloaded Titta-folder to path in PsychoPy (under file->preferences)
 1. Run read_me.py (first change the monitor settings and the eye tracker name in read_me.py).
