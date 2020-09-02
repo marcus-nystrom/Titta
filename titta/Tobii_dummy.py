@@ -152,7 +152,7 @@ class Connect(Thread):
                                 user_position_guide=False):
         print('stop_recording')      
     #%% 
-    def save_data(self, *argv):
+    def save_data(self, *argv, filename=None):
         print('save_data')      
         
     #%%
