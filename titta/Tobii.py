@@ -2019,7 +2019,7 @@ class myTobii(object):
         Args:
             filename - if a filename is given, it overrides the name stored in 
             settings (self.settings.FILENAME). Should be a string, e.g., 'fp1'
-        *argv refers to additional information you want to add to the same pickle
+            *argv refers to additional information you want to add to the same pickle
         '''
         
         if filename:
