@@ -65,9 +65,9 @@ Titta.getDefaults('tracker model name');` Supported eye trackers and their corre
     |Tobii Pro X120|`Tobii X120`|
     |Tobii Pro T60|`Tobii T60`|
     |Tobii Pro T120|`Tobii T120`|
-    |**Tobii 4C**|`IS4_Large_Peripheral`|
+    |**Tobii 4C (Upgrade Key required)**|`IS4_Large_Peripheral`|
   
-    Eye trackers marked in **bold** font have been tested. Note that the VR eye trackers are not supported by Titta. 
+    Eye trackers marked in **bold** font have been tested. Note that the VR eye trackers are not supported by Titta. Also note that the Tobii 4C cannot be used for research purposes without buying the Pro Upgrade Key, and is compatible with Titta only after this purchase. Unfortunately, the Pro Upgrade Key is no longer sold by Tobii.
   
 2. Change settings from their defaults if wanted.
 3. Create a Titta instance using this settings struct: `tracker = Titta(settings);`
