@@ -1383,7 +1383,7 @@ class myTobii(object):
 
         # Prepare header
         header_text = []
-        self.instruction_text.color = (1, 1, 1)
+        self.instruction_text.setColor([1, 1, 1], colorSpace='rgb')
         y_pos = y_pos_res
         for j, x in enumerate(x_pos):
             header_text.append(visual.TextStim(self.win_temp,text=header[j],
@@ -1540,7 +1540,7 @@ class myTobii(object):
             self.win.flip()
 
         # Clear screen and return
-        self.instruction_text.color = (1, 1, 1)
+        self.instruction_text.setColor([1, 1, 1], colorSpace='rgb')
         self.win.flip()
         self.mouse.setVisible(0)
 
