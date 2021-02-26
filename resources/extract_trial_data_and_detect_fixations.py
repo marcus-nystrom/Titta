@@ -83,7 +83,7 @@ header = ['device_time_stamp',
 msg_onset = 'stim on: im1.jpeg'
 msg_offset = 'stim off: im1.jpeg'
 
-I2MC_data_path = Path.cwd() / 'I2MC_Python' / 'example data' / 'participant1'
+I2MC_data_path = Path.cwd() / 'I2MC' / 'example data' / 'participant1'
 
 f = open("testfile.pkl", 'rb')
 gaze_data_container = pickle.load(f)
@@ -98,3 +98,12 @@ df_trial = extract_trial_data(df, df_msg, msg_onset, msg_offset)
 
 # Save data in format required by I2MC
 df_trial.to_csv(str(I2MC_data_path / 'trial.tsv'), sep='\t')
+
+# Now run I2MC (you first need to download it and adapt the function to import data
+# before this line works)
+I2MC_main = str(Path.cwd() / 'I2MC' / 'I2MC.py')
+if Path(I2MC_main).is_file():
+    exec(open(I2MC_main).read())
+else:
+    print('It appears that I2MC is not available. please follow the\
+ instructions in /resources/I2MC/get_I2MC.txt to download it.')
