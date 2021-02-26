@@ -1,4 +1,0 @@
-FixStart	FixEnd	FixDur	XPos	YPos	FlankedByDataLoss	Fraction Interpolated	WeightCutoff	RMSxy	BCEA	FixRangeX	FixRangeY	Participant	Trial
-0.000	304.995	306.661	970.064	535.361	0.000	0.000	0.555	0.079	0.057	0.593	0.333	participant1	trial
-331.661	1429.981	1099.986	928.664	544.712	0.000	0.000	0.555	0.077	0.086	0.724	0.547	participant1	trial
-1441.647	2996.678	1555.031	939.966	562.296	0.000	0.000	0.555	0.103	0.196	0.917	0.921	participant1	trial
