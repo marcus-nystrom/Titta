@@ -558,6 +558,7 @@ class AnimatedCalibrationDisplay(object):
         self.target.set_size(target_size)
         self.target.set_pos(position)
         self.target.draw()
+        
 
     def move_point(self, old_position, new_position, tick):
         ''' Animates movement between two positions
@@ -569,8 +570,9 @@ class AnimatedCalibrationDisplay(object):
 
         # How many ticks should the movement be (one screen unit in one second)?
         n_steps = int(self.screen_refresh_rate / 2)
-        step_pos_x = np.linspace(int(old_position[0]), int(new_position[0]), n_steps)
-        step_pos_y = np.linspace(int(old_position[1]), int(new_position[1]), n_steps)
+        step_pos_x = np.linspace(old_position[0], new_position[0], n_steps)
+        step_pos_y = np.linspace(old_position[1], new_position[1], n_steps)
+
 
         if tick >= len(step_pos_x):
             move_completed = True
