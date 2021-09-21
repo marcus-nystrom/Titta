@@ -55,6 +55,7 @@ Titta.getDefaults('tracker model name');` Supported eye trackers and their corre
     |Eye tracker|Model name|
     |---|---|
     |**Tobii Pro Spectrum**|`Tobii Pro Spectrum`|
+    |**Tobii Pro Fusion**|`Tobii Pro Fusion`|
     |Tobii Pro TX300|`Tobii TX300`|
     |Tobii Pro T60 XL|`Tobii T60 XL`|
     |**Tobii Pro Nano**|`Tobii Pro Nano`|
