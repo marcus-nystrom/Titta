@@ -223,12 +223,14 @@ class Graphics(object):
         self.SETUP_DOT_OUTER_DIAMETER = 0.03 # Height unit
         self.SETUP_DOT_INNER_DIAMETER = 0.005        
         
-        # Parameters for eye images
+        # Parameters for eye images (default values are for Spectrum)
         self.EYE_IMAGE_SIZE = (0.5, 0.25)
-        self.EYE_IMAGE_SIZE_PIX = (175, 496)
-        self.EYE_IMAGE_SIZE_PIX_FULL_FRAME = (512, 640)
-        self.EYE_IMAGE_POS_L = (0.5, -0.4)
-        self.EYE_IMAGE_POS_R = (-0.5, -0.4)
+        # self.EYE_IMAGE_SIZE_PIX = (175, 496)
+        # self.EYE_IMAGE_SIZE_PIX_FULL_FRAME = (512, 640)
+        self.EYE_IMAGE_POS_L = (-0.5, -0.4)
+        self.EYE_IMAGE_POS_R = (0.5, -0.4)
+        self.EYE_IMAGE_POS_L_1 = (-0.5, -0.4) # Used for the two additional fusion images
+        self.EYE_IMAGE_POS_R_1 = (0.5, -0.4)
         
         # Parameters for tracking monitor (norm units)
         self.EYE_SIZE = 0.03
