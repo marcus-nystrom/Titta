@@ -201,9 +201,9 @@ class myTobii(object):
             # Parameters for eye images (default values are for Spectrum)
             self.settings.graphics.EYE_IMAGE_SIZE = (0.25, 0.25)
             self.settings.graphics.EYE_IMAGE_POS_R = (0.55, -0.4)
-            self.settings.graphics.EYE_IMAGE_POS_L = (-0.55, -0.4)
+            self.settings.graphics.EYE_IMAGE_POS_L = (-0.25, -0.4)
             self.settings.graphics.EYE_IMAGE_POS_R_1 = (0.25, -0.4) # Used for the two additional fusion images
-            self.settings.graphics.EYE_IMAGE_POS_L_1 = (-0.25, -0.4)            
+            self.settings.graphics.EYE_IMAGE_POS_L_1 = (-0.55, -0.4)
 
            #%%
     def _create_calibration_buttons(self):
@@ -359,7 +359,7 @@ class myTobii(object):
         self.eye_image_stim_r_1 = visual.ImageStim(self.win_temp, units='norm',
                                                    size=self.settings.graphics.EYE_IMAGE_SIZE,
                                                    pos=self.settings.graphics.EYE_IMAGE_POS_R_1,
-                                                   image=np.zeros((512, 512)))        
+                                                   image=np.zeros((512, 512)))
 
         # Accuracy image
         self.accuracy_image = visual.ImageStim(self.win_temp, image=None,units='norm', size=(2,2),
@@ -574,7 +574,7 @@ class myTobii(object):
         self.store_data = False
 
         # Start streaming of eye images
-        if (self.settings.eye_tracker_name == 'Tobii Pro Spectrum' or 
+        if (self.settings.eye_tracker_name == 'Tobii Pro Spectrum' or
             self.settings.eye_tracker_name == 'Tobii Pro Fusion'):
             self.start_recording(image_data=True, store_data = self.store_data)
 
@@ -618,7 +618,7 @@ class myTobii(object):
             k = event.getKeys()
 
             # Draw setup button information  and check whether is was selected
-            if (self.settings.eye_tracker_name == 'Tobii Pro Spectrum' or 
+            if (self.settings.eye_tracker_name == 'Tobii Pro Spectrum' or
                     self.settings.eye_tracker_name == 'Tobii Pro Fusion'):
                 self.setup_button.draw()
                 self.setup_button_text.draw()
@@ -708,7 +708,7 @@ class myTobii(object):
                 self.win_temp.flip()
 
         # Stop streaming of eye images
-        if  (self.settings.eye_tracker_name == 'Tobii Pro Spectrum' or 
+        if  (self.settings.eye_tracker_name == 'Tobii Pro Spectrum' or
                     self.settings.eye_tracker_name == 'Tobii Pro Fusion'):
             self.stop_recording(image_data=True)
         self.mouse.setVisible(0)
@@ -1820,7 +1820,7 @@ class myTobii(object):
         temp_im = StringIO(im_info['image_data'])
         nparr = np.array(Image.open(temp_im))
 
-        
+
         # nparr = np.array(list(tim.getdata()))
 
         # tim.save("temp.gif","GIF")
@@ -1948,15 +1948,15 @@ class myTobii(object):
         if tr.CAPABILITY_HAS_EYE_IMAGES in self.tracker.device_capabilities:
 
             for i, eye_im in enumerate(list(self.eye_image)):
-                
+
                 if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
                     eye_im['region_id'] == 0
-                        
+
                 im_arr = self.get_eye_image(eye_im)
                 # print(eye_im['camera_id']), eye_im['region_id']
                 # Always display image from camera_id == 0 on left side
                 if eye_im['camera_id'] == 0:
-                    if eye_im['region_id'] == 1:
+                    if eye_im['region_id'] == 0:
                         self.eye_image_stim_l.image = im_arr
                     else:
                         self.eye_image_stim_r_1.image = im_arr
@@ -1965,20 +1965,20 @@ class myTobii(object):
                         self.eye_image_stim_r.image = im_arr
                     else:
                         self.eye_image_stim_l_1.image = im_arr
-                        
+
                 # elif eye_im['camera_id'] == 2:
-                #     self.eye_image_stim_l_1.image = im_arr    
+                #     self.eye_image_stim_l_1.image = im_arr
                 # else:
-                #     self.eye_image_stim_r_1.image = im_arr    
-                    
+                #     self.eye_image_stim_r_1.image = im_arr
+
 
             self.eye_image_stim_l.draw()
             self.eye_image_stim_r.draw()
-            
+
             # The Fusion has 4 eye images, while Spectrum only 2
             if self.settings.eye_tracker_name == 'Tobii Pro Fusion':
                 self.eye_image_stim_l_1.draw()
-                self.eye_image_stim_r_1.draw()                
+                self.eye_image_stim_r_1.draw()
 
     #%%
     def _eye_image_callback(self, im):
