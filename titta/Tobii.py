@@ -829,7 +829,8 @@ class myTobii(object):
             if autopace == 2 or 'space' in k:
 
                 # Switch to fully automatic pacing once first point is accepted
-                autopace = 2
+                if self.settings.AUTO_PACE == 1:
+                    autopace = 2
 
                 if (self.clock.getTime() - t0) > paval:
 
