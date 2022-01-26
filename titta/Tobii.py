@@ -568,7 +568,10 @@ class myTobii(object):
         Four dot are shown in the corners. Ask the participants to fixate them
         to make sure there are not problems in the corners of the screen
         '''
-
+		
+		# Clear all events in mouse buffer
+        event.clearEvents()
+		
         self.mouse.setVisible(1)
 
         self.store_data = False
