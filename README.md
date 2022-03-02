@@ -18,7 +18,7 @@ To get started on Windows:
 1. Open the command window
 	1. Go the the PsychoPy folder (e.g., C:\Program Files (x86)\PsychoPy3)
 	1. type 'python -m pip install git+https://github.com/marcus-nystrom/Titta.git#egg=Titta' 
-1. Download the 'examples' folder and run read_me.py (first change the monitor settings and the eye tracker name in read_me.py).
+1. Download the 'demos' folder and run read_me.py (first change the monitor settings and the eye tracker name in read_me.py).
 	
 Alternatively:
 1. Download [PsychoPy (version 3.1.5 or higher)](https://www.psychopy.org)
