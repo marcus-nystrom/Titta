@@ -304,6 +304,7 @@ class EThead(object):
         # Setup control circles for head position
         self.static_circ = visual.Circle(win, radius = HEAD_POS_CIRCLE_FIXED_RADIUS,
                                          lineColor = HEAD_POS_CIRCLE_FIXED_COLOR,
+                                         fillColor = None,
                                          lineWidth=4, units='height')
         self.moving_ellipse = visual.ShapeStim(win,  lineColor = yellow_linecolor,
                                          lineWidth=4, units='height',
