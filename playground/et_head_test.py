@@ -6,18 +6,17 @@ Created on Wed Aug 21 17:51:15 2019
 """
 5
 from psychopy import visual, event, core
-import helpers_tobii as helpers
 import numpy as np
 import tobii_research
 
 # Insert the parent directory (where Titta is) to path
-from Titta import Titta, helpers_tobii as helpers
+from titta import Titta, helpers_tobii as helpers
 
  
 win = visual.Window(screen=1)
 
 # Parameters
-et_name = 'Spectrum'
+et_name = 'Tobii Pro Spectrum'
 dummy_mode = False
     
 # Change any of the default dettings?
@@ -31,7 +30,7 @@ if dummy_mode:
 tracker.init()
 
 # Start streaming of eye images
-tracker.start_recording(gaze_data=True, store_data = False)
+tracker.start_recording(gaze_data=True, user_position_guide=True, store_data = False)
 core.wait(0.5)
     
 if not tracker.get_latest_sample():
@@ -57,16 +56,18 @@ offset = np.array([0, 0, 0])
 while 1:
 #try:
     sample = tracker.get_latest_sample()
+    sample_user_position = tracker.get_latest_user_position_guide_sample()
 
     latest_valid_bincular_avg, \
     previous_binocular_sample_valid,\
     latest_valid_yaw, \
     latest_valid_roll, \
     offset = et_head.update(sample,
-                            latest_valid_bincular_avg,    
+                            sample_user_position,
+                            latest_valid_bincular_avg,
                             previous_binocular_sample_valid,
-                            latest_valid_yaw, 
-                            latest_valid_roll, 
+                            latest_valid_yaw,
+                            latest_valid_roll,
                             offset)
     # print(latest_valid_yaw, 
     # latest_valid_roll, 
@@ -77,10 +78,10 @@ while 1:
 
     k = event.getKeys()
     if 'escape' in k:
-        tracker.stop_recording(gaze_data=True)
+        tracker.stop_recording(gaze_data=True, user_position_guide=True)
         win.close()
         break
     
-tracker.stop_recording(gaze_data=True, store_data = False)    
+tracker.stop_recording(gaze_data=True, user_position_guide=True, store_data = False)    
 win.flip()
 win.close()
