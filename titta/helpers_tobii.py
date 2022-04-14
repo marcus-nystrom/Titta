@@ -152,8 +152,8 @@ class MyDot2:
         That is, if size == 1, the size is not altered.
         '''
         self.outer_dot.radius = size / 2
-        self.line_vertical.height = size
-        self.line_horizontal.width = size
+        self.line_vertical.size = (self.line_vertical.width, size)
+        self.line_horizontal.size = (size, self.line_horizontal.height)
 
     def set_pos(self, pos):
         '''
@@ -465,7 +465,7 @@ class EThead(object):
         #%% Compute the position and size of the pupils
 #        print(self.eye_l.pos)
         self.pupil_l.pos = self.eye_l.pos
-        self.pupil_l.vertices = self.eye_l.vertices * (sample['left_pupil_diameter']- 1)*2  / 16
+        self.pupil_l.vertices = self.eye_l.vertices * (sample[ 'left_pupil_diameter'] - 1)*2 / 16
 
         self.pupil_r.pos = self.eye_r.pos
         self.pupil_r.vertices = self.eye_r.vertices * (sample['right_pupil_diameter'] - 1)*2 / 16
@@ -490,16 +490,14 @@ class EThead(object):
             else:
                 self.eye_r_closed.pos = self.eye_r.pos
                 self.eye_r_closed.ori = self.latest_valid_roll
-                self.eye_r_closed.width = self.head_width / 2.0
-                self.eye_r_closed.height = self.eye_r_closed.width / 4.0
+                self.eye_r_closed.size = (self.head_width / 2.0, self.head_width / 8.0)
                 self.eye_r_closed.draw()
 
             if 'right' in self.eye:
                 # Indicate that the left eye is not used
                 self.eye_l_closed.pos = self.eye_l.pos
                 self.eye_l_closed.ori = self.latest_valid_roll
-                self.eye_l_closed.width = self.head_width / 2.0
-                self.eye_l_closed.height = self.eye_l_closed.width / 4.0
+                self.eye_l_closed.size = (self.head_width / 2.0, self.head_width / 8.0)
                 self.eye_l_closed.draw()
 
 
@@ -510,16 +508,14 @@ class EThead(object):
             else:
                 self.eye_l_closed.pos = self.eye_l.pos
                 self.eye_l_closed.ori = self.latest_valid_roll
-                self.eye_l_closed.width = self.head_width / 2.0
-                self.eye_l_closed.height = self.eye_l_closed.width / 4.0
+                self.eye_l_closed.size = (self.head_width / 2.0, self.head_width / 8.0)
                 self.eye_l_closed.draw()
 
             if 'left' in self.eye:
                 # Indicate that the right eye is not used
                 self.eye_r_closed.pos = self.eye_r.pos
                 self.eye_r_closed.ori = self.latest_valid_roll
-                self.eye_r_closed.width = self.head_width / 2.0
-                self.eye_r_closed.height = self.eye_r_closed.width / 4.0
+                self.eye_r_closed.size = (self.head_width / 2.0, self.head_width / 8.0)
                 self.eye_r_closed.draw()
 
 
