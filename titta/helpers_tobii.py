@@ -478,8 +478,14 @@ class EThead(object):
         ''' Draw all requested features
         '''
 
-        # Draw head, eyes, and pupils
+        # draw reference
         self.static_circ.draw()
+
+        # early out if nothing else to draw
+        if not (self.right_eye_valid or self.left_eye_valid):
+            return
+
+        # Draw head, eyes, and pupils
         self.moving_ellipse.draw()
 
 #        print(self.eye, self.moving_ellipse.pos, self.eye_r.pos, self.pupil_r.vertices)
