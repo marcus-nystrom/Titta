@@ -594,11 +594,6 @@ class myTobii(object):
 
         # Initiate parameters of head class (shown on participant screen)
         et_head = helpers.EThead(self.win)
-        latest_valid_yaw = 0
-        latest_valid_roll = 0
-        previous_binocular_sample_valid = True
-        latest_valid_bincular_avg = np.array([0.5, 0.5, 0.5])
-        offset = np.array([0, 0, 0])
 
         # Initiate parameters of head class (shown on operator screen)
         if self.win_operator:
@@ -635,32 +630,12 @@ class myTobii(object):
             sample_user_position = self.get_latest_user_position_guide_sample()
 
             # Draw et head on participant screen
-            latest_valid_bincular_avg, \
-            previous_binocular_sample_valid,\
-            latest_valid_yaw, \
-            latest_valid_roll, \
-            offset = et_head.update(sample,
-                                    sample_user_position,
-                                    latest_valid_bincular_avg,
-                                    previous_binocular_sample_valid,
-                                    latest_valid_yaw,
-                                    latest_valid_roll,
-                                    offset, eye=self.eye)
+            et_head.update(sample, sample_user_position, eye=self.eye)
             et_head.draw()
 
             # Draw et head on operator screen
             if self.win_operator:
-                latest_valid_bincular_avg, \
-                previous_binocular_sample_valid,\
-                latest_valid_yaw, \
-                latest_valid_roll, \
-                offset = et_head_op.update(sample,
-                                           sample_user_position,
-                                           latest_valid_bincular_avg,
-                                           previous_binocular_sample_valid,
-                                           latest_valid_yaw,
-                                           latest_valid_roll,
-                                           offset, eye=self.eye)
+                et_head_op.update(sample, sample_user_position, eye=self.eye)
                 et_head_op.draw()
 
             # Draw instruction

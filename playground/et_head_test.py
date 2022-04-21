@@ -4,7 +4,6 @@ Created on Wed Aug 21 17:51:15 2019
 
 @author: Marcus
 """
-5
 from psychopy import visual, event, core
 import numpy as np
 import tobii_research
@@ -47,11 +46,6 @@ if not tracker.get_latest_sample():
 
 
 et_head = helpers.EThead(win)
-latest_valid_yaw = 0 
-latest_valid_roll = 0
-previous_binocular_sample_valid = True
-latest_valid_bincular_avg = np.array([0.5, 0.5, 0.5])
-offset = np.array([0, 0, 0])
 
 while 1:
 #try:
@@ -62,13 +56,7 @@ while 1:
     previous_binocular_sample_valid,\
     latest_valid_yaw, \
     latest_valid_roll, \
-    offset = et_head.update(sample,
-                            sample_user_position,
-                            latest_valid_bincular_avg,
-                            previous_binocular_sample_valid,
-                            latest_valid_yaw,
-                            latest_valid_roll,
-                            offset)
+    offset = et_head.update(sample, sample_user_position)
     # print(latest_valid_yaw, 
     # latest_valid_roll, 
     # latest_valid_bincular_avg)

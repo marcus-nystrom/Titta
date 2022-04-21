@@ -333,12 +333,15 @@ class EThead(object):
         self.head_width = 0.25
         self.head_height = 0.25
 
+        # state variables
+        self.latest_valid_yaw = 0.
+        self.latest_valid_roll = 0.
+        self.previous_binocular_sample_valid = True
+        self.latest_valid_bincular_avg = np.array([0.5, 0.5, 0.5])
+        self.offset = np.array([0., 0., 0.])
 
-    def update(self, sample, sample_user_pos, latest_valid_binocular_avg,
-               previous_binocular_sample_valid,
-               latest_valid_roll,
-               latest_valid_yaw,
-               offset, eye='both'):
+
+    def update(self, sample, sample_user_pos, eye='both'):
         '''
         Args:
             sample - a dict containing information about the sample
@@ -369,7 +372,6 @@ class EThead(object):
         '''
 
         self.eye = eye # Which eye(s) should be tracked
-        self.latest_valid_roll = latest_valid_roll * 180 / np.pi * -1
 
         # Indicate that eye is not used by red color
         if 'right' in self.eye:
@@ -397,19 +399,19 @@ class EThead(object):
 
         if eye == 'both':
             if self.left_eye_valid and self.right_eye_valid: # if both eyes are open
-                latest_valid_binocular_avg = avg_pos[:]
-                previous_binocular_sample_valid = True
-                offset = np.array([0, 0, 0])
+                self.latest_valid_binocular_avg = avg_pos[:]
+                self.previous_binocular_sample_valid = True
+                self.offset = np.array([0., 0., 0.])
             elif self.left_eye_valid or self.right_eye_valid:
 
-                if previous_binocular_sample_valid:
-                    offset = latest_valid_binocular_avg - avg_pos
+                if self.previous_binocular_sample_valid:
+                    self.offset = self.latest_valid_binocular_avg - avg_pos
 
-                previous_binocular_sample_valid = False
+                self.previous_binocular_sample_valid = False
 
         #(0.5, 0.5, 0.5)  means the eye is in the center of the box
-        self.moving_ellipse.pos = ((avg_pos[0] - 0.5) * -1 - offset[0] ,
-                                (avg_pos[1] - 0.5) * -1 - offset[1])
+        self.moving_ellipse.pos = ((avg_pos[0] - 0.5) * -1 - self.offset[0] ,
+                                (avg_pos[1] - 0.5) * -1 - self.offset[1])
 
         self.moving_ellipse.height = (avg_pos[2] - 0.5)*-1 * 0.5 + self.HEAD_POS_ELLIPSE_MOVING_HEIGHT
 
@@ -425,12 +427,13 @@ class EThead(object):
             yaw =  np.math.tan((xyz_pos_eye_l[2] - xyz_pos_eye_r[2]) / \
                                (xyz_pos_eye_l[0] - xyz_pos_eye_r[0])) *-1
 
-            latest_valid_roll = roll
-            latest_valid_yaw = yaw
+            self.latest_valid_roll = roll
+            self.latest_valid_yaw = yaw
 
         else: # Otherwise use latest valid measurement
-            roll = latest_valid_roll
-            yaw = latest_valid_roll
+            roll = self.latest_valid_roll
+            yaw = self.latest_valid_yaw
+        self.latest_valid_roll_deg = roll * 180 / np.pi * -1
 
 #        print('test', latest_valid_binocular_avg, roll, yaw)
 
@@ -472,14 +475,20 @@ class EThead(object):
 
 #        print(self.eye_l.pos, self.eye_r.pos)
 
-        return latest_valid_binocular_avg, previous_binocular_sample_valid, latest_valid_roll, latest_valid_yaw, offset
+        return self.latest_valid_binocular_avg, self.previous_binocular_sample_valid, self.latest_valid_roll, self.latest_valid_yaw, self.offset
 
     def draw(self):
         ''' Draw all requested features
         '''
 
-        # Draw head, eyes, and pupils
+        # draw reference
         self.static_circ.draw()
+
+        # early out if nothing else to draw
+        if not (self.right_eye_valid or self.left_eye_valid):
+            return
+
+        # Draw head, eyes, and pupils
         self.moving_ellipse.draw()
 
 #        print(self.eye, self.moving_ellipse.pos, self.eye_r.pos, self.pupil_r.vertices)
@@ -489,14 +498,14 @@ class EThead(object):
                 self.pupil_r.draw()
             else:
                 self.eye_r_closed.pos = self.eye_r.pos
-                self.eye_r_closed.ori = self.latest_valid_roll
+                self.eye_r_closed.ori = self.latest_valid_roll_deg
                 self.eye_r_closed.size = (self.head_width / 2.0, self.head_width / 8.0)
                 self.eye_r_closed.draw()
 
             if 'right' in self.eye:
                 # Indicate that the left eye is not used
                 self.eye_l_closed.pos = self.eye_l.pos
-                self.eye_l_closed.ori = self.latest_valid_roll
+                self.eye_l_closed.ori = self.latest_valid_roll_deg
                 self.eye_l_closed.size = (self.head_width / 2.0, self.head_width / 8.0)
                 self.eye_l_closed.draw()
 
@@ -507,14 +516,14 @@ class EThead(object):
                 self.pupil_l.draw()
             else:
                 self.eye_l_closed.pos = self.eye_l.pos
-                self.eye_l_closed.ori = self.latest_valid_roll
+                self.eye_l_closed.ori = self.latest_valid_roll_deg
                 self.eye_l_closed.size = (self.head_width / 2.0, self.head_width / 8.0)
                 self.eye_l_closed.draw()
 
             if 'left' in self.eye:
                 # Indicate that the right eye is not used
                 self.eye_r_closed.pos = self.eye_r.pos
-                self.eye_r_closed.ori = self.latest_valid_roll
+                self.eye_r_closed.ori = self.latest_valid_roll_deg
                 self.eye_r_closed.size = (self.head_width / 2.0, self.head_width / 8.0)
                 self.eye_r_closed.draw()
 
