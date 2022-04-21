@@ -337,7 +337,7 @@ class EThead(object):
         self.latest_valid_yaw = 0.
         self.latest_valid_roll = 0.
         self.previous_binocular_sample_valid = True
-        self.latest_valid_bincular_avg = np.array([0.5, 0.5, 0.5])
+        self.latest_valid_binocular_avg = np.array([0.5, 0.5, 0.5])
         self.offset = np.array([0., 0., 0.])
 
 
@@ -564,7 +564,7 @@ class AnimatedCalibrationDisplay(object):
         self.target.set_size(target_size)
         self.target.set_pos(position)
         self.target.draw()
-        
+
 
     def move_point(self, old_position, new_position, tick):
         ''' Animates movement between two positions
