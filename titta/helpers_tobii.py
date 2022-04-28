@@ -308,7 +308,7 @@ class EThead(object):
                                          lineWidth=4, units='height')
         self.moving_ellipse = visual.ShapeStim(win,  lineColor = yellow_linecolor,
                                          lineWidth=4, units='height',
-                                         fillColor=yellow, opacity=0.1)
+                                         fillColor=yellow, opacity=0.5)
 
 
         # Ellipses for eyes
