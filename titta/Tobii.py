@@ -1197,13 +1197,13 @@ class myTobii(object):
         #... and collected validation samples for left...
         if self.eye == 'both' or self.eye == 'left':
             samples.xys = gaze_positions[:, 1:3]
-            samples.colors = (1, 0, 0)
+            samples.colors = 'red'
             samples.draw()
 
         #... and right eye
         if self.eye == 'both' or self.eye == 'right':
             samples.xys = gaze_positions[:, 3:5]
-            samples.colors = (0, 0, 1)
+            samples.colors = 'blue'
             samples.draw()
 
         # Save validation results as image
