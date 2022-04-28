@@ -1330,8 +1330,11 @@ class myTobii(object):
                                         # not calibration results
 
         # information about data quality header
-        header = ['Quality (deg)', 'L', 'R', 'L_rms', 'R_rms']
-        x_pos= np.linspace(-0.30, 0.30, num = 5)
+        header = ['Quality', 'Left eye', 'Right eye', 'Left eye', 'Right eye', 
+                   'Left eye', 'Right eye']
+        header_colors = [self.settings.graphics.TEXT_COLOR,
+                         'red', 'blue', 'red', 'blue', 'red', 'blue']
+        x_pos= np.linspace(-0.35, 0.35, num = 7)
 
         # Prepare rects for buttons, button text, and accuracy values
         select_accuracy_rect = []
@@ -1365,7 +1368,7 @@ class myTobii(object):
                                                         wrapWidth = 1,
                                                         height = self.settings.graphics.TEXT_SIZE,
                                                         units='norm',
-                                                        color = self.settings.graphics.TEXT_COLOR,
+                                                        color = header_colors[j],
                                                         pos = (x, y_pos)))
                 else:
                     accuracy_values_j.append(visual.TextStim(self.win_temp,
@@ -1373,12 +1376,25 @@ class myTobii(object):
                                                         wrapWidth = 1,
                                                         height = self.settings.graphics.TEXT_SIZE,
                                                         units='norm',
-                                                        color = self.settings.graphics.TEXT_COLOR,
+                                                        color = header_colors[j],
                                                         pos = (x, y_pos)))
             accuracy_values.append(accuracy_values_j)
             y_pos -= 0.06
 
+        # Prepare main header
+        header_main_text = ['Accuracy (deg)', 'Precision (deg)', 'Data loss (%)']
+        self.instruction_text.setColor([1, 1, 1], colorSpace='rgb')
+        y_pos_main = y_pos_res + 0.13
+        x_pos_main = np.linspace(-0.17, 0.30, num = 3)
 
+        header_text_main = []
+        for j, x in enumerate(x_pos_main):
+            header_text_main.append(visual.TextStim(self.win_temp,text=header_main_text[j],
+                                                wrapWidth = 1,
+                                                height = self.settings.graphics.TEXT_SIZE,
+                                                units='norm',
+                                                pos = (x, y_pos_main),
+                                                color = self.settings.graphics.TEXT_COLOR))        
         # Prepare header
         header_text = []
         self.instruction_text.setColor([1, 1, 1], colorSpace='rgb')
@@ -1389,7 +1405,7 @@ class myTobii(object):
                                                 height = self.settings.graphics.TEXT_SIZE,
                                                 units='norm',
                                                 pos = (x, y_pos_res + 0.06),
-                                                color = self.settings.graphics.TEXT_COLOR))
+                                                color = header_colors[j]))
 
 
         # Wait for user input
@@ -1428,8 +1444,9 @@ class myTobii(object):
                 self.calibration_image.draw()
                 self.calibration_image_text.draw()
 
-            # Draw header
-            [h.draw() for h in header_text]
+            # Draw headers
+            [h.draw() for h in header_text_main]            
+            [hh.draw() for hh in header_text]
 
             # Draw accuracy/precision values and buttons to select a calibration
             for i in range(nCalibrations):
