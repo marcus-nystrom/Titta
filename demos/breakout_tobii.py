@@ -80,12 +80,13 @@ tracker.start_recording(gaze_data=True,
 tracker.start_sample_buffer(sample_buffer_length=10)
 
 # Define some colors
-black = (0, 0, 0)
-white = (1, 1, 1)
-blue = (0, 0, 1)
+black = 'black'  # (0, 0, 0)
+white = 'white'  # (1, 1, 1)
+blue = 'blue'  # (0, 0, 1)
  
 screen_size = SCREEN_RES
-game_rect = visual.Rect(win, SCREEN_RES[0], SCREEN_RES[1], units = 'pix')
+
+# game_rect = visual.Rect(win, SCREEN_RES[0], SCREEN_RES[1], units = 'pix')
 # mouse.setPos((0, -screen_size[1]/2 + 100))
 
 # information about block position
@@ -110,7 +111,7 @@ def generate_blocks():
             blocks.append(block)
 #            block.image.draw()
         # Move the top of the next row down
-        top -= block_height - 2
+        top -= (block_height + 10)
         
     return blocks
  
@@ -229,12 +230,15 @@ class Player():
         lx = [d['left_gaze_point_on_display_area'][0] for d in data]
         rx = [d['right_gaze_point_on_display_area'][0] for d in data]
 
+        # update position only if contains no nan
+        if np.any(np.isnan(np.array(lx) * np.array(rx))):
+            return
+            
         # print(lx)
         # Use the average position (i.e., lowpass filtered)
         pos = np.nanmean([np.nanmean(rx), np.nanmean(lx)])
         pos = helpers.tobii2pix(np.array([[pos, pos]]), mon)[:, 0]
         pos = pos - screen_size[0] / 2
-            
 
         # Set the left side of the player bar to the mouse/gaze position
         if pos > (screen_size[0] / 2 - self.width/2.0):
@@ -312,7 +316,7 @@ while not exit_program:
         exit_program = True
 
     # Draw all stimuli
-    game_rect.draw()
+    #game_rect.draw()
     [b.image.draw() for b in blocks]
     player.image.draw()
     ball.image.draw()
