@@ -117,6 +117,7 @@ class myTobii(object):
         self.image_data_container = []
         self.external_signal_container = []
         self.stream_errors_container = []
+        self.eye_openness_data_container = []
 
         self.user_position_guide_data = None
 
@@ -1643,6 +1644,7 @@ class myTobii(object):
 
         if gaze_data:
             self.subscribe_to_gaze_data()
+            self.subscribe_to_eye_openness_data()
         if sync_data:
             self.subscribe_to_time_synchronization_data()
         if image_data:
@@ -1669,6 +1671,7 @@ class myTobii(object):
 
         if gaze_data:
             self.usubscribe_from_gaze_data()
+            self.unsubscribe_from_eye_openness_data()
         if sync_data:
             self.unsubscribe_from_time_synchronization_data()
         if image_data:
@@ -1722,7 +1725,29 @@ class myTobii(object):
         '''
         self.tracker.unsubscribe_from(tr.EYETRACKER_EXTERNAL_SIGNAL, self._external_signal_callback)
 
+
     #%%
+    def subscribe_to_eye_openness_data(self):
+        ''' Starts subscribing to gaze data
+        '''
+        self.tracker.subscribe_to(tr.EYETRACKER_EYE_OPENNESS_DATA, self._eye_openness_callback, as_dictionary=True)
+
+    #%%
+    def unsubscribe_from_eye_openness_data(self):
+        ''' Starts subscribing to gaze data
+        '''
+        self.tracker.unsubscribe_from(tr.EYETRACKER_EYE_OPENNESS_DATA, self._eye_openness_callback)
+
+    #%% 
+    def _eye_openness_callback(self, eye_openness_data):
+        self.eye_openness_data_container.append([eye_openness_data["device_time_stamp"],
+                                                eye_openness_data["system_time_stamp"],
+                                                eye_openness_data["left_eye_validity"],
+                                                eye_openness_data["left_eye_openness_value"],
+                                                eye_openness_data["right_eye_validity"],
+                                                eye_openness_data["right_eye_openness_value"]])        
+
+    #%% 
     def _gaze_data_callback(self, callback_object):
         '''
         Callback function for gaze data
@@ -2074,6 +2099,7 @@ class myTobii(object):
         with open(fname + '.pkl','wb') as fp:
             pickle.dump(self.gaze_data_container, fp)
             pickle.dump(self.msg_container, fp)
+            pickle.dump(self.eye_openness_data_container, fp)
             pickle.dump(self.external_signal_container, fp)
             pickle.dump(self.sync_data_container, fp)
             pickle.dump(self.stream_errors_container, fp)
@@ -2091,13 +2117,13 @@ class myTobii(object):
 
         # Clear data containers
         self.gaze_data_container = []
+        self.eye_openness_data_container = []
         self.msg_container = []
         self.sync_data_container = []
         self.image_data_container = []
         self.external_signal_container = []
         self.stream_errors_container = []
         self.all_validation_results = []
-
 
     #%%
     def de_init(self):

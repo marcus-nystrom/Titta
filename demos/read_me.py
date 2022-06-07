@@ -2,6 +2,7 @@
 import pickle
 import pandas as pd
 from psychopy import visual, monitors
+import matplotlib.pyplot as plt
 from titta import Titta, helpers_tobii as helpers
 
 
@@ -18,6 +19,7 @@ mon.setWidth(SCREEN_WIDTH)          # Width of screen (cm)
 mon.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
 mon.setSizePix(SCREEN_RES)
 im_name = 'im1.jpeg'
+stimulus_duration = 3
 
 # %%  ET settings
 et_name = 'Tobii Pro Spectrum'
@@ -52,7 +54,6 @@ if bimonocular_calibration:
 else:
     tracker.calibrate(win)
 
-
 # %% Record some data
 tracker.start_recording(gaze_data=True, store_data=True)
 
@@ -65,7 +66,7 @@ for i in range(monitor_refresh_rate):
 tracker.send_message('fix off')
 
 # Wait exactly 3 * fps frames (3 s)
-for i in range(3 * monitor_refresh_rate):
+for i in range(stimulus_duration * monitor_refresh_rate):
     if i == 0:
         tracker.send_message(''.join(['stim on: ', im_name]))
     image.draw()
@@ -79,14 +80,35 @@ tracker.stop_recording(gaze_data=True)
 win.close()
 tracker.save_data(mon)  # Also save screen geometry from the monitor object
 
-
-# %% Open pickle and write et-data and messages to tsv-files.
+# %% Open some parts of the pickle and write et-data and messages to tsv-files.
 f = open(settings.FILENAME[:-4] + '.pkl', 'rb')
 gaze_data = pickle.load(f)
 msg_data = pickle.load(f)
+eye_openness_data = pickle.load(f)
 
 #  Save data and messages
-df = pd.DataFrame(gaze_data, columns=tracker.header)
-df.to_csv(settings.FILENAME[:-4] + '.tsv', sep='\t')
 df_msg = pd.DataFrame(msg_data,  columns=['system_time_stamp', 'msg'])
 df_msg.to_csv(settings.FILENAME[:-4] + '_msg.tsv', sep='\t')
+
+df = pd.DataFrame(gaze_data, columns=tracker.header)
+df_eye_openness = pd.DataFrame(eye_openness_data,  columns=['device_time_stamp',
+                                                    'system_time_stamp', 
+                                                    'left_eye_validity', 
+                                                    'left_eye_openness_value', 
+                                                    'right_eye_validity', 
+                                                    'right_eye_openness_value'])
+                                                    
+# Add the eye openness signal to the dataframe containing gaze data                                                    
+df_etdata = pd.merge(df, df_eye_openness, on=['system_time_stamp'])
+df_etdata.to_csv(settings.FILENAME[:-4] + '.tsv', sep='\t')
+
+# Plot some data (e.g., the horizontal data from the left eye) 
+t = (df_etdata['system_time_stamp'] - df_etdata['system_time_stamp'][0]) / 1000
+plt.plot(t, df_etdata['left_gaze_point_on_display_area_x'])
+plt.plot(t, df_etdata['left_gaze_point_on_display_area_y'])
+plt.xlabel('Time (ms)')
+plt.ylabel('x/y coordinate (normalized units)')
+plt.legend(['x', 'y'])
+plt.show()
+
+

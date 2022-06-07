@@ -67,9 +67,11 @@ else: # else Python 2
 EYE_IMAGE_SIZE_PIX = (175, 496)
 EYE_IMAGE_SIZE_PIX_FULL_FRAME = (512, 640)
 
+# Files need to be loaded in this order
 f = open("testfile.pkl", 'rb')
 gaze_data_container = pickle.load(f)
 msg_container = pickle.load(f)
+eye_openness_data_container = pickle.load(f)
 external_signal_container = pickle.load(f)
 sync_data_container = pickle.load(f)
 stream_errors_container = pickle.load(f)
