@@ -41,23 +41,24 @@ fixation_point = helpers.MyDot2(win)
 image = visual.ImageStim(win, image='im1.jpeg', units='norm', size = (2, 2))
 
 #%% ET settings
-et_name = 'Tobii Pro Spectrum' 
-# et_name = 'Tobii4C' 
+et_name = 'Tobii Pro Spectrum'
+# et_name = 'Tobii4C'
 
 dummy_mode = False
 bimonocular_calibration = False
-     
+
 # Change any of the default dettings?e
 settings = Titta.get_defaults(et_name)
 settings.FILENAME = 'testfile.tsv'
+settings.ANIMATE_CALIBRATION = False
 
 #%% Connect to eye tracker and calibrate
 tracker = Titta.Connect(settings)
 if dummy_mode:
     tracker.set_dummy_mode()
 tracker.init()
-   
-# Calibrate 
+
+# Calibrate
 if bimonocular_calibration:
     tracker.calibrate(win, win_operator=win_op, eye='left', calibration_number = 'first')
     tracker.calibrate(win, win_operator=win_op, eye='right', calibration_number = 'second')
@@ -87,17 +88,17 @@ tracker.stop_recording(gaze_data=True)
 # Close window and save data
 win.close()
 win_op.close()
-tracker.save_data() 
+tracker.save_data()
 
 #%% Open pickle and write et-data and messages to tsv-files.
 f = open(settings.FILENAME[:-4] + '.pkl', 'rb')
 gaze_data = pickle.load(f)
 msg_data = pickle.load(f)
 
-# Save data and messages 
+# Save data and messages
 df = pd.DataFrame(gaze_data, columns=tracker.header)
 df.to_csv(settings.FILENAME[:-4] + '.tsv', sep='\t')
 df_msg = pd.DataFrame(msg_data,  columns = ['system_time_stamp', 'msg'])
-df_msg.to_csv(settings.FILENAME[:-4] + '_msg.tsv', sep='\t')            
+df_msg.to_csv(settings.FILENAME[:-4] + '_msg.tsv', sep='\t')
 
 core.quit()
