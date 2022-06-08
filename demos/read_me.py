@@ -92,23 +92,29 @@ df_msg.to_csv(settings.FILENAME[:-4] + '_msg.tsv', sep='\t')
 
 df = pd.DataFrame(gaze_data, columns=tracker.header)
 df_eye_openness = pd.DataFrame(eye_openness_data,  columns=['device_time_stamp',
-                                                    'system_time_stamp', 
-                                                    'left_eye_validity', 
-                                                    'left_eye_openness_value', 
-                                                    'right_eye_validity', 
-                                                    'right_eye_openness_value'])
-                                                    
-# Add the eye openness signal to the dataframe containing gaze data                                                    
+                                                            'system_time_stamp',
+                                                            'left_eye_validity',
+                                                            'left_eye_openness_value',
+                                                            'right_eye_validity',
+                                                            'right_eye_openness_value'])
+
+# Add the eye openness signal to the dataframe containing gaze data
 df_etdata = pd.merge(df, df_eye_openness, on=['system_time_stamp'])
 df_etdata.to_csv(settings.FILENAME[:-4] + '.tsv', sep='\t')
 
-# Plot some data (e.g., the horizontal data from the left eye) 
+# Plot some data (e.g., the horizontal data from the left eye)
 t = (df_etdata['system_time_stamp'] - df_etdata['system_time_stamp'][0]) / 1000
 plt.plot(t, df_etdata['left_gaze_point_on_display_area_x'])
 plt.plot(t, df_etdata['left_gaze_point_on_display_area_y'])
 plt.xlabel('Time (ms)')
 plt.ylabel('x/y coordinate (normalized units)')
 plt.legend(['x', 'y'])
+# plt.show()
+
+plt.figure()
+plt.plot(t, df_etdata['left_eye_openness_value'])
+plt.plot(t, df_etdata['right_eye_openness_value'])
+plt.xlabel('Time (ms)')
+plt.ylabel('Eye openness (mm)')
+plt.legend(['left', 'right'])
 plt.show()
-
-
