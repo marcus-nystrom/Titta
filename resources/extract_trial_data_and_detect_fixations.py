@@ -4,6 +4,8 @@ Created on Thu Feb 25 19:25:01 2021
 
 @author: Marcus
 Extract trial data and save it in a format that I2MC accepts to detect fixations.
+
+
 """
 import pickle
 import numpy as np
@@ -14,35 +16,35 @@ from pathlib import Path
 def extract_trial_data(df_et_data, df_msg, msg_onset, msg_offset):
     ''' Extracts data from one trial associated with the
     stimulus name.
- 
+
     Args:
         df_et_data - Pandas dataframe with sample et-data (output from Titta)
         df_msg - Pandas dataframe containing messages (assume stimname is 'my_im.png')
         msg_onset (str) - message sent at stimulus onset
         msg_offset (str) - message sent at stimulus onset
 
-        
+
     Returns:
         df - dataframe with data from one trial
-        
+
     '''
-        
+
     # Find timestamps for data belonging to this stimulus
     start_idx = np.where(df_msg.msg == msg_onset)[0][0]
     stop_idx = np.where(df_msg.msg == msg_offset)[0][0]
-    
+
     start_time_stamp = df_msg.system_time_stamp[start_idx]
     stop_time_stamp = df_msg.system_time_stamp[stop_idx]
-    
+
     # print(start_idx, stop_idx, start_time_stamp, stop_time_stamp)
-    # 
+    #
     # Cut out samples belonging to this stimulus
-    fix_idx_start = np.searchsorted(df_et_data.system_time_stamp, 
+    fix_idx_start = np.searchsorted(df_et_data.system_time_stamp,
                                     start_time_stamp)
-    fix_idx_stop = np.searchsorted(df_et_data.system_time_stamp, 
+    fix_idx_stop = np.searchsorted(df_et_data.system_time_stamp,
                                    stop_time_stamp)
     df_stim = df_et_data.iloc[fix_idx_start:fix_idx_stop].copy()
-    
+
     return df_stim
 
 # %%
@@ -80,8 +82,9 @@ header = ['device_time_stamp',
          'right_gaze_origin_validity',
          'right_gaze_point_validity']
 
-msg_onset = 'stim on: im1.jpeg'
-msg_offset = 'stim off: im1.jpeg'
+# These messages are used in the read_me.py demo
+msg_onset = 'stim on: im1.jpeg'  # Replace this with your own message
+msg_offset = 'stim off: im1.jpeg'  # Replace this with your own message
 
 I2MC_data_path = Path.cwd() / 'I2MC' / 'example data' / 'participant1'
 
