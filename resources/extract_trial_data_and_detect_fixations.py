@@ -93,25 +93,27 @@ if classify_fixations:
 
     I2MC_main_path = Path.cwd() / 'I2MC' / 'I2MC_Python-master' / 'example'
 
+    I2MC_main = I2MC_main_path / 'I2MC_example.py'
+    if not I2MC_main.is_file():
+        print('It appears that I2MC is not available. please follow the\
+     instructions in /resources/I2MC/get_I2MC.txt to download it.')
+        raise FileNotFoundError
+
     # First remove example data found when downloading I2MC
     example_data_path = I2MC_main_path / 'example_data'
     if example_data_path.is_dir():
         shutil.rmtree(example_data_path)
+        print('Removed old data')
 
     # Then create a new one (to be filled with new data)
     I2MC_data_path = I2MC_main_path / 'example_data'/ 'participant1'
+
     try:
         I2MC_data_path.mkdir(parents=True, exist_ok=False)
     except FileExistsError:
         print("Folder is already there")
     else:
         print("Folder was created")
-
-    I2MC_main = I2MC_main_path / 'I2MC_example.py'
-    if not I2MC_main.is_file():
-        print('It appears that I2MC is not available. please follow the\
-     instructions in /resources/I2MC/get_I2MC.txt to download it.')
-        raise FileNotFoundError
 
 # Read messages and et data from pickle
 f = open("testfile.pkl", 'rb')
@@ -146,6 +148,9 @@ for t in trial_msg:
         df_trial.to_csv(str(I2MC_data_path / filename), sep='\t')
     else:
         df_trial.to_csv(filename, sep='\t')
+
+    print('Trial ' + filename + " written to folder")
+
 
 # %%
 # Now open and run / 'I2MC' / 'I2MC_Python-master' / 'example / I2MC_example.py'.
