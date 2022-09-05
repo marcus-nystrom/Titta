@@ -5,11 +5,14 @@ Created on Thu Feb 25 19:25:01 2021
 @author: Marcus
 Extract trial data and save it in a format that I2MC accepts to detect fixations.
 
+Adapted to handle data recorded from one participant running the read_my.py demo
 
 """
 import pickle
 import numpy as np
 import pandas as pd
+import sys, os
+import shutil
 from pathlib import Path
 
 # %%
@@ -82,12 +85,35 @@ header = ['device_time_stamp',
          'right_gaze_origin_validity',
          'right_gaze_point_validity']
 
-# These messages are used in the read_me.py demo
-msg_onset = 'stim on: im1.jpeg'  # Replace this with your own message
-msg_offset = 'stim off: im1.jpeg'  # Replace this with your own message
+# Set this to True is you also want to detect fixations (not only extract trials)
+classify_fixations = True
 
-I2MC_data_path = Path.cwd() / 'I2MC' / 'example data' / 'participant1'
+# Check whether I2MC exists
+if classify_fixations:
 
+    I2MC_main_path = Path.cwd() / 'I2MC' / 'I2MC_Python-master' / 'example'
+
+    # First remove example data found when downloading I2MC
+    example_data_path = I2MC_main_path / 'example_data'
+    if example_data_path.is_dir():
+        shutil.rmtree(example_data_path)
+
+    # Then create a new one (to be filled with new data)
+    I2MC_data_path = I2MC_main_path / 'example_data'/ 'participant1'
+    try:
+        I2MC_data_path.mkdir(parents=True, exist_ok=False)
+    except FileExistsError:
+        print("Folder is already there")
+    else:
+        print("Folder was created")
+
+    I2MC_main = I2MC_main_path / 'I2MC_example.py'
+    if not I2MC_main.is_file():
+        print('It appears that I2MC is not available. please follow the\
+     instructions in /resources/I2MC/get_I2MC.txt to download it.')
+        raise FileNotFoundError
+
+# Read messages and et data from pickle
 f = open("testfile.pkl", 'rb')
 gaze_data_container = pickle.load(f)
 msg_container = pickle.load(f)
@@ -96,17 +122,39 @@ msg_container = pickle.load(f)
 df = pd.DataFrame(gaze_data_container, columns=header)
 df_msg = pd.DataFrame(msg_container, columns=['system_time_stamp', 'msg'])
 
-# Extract relevant trial data
-df_trial = extract_trial_data(df, df_msg, msg_onset, msg_offset)
 
-# Save data in format required by I2MC
-df_trial.to_csv(str(I2MC_data_path / 'trial.tsv'), sep='\t')
+# Read message for onset and offset
+# Assumption is that messages are on the form
+# 'onset_stimulusname' for the onset of a stimulus and
+# 'offset_stimulusname'for the offset of a stimulus
+onset = []
+offset = []
+for i, row in df_msg.iterrows():
 
-# Now run I2MC (you first need to download it and adapt the function to import data
-# before this line works)
-I2MC_main = str(Path.cwd() / 'I2MC' / 'I2MC.py')
-if Path(I2MC_main).is_file():
-    exec(open(I2MC_main).read())
-else:
-    print('It appears that I2MC is not available. please follow the\
- instructions in /resources/I2MC/get_I2MC.txt to download it.')
+    if 'onset' in row.msg:
+        onset.append(row.msg)
+    if 'offset' in row.msg:
+        offset.append(row.msg)
+trial_msg = zip(onset, offset)
+
+# Extract relevant trial data and save in format required by I2MC
+for t in trial_msg:
+    df_trial = extract_trial_data(df, df_msg, t[0], t[1])
+
+    filename = t[0].split('_')[1] + '.tsv'
+    if classify_fixations:
+        df_trial.to_csv(str(I2MC_data_path / filename), sep='\t')
+    else:
+        df_trial.to_csv(filename, sep='\t')
+
+# %%
+# Now open and run / 'I2MC' / 'I2MC_Python-master' / 'example / I2MC_example.py'.
+# OBS: you first need to adjust the settings to match your
+# Experimental setup in 'I2MC_example.py'. Check under '# NECESSARY VARIABLES'
+# Also make sure Titta is use when importing data (line 190)
+# data = imp.Titta(file_name, [opt['xres'], opt['yres']])
+
+
+
+
+
