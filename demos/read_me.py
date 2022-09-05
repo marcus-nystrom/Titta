@@ -2,6 +2,7 @@
 import pickle
 import pandas as pd
 from psychopy import visual, monitors
+import numpy as np
 import matplotlib.pyplot as plt
 from titta import Titta, helpers_tobii as helpers
 
@@ -18,7 +19,7 @@ mon = monitors.Monitor(MY_MONITOR)  # Defined in defaults file
 mon.setWidth(SCREEN_WIDTH)          # Width of screen (cm)
 mon.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
 mon.setSizePix(SCREEN_RES)
-im_name = 'im1.jpeg'
+im_names = ['im1.jpeg', 'im2.jpeg', 'im3.jpeg']
 stimulus_duration = 3
 
 # %%  ET settings
@@ -45,9 +46,12 @@ win = visual.Window(monitor=mon, fullscr=FULLSCREEN,
                     screen=1, size=SCREEN_RES, units='deg')
 
 fixation_point = helpers.MyDot2(win)
-image = visual.ImageStim(win, image=im_name, units='norm', size=(2, 2))
 
-#  Calibrate
+images = []
+for im_name in im_names:
+    images.append(visual.ImageStim(win, image=im_name, units='norm', size=(2, 2)))
+
+#  Calibratse
 if bimonocular_calibration:
     tracker.calibrate(win, eye='left', calibration_number='first')
     tracker.calibrate(win, eye='right', calibration_number='second')
@@ -67,13 +71,16 @@ for i in range(monitor_refresh_rate):
 tracker.send_message('fix off')
 
 # Wait exactly 3 * fps frames (3 s)
-for i in range(stimulus_duration * monitor_refresh_rate):
-    image.draw()
-    t = win.flip()
-    if i == 0:
-        tracker.send_message(''.join(['stim on: ', im_name]))
+np.random.shuffle(images)
+for image in images:
+    im_name = image.image
+    for i in range(stimulus_duration * monitor_refresh_rate):
+        image.draw()
+        t = win.flip()
+        if i == 0:
+            tracker.send_message(''.join(['stim on: ', im_name]))
 		
-tracker.send_message(''.join(['stim off: ', im_name]))
+    tracker.send_message(''.join(['stim off: ', im_name]))
 
 win.flip()
 tracker.stop_recording(gaze_data=True)
