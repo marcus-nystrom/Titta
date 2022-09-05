@@ -1644,7 +1644,8 @@ class myTobii(object):
 
         if gaze_data:
             self.subscribe_to_gaze_data()
-            self.subscribe_to_eye_openness_data()
+			if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
+				self.subscribe_to_eye_openness_data()
         if sync_data:
             self.subscribe_to_time_synchronization_data()
         if image_data:
@@ -1670,8 +1671,9 @@ class myTobii(object):
         '''
 
         if gaze_data:
-            self.usubscribe_from_gaze_data()
-            self.unsubscribe_from_eye_openness_data()
+            self.unsubscribe_from_gaze_data()
+			if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
+				self.unsubscribe_from_eye_openness_data()
         if sync_data:
             self.unsubscribe_from_time_synchronization_data()
         if image_data:
@@ -1809,7 +1811,7 @@ class myTobii(object):
         self.tracker.subscribe_to(tr.EYETRACKER_GAZE_DATA, self._gaze_data_callback, as_dictionary=True)
 
     #%%
-    def usubscribe_from_gaze_data(self):
+    def unsubscribe_from_gaze_data(self):
         ''' Starts subscribing to gaze data
         '''
         self.tracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA, self._gaze_data_callback)
