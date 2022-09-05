@@ -47,7 +47,7 @@ for trial in trials:
         # hit?
         hit = False
         for key in image_aois:
-            if image_aois[key][int(y), int(x)] == 1:  # 1 means white
+            if image_aois[key][int(y), int(x)] == temp_im.max():  # 1/255 means white
                 aoi_hits.append([trial, i, x, y, dur, key])
                 hit = True
 
