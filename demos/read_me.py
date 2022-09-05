@@ -59,18 +59,20 @@ tracker.start_recording(gaze_data=True, store_data=True)
 
 # Present fixation dot and wait for one second
 for i in range(monitor_refresh_rate):
-    if i == 0:
-        tracker.send_message('fix on')
     fixation_point.draw()
     t = win.flip()
+    if i == 0:
+        tracker.send_message('fix on')	
+		
 tracker.send_message('fix off')
 
 # Wait exactly 3 * fps frames (3 s)
 for i in range(stimulus_duration * monitor_refresh_rate):
-    if i == 0:
-        tracker.send_message(''.join(['stim on: ', im_name]))
     image.draw()
     t = win.flip()
+    if i == 0:
+        tracker.send_message(''.join(['stim on: ', im_name]))
+		
 tracker.send_message(''.join(['stim off: ', im_name]))
 
 win.flip()
