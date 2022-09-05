@@ -78,8 +78,8 @@ stream_errors_container = pickle.load(f)
 image_data_container = pickle.load(f)
 calibration_history = pickle.load(f)
 system_info = pickle.load(f)
-settings = pickle.load(f)
-python_version = pickle.load(f)
+# settings = pickle.load(f)
+# python_version = pickle.load(f)
 
 # And additional stuff if you pickeled something optional during the
 # call to 'save_data()'
