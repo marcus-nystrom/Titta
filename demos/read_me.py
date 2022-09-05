@@ -78,9 +78,9 @@ for image in images:
         image.draw()
         t = win.flip()
         if i == 0:
-            tracker.send_message(''.join(['stim on: ', im_name]))
+            tracker.send_message(''.join(['onset_', im_name]))
 		
-    tracker.send_message(''.join(['stim off: ', im_name]))
+    tracker.send_message(''.join(['offset_', im_name]))
 
 win.flip()
 tracker.stop_recording(gaze_data=True)
