@@ -29,7 +29,14 @@ for trial in trials:
     trial_aois = (Path.cwd() / 'AOIs' / trial).glob('*.png')
     image_aois = {}
     for t in trial_aois:
-        image_aois[str(t).split(os.sep)[-1]] = plt.imread(t)[:, :, 0].astype('int')
+
+        temp_im = plt.imread(t)
+
+        # If an RGB image, use only R-band.
+        if len(temp_im.shape) > 2:
+            temp_im = temp_im[:, :, 0]
+
+        image_aois[str(t).split(os.sep)[-1]] = temp_im
 
     # Go through each fixation in this trial and check whether it lands on
     # an AOI
@@ -40,7 +47,7 @@ for trial in trials:
         # hit?
         hit = False
         for key in image_aois:
-            if image_aois[key][int(y), int(x)] == 0:  # 0 means black
+            if image_aois[key][int(y), int(x)] == 1:  # 1 means white
                 aoi_hits.append([trial, i, x, y, dur, key])
                 hit = True
 
