@@ -569,10 +569,10 @@ class myTobii(object):
         Four dot are shown in the corners. Ask the participants to fixate them
         to make sure there are not problems in the corners of the screen
         '''
-		
+
 		# Clear all events in mouse buffer
         event.clearEvents()
-		
+
         self.mouse.setVisible(1)
 
         self.store_data = False
@@ -1331,7 +1331,7 @@ class myTobii(object):
                                         # not calibration results
 
         # information about data quality header
-        header = ['Quality', 'Left eye', 'Right eye', 'Left eye', 'Right eye', 
+        header = ['Quality', 'Left eye', 'Right eye', 'Left eye', 'Right eye',
                    'Left eye', 'Right eye']
         header_colors = [self.settings.graphics.TEXT_COLOR,
                          'red', 'blue', 'red', 'blue', 'red', 'blue']
@@ -1395,7 +1395,7 @@ class myTobii(object):
                                                 height = self.settings.graphics.TEXT_SIZE,
                                                 units='norm',
                                                 pos = (x, y_pos_main),
-                                                color = self.settings.graphics.TEXT_COLOR))        
+                                                color = self.settings.graphics.TEXT_COLOR))
         # Prepare header
         header_text = []
         self.instruction_text.setColor([1, 1, 1], colorSpace='rgb')
@@ -1446,7 +1446,7 @@ class myTobii(object):
                 self.calibration_image_text.draw()
 
             # Draw headers
-            [h.draw() for h in header_text_main]            
+            [h.draw() for h in header_text_main]
             [hh.draw() for hh in header_text]
 
             # Draw accuracy/precision values and buttons to select a calibration
@@ -1644,8 +1644,8 @@ class myTobii(object):
 
         if gaze_data:
             self.subscribe_to_gaze_data()
-			if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
-				self.subscribe_to_eye_openness_data()
+            if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
+                self.subscribe_to_eye_openness_data()
         if sync_data:
             self.subscribe_to_time_synchronization_data()
         if image_data:
@@ -1672,8 +1672,8 @@ class myTobii(object):
 
         if gaze_data:
             self.unsubscribe_from_gaze_data()
-			if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
-				self.unsubscribe_from_eye_openness_data()
+            if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
+                self.unsubscribe_from_eye_openness_data()
         if sync_data:
             self.unsubscribe_from_time_synchronization_data()
         if image_data:
@@ -1740,16 +1740,16 @@ class myTobii(object):
         '''
         self.tracker.unsubscribe_from(tr.EYETRACKER_EYE_OPENNESS_DATA, self._eye_openness_callback)
 
-    #%% 
+    #%%
     def _eye_openness_callback(self, eye_openness_data):
         self.eye_openness_data_container.append([eye_openness_data["device_time_stamp"],
                                                 eye_openness_data["system_time_stamp"],
                                                 eye_openness_data["left_eye_validity"],
                                                 eye_openness_data["left_eye_openness_value"],
                                                 eye_openness_data["right_eye_validity"],
-                                                eye_openness_data["right_eye_openness_value"]])        
+                                                eye_openness_data["right_eye_openness_value"]])
 
-    #%% 
+    #%%
     def _gaze_data_callback(self, callback_object):
         '''
         Callback function for gaze data
