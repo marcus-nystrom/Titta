@@ -9,4 +9,6 @@ data = imp.Titta(file_name, [opt['xres'], opt['yres']])
 
 When fixations have been detected, they can be mapped to specific AOIs (see the 'AOI_example' folder).
 
+If you prefer Jupyter notebooks, see 'Titta data processing.ipynb' and 'map_fixations_to_aois.ipynb'.
+
 To read result pickles (files ending with .pkl) containing data from a recording using Titta, use 'read_result_pickle.py'
