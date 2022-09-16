@@ -61,15 +61,15 @@ for i, row in df_fixations.iterrows():
     hit = False
     for key in aois:
         if aois[key][int(y), int(x)] == temp_im.max():
-            aoi_hits.append([row.participant, row.trial, i, x, y, dur, key])
+            aoi_hits.append([row.participant, row.trial, x, y, dur, key])
             hit = True
 
     # if not hit
     if not hit:
-        aoi_hits.append([participant, trial, i, x, y, dur, 'WS']) # WS (white space) for miss
+        aoi_hits.append([participant, trial, x, y, dur, 'WS']) # WS (white space) for miss
 
 # Save AOI data as csv
-df = pd.DataFrame(aoi_hits, columns=['participant', 'trial', 'fixation_number', 'xpos', 'ypos',
+df = pd.DataFrame(aoi_hits, columns=['participant', 'trial', 'xpos', 'ypos',
                                 'dur', 'AOI_name'])
 df.to_csv('fixation_aoi_hits.csv', index=False)
 
