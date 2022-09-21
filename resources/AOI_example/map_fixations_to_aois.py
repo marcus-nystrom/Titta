@@ -23,7 +23,7 @@ for p in aoi_folder.rglob("*"):
     if p.is_file():
 
         trial_name = str(p).split(os.sep)[-2]
-        aoi_name = p.name
+        aoi_name = p.stem
 
         # Read binary AOI image
         temp_im = plt.imread(p)
