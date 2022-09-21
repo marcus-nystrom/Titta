@@ -1,4 +1,4 @@
-Run `map_fixations_to_aois.py` to map each fixation to an AOI (generates an output file `fixation_aoi_hits.csv`). Fixations (allfixation.txt) used in this example were extracted with the I2MC algorithm from raw data collected with the read_me.py demo (see `demos` folder).
+Run `map_fixations_to_aois.py` to map each fixation to an AOI (generates an output file `fixation_aoi_hits.csv`). Fixations (`allfixation.txt`) used in this example were extracted with the I2MC algorithm from raw data collected with the read_me.py demo (see `demos` folder).
 
 If you prefer Jypyter notebooks, see `map_fixations_to_aois.ipynb`
 
