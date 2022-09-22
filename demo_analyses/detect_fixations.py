@@ -59,9 +59,9 @@ import numpy as np
 import import_funcs as imp
 try:
     import I2MC
+    import I2MC.plot
 except ImportError:
     print('pip install I2MC')
-    import I2MC.plot
 import matplotlib.pyplot as plt
 import time
 start = time.time()
