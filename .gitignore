@@ -28,7 +28,7 @@
 *.idf
 *.asc
 *.tsv
-*.pkl
+#*.pkl
 *.png
 *.gif
 *.mp4
@@ -53,4 +53,4 @@ Thumbs.db
 # Other #
 ######################
 .spyproject
-*.pkl
+#*.pkl
