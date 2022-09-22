@@ -45,9 +45,14 @@ for p in aoi_folder.rglob("*"):
 aoi_hits = []
 
 # For each fixation
+trial_old = 'dummy_trial_name'
 for i, row in df_fixations.iterrows():
 
     trial = row.trial
+    if trial != trial_old:
+        trial_fixation_no = 1
+        trial_old = trial
+
     participant = row.participant
 
     # Find AOIs for this trial
@@ -61,15 +66,18 @@ for i, row in df_fixations.iterrows():
     hit = False
     for key in aois:
         if aois[key][int(y), int(x)] == temp_im.max():
-            aoi_hits.append([row.participant, row.trial, x, y, dur, key])
+            aoi_hits.append([row.participant, row.trial, trial_fixation_no, x, y, dur, key])
             hit = True
 
     # if not hit
     if not hit:
-        aoi_hits.append([participant, trial, x, y, dur, 'WS']) # WS (white space) for miss
+        aoi_hits.append([participant, trial, trial_fixation_no, x, y, dur, 'WS']) # WS (white space) for miss
+
+    trial_fixation_no += 1
 
 # Save AOI data as csv
-df = pd.DataFrame(aoi_hits, columns=['participant', 'trial', 'xpos', 'ypos',
+df = pd.DataFrame(aoi_hits, columns=['participant', 'trial', 'fixation_number',
+                                     'xpos', 'ypos',
                                 'dur', 'AOI_name'])
 df.to_csv('fixation_aoi_hits.csv', index=False)
 
