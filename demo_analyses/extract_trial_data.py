@@ -95,6 +95,7 @@ for f in files:
     fh = open(f, 'rb')
     gaze_data_container = pickle.load(fh)
     msg_container = pickle.load(fh)
+    fh.close()
 
     # Convert to pandas dataframes
     df = pd.DataFrame(gaze_data_container, columns=header)
