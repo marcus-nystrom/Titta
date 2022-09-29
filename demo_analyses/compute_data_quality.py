@@ -55,7 +55,7 @@ for fn in files:
     # validation procedure following directly after the calibration.
     for c in calibration_history:
         # if this calibration was 'used'?
-        if 'used' in c[-1]:
+        if c[-1] == 'used':
             data_quality.append([pid] + c[:-1])
 
     # Also compute precision and data loss from individual trials
