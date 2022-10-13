@@ -29,7 +29,7 @@
 *.asc
 *.tsv
 #*.pkl
-*.png
+#*.png
 *.gif
 *.mp4
 *.bin
