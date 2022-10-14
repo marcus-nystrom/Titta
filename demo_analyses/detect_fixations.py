@@ -114,7 +114,7 @@ opt['windowtime']           = 0.2                           # time window (s) ov
 opt['steptime']             = 0.02                          # time window shift (s) for each iteration. Use zero for sample by sample processing
 opt['maxerrors']            = 100                           # maximum number of errors allowed in k-means clustering procedure before proceeding to next file
 opt['downsamples']          = [2, 5, 10]
-opt['downsampFilter']       = False                         # use chebychev filter when downsampling? Its what matlab's downsampling functions do, but could cause trouble (ringing) with the hard edges in eye-movement data
+opt['downsampFilter']       = True                         # use chebychev filter when downsampling? Its what matlab's downsampling functions do, but could cause trouble (ringing) with the hard edges in eye-movement data
 
 # # FIXATION DETERMINATION
 opt['cutoffstd']            = 2.0                           # number of standard deviations above mean k-means weights will be used as fixation cutoff
@@ -122,6 +122,16 @@ opt['onoffsetThresh']       = 3.0                           # number of MAD away
 opt['maxMergeDist']         = 30.0                          # maximum Euclidean distance in pixels between fixations for merging
 opt['maxMergeTime']         = 30.0                          # maximum time in ms between fixations for merging
 opt['minFixDur']            = 40.0                          # minimum fixation duration after merging, fixations with shorter duration are removed from output
+opt['chebyOrder']           = 8
+
+# Change parameters according to the recommendations on Github
+if opt['freq'] == 120:
+    opt['downsamples']          = [2, 3, 5]
+    opt['chebyOrder']           = 7
+
+if opt['freq'] < 120:
+    opt['downsamples']          = [2, 3]
+    opt['downsampFilter']       = False
 
 
 # =============================================================================
