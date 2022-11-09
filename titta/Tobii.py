@@ -49,8 +49,8 @@ class myTobii(object):
         acquited through the call (Titta.get_defaults)
         '''
 
-        if 'Tobii Pro Spectrum' not in settings.eye_tracker_name:
-            settings.RECORD_EYE_IMAGES_DURING_CALIBRATION = False
+        # if 'Tobii Pro Spectrum' not in settings.eye_tracker_name:
+        #     settings.RECORD_EYE_IMAGES_DURING_CALIBRATION = False
 
         self.settings = settings
 
@@ -179,6 +179,10 @@ class myTobii(object):
         # Initiate direct access to barebone SDK functionallity
         self.rawTracker = rawTracker(self.settings.TRACKER_ADDRESS)
         self.tracker = self.rawTracker.tracker
+
+        # Only the tobii pro spectrum and the tobii pro fusion can record eye images
+        if tr.CAPABILITY_HAS_EYE_IMAGES in self.tracker.device_capabilities:
+            self.settings.RECORD_EYE_IMAGES_DURING_CALIBRATION = False
 
         # set sampling frequency
         Fs = self.get_sample_rate()
@@ -385,7 +389,8 @@ class myTobii(object):
                                  has finished
 
         '''
-        if self.settings.eye_tracker_name != 'Tobii Pro Spectrum':
+        # if self.settings.eye_tracker_name != 'Tobii Pro Spectrum':
+        if not tr.CAPABILITY_CAN_DO_MONOCULAR_CALIBRATION in self.tracker.device_capabilities:
             assert eye=='both', 'Monocular calibrations available only in Tobii Pro Spectrum'
 
         # Generate coordinates for calibration in PsychoPy and
@@ -426,7 +431,8 @@ class myTobii(object):
             self.animator = helpers.AnimatedCalibrationDisplay(self.win, target, 'animate_point')
 
         # Screen based calibration
-        if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
+        # if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
+        if tr.CAPABILITY_CAN_DO_MONOCULAR_CALIBRATION in self.tracker.device_capabilities:
             self.calibration = tr.ScreenBasedMonocularCalibration(self.tracker)
             if 'both' in eye:
     #            self.calibration = tr.ScreenBasedCalibration(self.tracker)
@@ -578,8 +584,9 @@ class myTobii(object):
         self.store_data = False
 
         # Start streaming of eye images
-        if (self.settings.eye_tracker_name == 'Tobii Pro Spectrum' or
-            self.settings.eye_tracker_name == 'Tobii Pro Fusion'):
+        # if (self.settings.eye_tracker_name == 'Tobii Pro Spectrum' or
+        #     self.settings.eye_tracker_name == 'Tobii Pro Fusion'):
+        if tr.CAPABILITY_HAS_EYE_IMAGES in self.tracker.device_capabilities:
             self.start_recording(image_data=True, store_data = self.store_data)
 
 
@@ -617,8 +624,9 @@ class myTobii(object):
             k = event.getKeys()
 
             # Draw setup button information  and check whether is was selected
-            if (self.settings.eye_tracker_name == 'Tobii Pro Spectrum' or
-                    self.settings.eye_tracker_name == 'Tobii Pro Fusion'):
+            # if (self.settings.eye_tracker_name == 'Tobii Pro Spectrum' or
+            #         self.settings.eye_tracker_name == 'Tobii Pro Fusion'):
+            if tr.CAPABILITY_HAS_EYE_IMAGES in self.tracker.device_capabilities:
                 self.setup_button.draw()
                 self.setup_button_text.draw()
                 if self.settings.graphics.SETUP_BUTTON in k or (self.mouse.isPressedIn(self.setup_button, buttons=[0]) and not image_button_pressed):
@@ -687,8 +695,9 @@ class myTobii(object):
                 self.win_temp.flip()
 
         # Stop streaming of eye images
-        if  (self.settings.eye_tracker_name == 'Tobii Pro Spectrum' or
-                    self.settings.eye_tracker_name == 'Tobii Pro Fusion'):
+        # if  (self.settings.eye_tracker_name == 'Tobii Pro Spectrum' or
+        #             self.settings.eye_tracker_name == 'Tobii Pro Fusion'):
+        if tr.CAPABILITY_HAS_EYE_IMAGES in self.tracker.device_capabilities:
             self.stop_recording(image_data=True)
         self.mouse.setVisible(0)
 
@@ -817,7 +826,8 @@ class myTobii(object):
                     i += 1
 
                     # Collect some calibration data
-                    if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
+                    # if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
+                    if tr.CAPABILITY_CAN_DO_MONOCULAR_CALIBRATION in self.tracker.device_capabilities:
                         if self.eye == 'left':
                             if self.calibration.collect_data(tobii_data[0], tobii_data[1], self.eye_to_calibrate) != tr.CALIBRATION_STATUS_SUCCESS_LEFT_EYE:
                                 self.calibration.collect_data(tobii_data[0], tobii_data[1], self.eye_to_calibrate)
@@ -864,8 +874,8 @@ class myTobii(object):
         # Accept of redo the calibration?
         if 'success' in calibration_result.status:
             action = 'val'
-            if 'Tobii Pro Spectrum' in self.settings.eye_tracker_name:
-                print(self.eye, self.eye_to_calibrate)
+            # if 'Tobii Pro Spectrum' in self.settings.eye_tracker_name:
+            #     print(self.eye, self.eye_to_calibrate)
 
             cal_data = self._generate_calibration_image(calibration_result)
 #                pos, xy_pos = self.run_validation()
@@ -1644,7 +1654,8 @@ class myTobii(object):
 
         if gaze_data:
             self.subscribe_to_gaze_data()
-            if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
+            if tr.CAPABILITY_HAS_EYE_OPENNESS_DATA in self.tracker.device_capabilities:
+            # if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
                 self.subscribe_to_eye_openness_data()
         if sync_data:
             self.subscribe_to_time_synchronization_data()
@@ -1672,7 +1683,8 @@ class myTobii(object):
 
         if gaze_data:
             self.unsubscribe_from_gaze_data()
-            if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
+            if tr.CAPABILITY_HAS_EYE_OPENNESS_DATA in self.tracker.device_capabilities:
+            # if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
                 self.unsubscribe_from_eye_openness_data()
         if sync_data:
             self.unsubscribe_from_time_synchronization_data()
