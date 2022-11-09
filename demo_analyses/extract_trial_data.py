@@ -128,11 +128,19 @@ for f in files:
     # Extract relevant trial data and save in format required by I2MC
     for t in trial_msg:
         df_trial = extract_trial_data(df, df_msg, t[0], t[1])
+        df_trial.reset_index(inplace=True)
 
         filename = t[0].split('_')[1] + '.tsv'
         df_trial.to_csv(str(path) + os.sep + filename, sep='\t')
 
         print('Trial ' + filename + " written to folder ", path)
+
+        # Check that no samples are missing
+        expected_number_of_samples = df_trial.system_time_stamp.iloc[-1] - df_trial.system_time_stamp.iloc[0]
+        recorded_number_of_samples = len(df_trial.system_time_stamp)
+        percent_valid_samples = recorded_number_of_samples/recorded_number_of_samples*100
+        if percent_valid_samples < 99:
+            print(f'WARNING: Trial is missing {100 - percent_valid_samples}% of the samples.')
 
 
 
