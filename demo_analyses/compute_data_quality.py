@@ -91,18 +91,27 @@ for trial in trials:
     df_trial = pd.read_csv(trial, sep='\t')
     trial_name = '.'.join(str(trial).split(os.sep)[-1].split('.')[:2])
 
+    # Check that no samples are missing (based on the expected number of samples)
+    expected_number_of_samples = (df_trial.system_time_stamp.iloc[-1] - df_trial.system_time_stamp.iloc[0]) / 1000 / 1000 * system_info['sampling_frequency']
+    recorded_number_of_samples = len(df_trial.system_time_stamp)
+    percent_valid_samples = expected_number_of_samples/recorded_number_of_samples*100
+    if percent_valid_samples < 99:
+        print(f'WARNING: Trial is missing {100 - percent_valid_samples}% of the samples.')
+    prop_missing_data = 1 - expected_number_of_samples/recorded_number_of_samples
+
     # Compute precision
     for eye in  ['left', 'right']:
         n_samples = len(df_trial)
         n_valid_samples = np.nansum(df_trial[eye + '_gaze_point_validity'])
-        loss = 1 - n_valid_samples / n_samples
+        prop_invalid_samples = 1 - n_valid_samples / n_samples
         data_loss_trials.append([pid, trial_name, eye, n_samples,
-                                 n_valid_samples, loss])
+                                 n_valid_samples, prop_invalid_samples, 0])
 
 df_trial = pd.DataFrame(data_loss_trials, columns=['pid', 'trial',
                                                       'eye',
                                                       'n_trial_samples',
                                                       'n_valid_trial_samples',
-                                                      'Prop_data_loss'])
+                                                      'prop_invalid_samples',
+                                                      'prop_missing_data'])
 df_trial.to_csv('data_loss_per_trial.csv')
 print('Data loss values written to data_loss_per_trial.csv')
