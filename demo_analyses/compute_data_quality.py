@@ -94,7 +94,7 @@ for trial in trials:
     # Check that no samples are missing (based on the expected number of samples)
     expected_number_of_samples = (df_trial.system_time_stamp.iloc[-1] - df_trial.system_time_stamp.iloc[0]) / 1000 / 1000 * system_info['sampling_frequency']
     recorded_number_of_samples = len(df_trial.system_time_stamp)
-    percent_valid_samples = expected_number_of_samples/recorded_number_of_samples*100
+    percent_valid_samples = recorded_number_of_samples/expected_number_of_samples*100
     if percent_valid_samples < 99:
         print(f'WARNING: Trial is missing {100 - percent_valid_samples}% of the samples.')
     prop_missing_data = 1 - recorded_number_of_samples/expected_number_of_samples
