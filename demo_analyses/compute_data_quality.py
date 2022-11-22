@@ -97,7 +97,7 @@ for trial in trials:
     percent_valid_samples = expected_number_of_samples/recorded_number_of_samples*100
     if percent_valid_samples < 99:
         print(f'WARNING: Trial is missing {100 - percent_valid_samples}% of the samples.')
-    prop_missing_data = 1 - expected_number_of_samples/recorded_number_of_samples
+    prop_missing_data = 1 - recorded_number_of_samples/expected_number_of_samples
 
     # Compute precision
     for eye in  ['left', 'right']:
@@ -105,7 +105,7 @@ for trial in trials:
         n_valid_samples = np.nansum(df_trial[eye + '_gaze_point_validity'])
         prop_invalid_samples = 1 - n_valid_samples / n_samples
         data_loss_trials.append([pid, trial_name, eye, n_samples,
-                                 n_valid_samples, prop_invalid_samples, 0])
+                                 n_valid_samples, prop_invalid_samples, prop_missing_data])
 
 df_trial = pd.DataFrame(data_loss_trials, columns=['pid', 'trial',
                                                       'eye',
