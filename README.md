@@ -4,7 +4,7 @@ that integrates with PsychToolbox is also available from
 https://github.com/dcnieho/Titta. For a similar toolbox for SMI eye trackers, please see www.github.com/marcus-nystrom/SMITE.
 
 Cite as:
-[Niehorster, D.C., Andersson, R. & Nyström, M. (2020). Titta: A toolbox for creating PsychToolbox and Psychopy experiments with Tobii eye trackers. Behavior Research Methods. doi: 10.3758/s13428-020-01358-8](https://doi.org/10.3758/s13428-020-01358-8)
+[Niehorster, D.C., Andersson, R. & Nystrom, M. (2020). Titta: A toolbox for creating PsychToolbox and Psychopy experiments with Tobii eye trackers. Behavior Research Methods. doi: 10.3758/s13428-020-01358-8](https://doi.org/10.3758/s13428-020-01358-8)
 
 For questions, bug reports or to check for updates, please visit
 https://github.com/marcus-nystrom/Titta. 
@@ -36,7 +36,7 @@ Alternatively:
 1. Open a new External Presenter Project in Pro Lab. The Project name must be the same as the project name in read_read_me_TalkToProLab.py.
 1. In PsychoPy, run read_read_me_TalkToProLab.py (first change the monitor settings and the eye tracker name).
 
-Tested with PsychoPy v. 3.1.5 on Windows 10 using Python 3.6. Ideally, make sure that the eye tracker is detected and works in 
+Tested with PsychoPy v. 3.1.5 on Windows 10 using Python 3.6, and PsychoPy 2022.1.3 using Python 3.8. Ideally, make sure that the eye tracker is detected and works in 
 the [Tobii Eye Tracker Manager](https://www.tobiipro.com/product-listing/eye-tracker-manager/) before trying to use it with Titta.
 
 ## Contents
@@ -72,5 +72,5 @@ Titta.getDefaults('tracker model name');` Supported eye trackers and their corre
   
 2. Change settings from their defaults if wanted.
 3. Create a Titta instance using this settings struct: `tracker = Titta(settings);`
-4. Interact with the eye tracker using the below API.
+4. Interact with the eye tracker using the Titta API.
 5. When calling `Titta.calibrate()`, a participant setup and calibration interface is shown. For each screen, several keyboard hotkeys are available to activate certain functionality. By default, the hotkey for each button is printed in the button's label. 
