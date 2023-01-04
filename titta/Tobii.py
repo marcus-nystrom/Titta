@@ -1089,12 +1089,12 @@ class myTobii(object):
 
             # Start collecting validation data for a point 500 ms after its onset
             if (self.clock.getTime() >= 0.500 and self.clock.getTime() < 0.800) and not buffer_started:
-                self.start_sample_buffer(sample_buffer_length=300)
+                self.start_ring_buffer(sample_buffer_length=300)
                 buffer_started = True
 
             if self.clock.getTime() >= 0.800 and buffer_started:
-                sample = self.consume_buffer()
-                self.stop_sample_buffer()
+                sample = self.consume_ring_buffer()
+                self.stop_ring_buffer()
                 buffer_started = False
 
             # Time to switch to a new point
@@ -1611,7 +1611,7 @@ class myTobii(object):
         return tr.get_system_time_stamp()
 
     #%%
-    def start_sample_buffer(self, sample_buffer_length=3):
+    def start_ring_buffer(self, sample_buffer_length=3):
         '''Starts sample buffer'''
 
         # Initialize the ring buffer
@@ -1619,17 +1619,45 @@ class myTobii(object):
         self.__buffer_active = True
 
     #%%
-    def stop_sample_buffer(self):
+    def peek_buffer(self, n_samples):
+        '''
+
+
+        Args:
+            n_samples (int): number of samples to return
+
+        Returns:
+            python object with n_samples et samples
+
+        '''
+        return self.tracker_wrap.peek_N('gaze',n_samples)
+
+    # %%
+    def consume_buffer(self, n_samples):
+        '''
+
+
+        Args:
+            n_samples (int): number of samples to return
+
+        Returns:
+            python object with n_samples et samples
+
+        '''
+        return self.tracker_wrap.consume_N('gaze',n_samples)
+
+    #%%
+    def stop_ring_buffer(self):
         '''Stops sample buffer'''
         self.__buffer_active = False
 
     #%%
-    def consume_buffer(self):
+    def consume_ring_buffer(self):
         ''' Consume all samples and empty buffer'''
         return self.buf.get_all()
 
     #%%
-    def peek_buffer(self):
+    def peek_ring_buffer(self):
         ''' Get samples in buffer without emptying the buffer '''
         return self.buf.peek()
 
