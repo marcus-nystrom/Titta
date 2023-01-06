@@ -5,17 +5,10 @@ Created on Tue Jun 06 16:20:36 2017
 @author: marcus
 """
 from psychopy import visual
-from collections import deque
 import numpy as np
 from psychopy.tools.monitorunittools import cm2deg, deg2pix
 import copy
-from matplotlib.patches import Ellipse
-import sys
 import warnings
-
-if sys.version_info[0] == 2: # if Python 2:
-    range = xrange
-    pass
 
 
 #%%
@@ -209,40 +202,6 @@ class MyDot2:
         self.line_vertical.fillColor = 'red'
         self.line_horizontal.lineColor = 'red'
 
-
-#%%
-class RingBuffer(object):
-    """ A simple ring buffer based on the deque class"""
-    def __init__(self, maxlen=200):
-        # Create que with maxlen
-        self.maxlen = maxlen
-        self._b = deque(maxlen=maxlen)
-
-    def clear(self):
-        """ Clears buffer """
-        return(self._b.clear())
-
-    def get_all(self):
-        """ Returns all samples from buffer and empties the buffer"""
-        lenb = len(self._b)
-        return([self._b.popleft() for i in range(lenb)])
-
-    def peek(self):
-        """ Returns all samples from buffer without emptying the buffer
-        First remove an element, then add it again
-        """
-        b_temp = copy.copy(self._b)
-        c = []
-        if len(b_temp) > 0:
-            for i in range(len(b_temp)):
-                c.append(b_temp.pop())
-
-        return(c)
-
-    def append(self, L):
-        self._b.append(L)
-        """"Append buffer with the most recent sample (list L)"""
-
 #%%
 def ellipse(xy = (0, 0), width=1, height=1, angle=0, n_points=50):
     ''' Generates edge points for an ellipse
@@ -348,22 +307,21 @@ class EThead(object):
 
                 relevant info in sample is
 
-                'left_gaze_origin_in_user_coordinate_system'
-                'right_gaze_origin_in_user_coordinate_system'
-                'left_gaze_origin_in_trackbox_coordinate_system'
-                'right_gaze_origin_in_trackbox_coordinate_system'
-                'left_pupil_diameter'
-                'right_pupil_diameter'
+                sample.left.gaze_origin.in_user_coordinate_system
+                sample.right.gaze_origin.in_user_coordinate_system
+                sample.left.gaze_origin.in_trackbox_coordinate_system
+                sample.right.gaze_origin.in_trackbox_coordinate_system
+                sample.left.pupil_diameter
+                sample.right.pupil_diameter
 
-            sample_user_pos - a dict containing information about the user
-                positioning.
+            sample_user_pos
 
                 relevant info in sample is
 
-                'left_user_position'
-                'left_user_position_validity'
-                'right_user_position'
-                'right_user_position_validity'
+                sample_user_pos.left.user_position
+                sample_user_pos.left.user_validity.valid.value
+                sample_user_pos.right.user_position
+                sample_user_pos.left.user_validity.valid.value
 
             eye - track, both eyes, left eye, or right eye
                   the non-tracked eye will be indicated by a cross
@@ -381,8 +339,13 @@ class EThead(object):
             self.eye_r_closed.fillColor = (1, -1, -1)
 
         #%% 1. Compute the average position of the head ellipse
-        xyz_pos_eye_l = sample_user_pos['left_user_position']
-        xyz_pos_eye_r = sample_user_pos['right_user_position']
+        xyz_pos_eye_l = (sample_user_pos.left.user_position.x,
+                         sample_user_pos.left.user_position.y,
+                         sample_user_pos.left.user_position.z)
+
+        xyz_pos_eye_r = (sample_user_pos.right.user_position.x,
+                         sample_user_pos.right.user_position.y,
+                         sample_user_pos.right.user_position.z)
 
         # Valid data from the eyes?
         self.right_eye_valid = np.sum(np.isnan(xyz_pos_eye_r)) == 0 # boolean
@@ -468,10 +431,10 @@ class EThead(object):
         #%% Compute the position and size of the pupils
 #        print(self.eye_l.pos)
         self.pupil_l.pos = self.eye_l.pos
-        self.pupil_l.vertices = self.eye_l.vertices * (sample[ 'left_pupil_diameter'] - 1)*2 / 16
+        self.pupil_l.vertices = self.eye_l.vertices * (sample.left.pupil_diameter - 1)*2 / 16
 
         self.pupil_r.pos = self.eye_r.pos
-        self.pupil_r.vertices = self.eye_r.vertices * (sample['right_pupil_diameter'] - 1)*2 / 16
+        self.pupil_r.vertices = self.eye_r.vertices * (sample.right.pupil_diameter - 1)*2 / 16
 
 #        print(self.eye_l.pos, self.eye_r.pos)
 
@@ -526,11 +489,6 @@ class EThead(object):
                 self.eye_r_closed.ori = self.latest_valid_roll_deg
                 self.eye_r_closed.size = (self.head_width / 2.0, self.head_width / 8.0)
                 self.eye_r_closed.draw()
-
-
-
-
-
 
 
 #%%
