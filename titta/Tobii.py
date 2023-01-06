@@ -4,35 +4,17 @@ Created on Thu Jun 01 14:11:57 2017
 
 @author: Marcus
 
-ToDO:
-    * Integrate raw classes
-    *	Align validation screen with Matlab interface
-    * Select calibration with arrow keys
-	* self.tracker = tr.EyeTracker(self.settings.TRACKER_ADDRESS - add better error message if this call fails
-	  e.g. "Could not connect to eye tracker. Did you forget to switch is on or provide the wrong eye tracker name?
-    * make sure that pressing 'r' during validation, restarts a validition when in validation mode
-    (i.e., when the validation button has been pressed)
-    * CHANGE NAMES TO THOSE IN SDK
-    * Change enter_calibration_mode (such that the most recent calibration is perserved)
-"""
+ToDO: Add information about monitor to system_info() dict.
+
+    """
 from __future__ import print_function # towards Python 3 compatibility
 
 from psychopy import visual, core, event
-from collections import deque
 import pandas as pd
 import copy
 import sys
 import warnings
-
-if sys.version_info[0] == 3: # if Python 3:
-    from io import BytesIO as StringIO
-    import pickle
-else: # else Python 2
-    from cStringIO import StringIO
-    import cPickle as pickle
-
-from PIL import Image
-import tobii_research as tr
+import json
 import numpy as np
 from titta import helpers_tobii as helpers
 from TittaPy import EyeTracker
@@ -46,12 +28,9 @@ class myTobii(object):
 
     def __init__(self, settings):
         '''
-        Constructs an instance of the TITTA interface, with specified settings
+        Constructs an instance of the Titta interface, with specified settings
         acquited through the call (Titta.get_defaults)
         '''
-
-        # if 'Tobii Pro Spectrum' not in settings.eye_tracker_name:
-        #     settings.RECORD_EYE_IMAGES_DURING_CALIBRATION = False
 
         self.settings = settings
 
@@ -63,7 +42,6 @@ class myTobii(object):
     def init(self):
         ''' Apply settings and check capabilities
         '''
-
         # Update the number of calibration point (if changed by the user)
         if self.settings.N_CAL_TARGETS == 13:
             self.settings.CAL_POS_TOBII = self.settings.CAL_TARGETS[:]
@@ -80,21 +58,20 @@ class myTobii(object):
         else:
             raise ValueError('Unvalid number of calibration points')
 
-
-        # If no tracker address is give, find it automatically
-        k = 0
-        while len(self.settings.TRACKER_ADDRESS) == 0 and k < 4:
+        # If no tracker address is given, find one automatically
+        # Sometimes you have to try a few times before it finds and eye tracker
+        for k in range(4):
 
             # if the tracker doesn't connect, try four times to reconnect
-            ets = tr.find_all_eyetrackers()
+            ets = EyeTracker.find_all_eye_trackers()
             for et in ets:
 
-                # Check that the desired eye tracker is found
+                # Check if the desired eye tracker is found
                 if et.model == self.settings.eye_tracker_name:
                     self.settings.TRACKER_ADDRESS = et.address
-
-            k += 1
-            core.wait(2)
+                    break
+                else:
+                    core.wait(1)
 
         # If no tracker address could be set, the eye tracker was not found
         if len(self.settings.TRACKER_ADDRESS) == 0:
@@ -108,31 +85,23 @@ class myTobii(object):
 
         if self.settings.PACING_INTERVAL < 0.8:
             raise Exception('Calibration pacing interval must be \
-                            larger than 0.8 s')
+                            larger or equal to 0.8 s')
 
-        # Also connect to eye tracker via the python wrapper
-        self.tracker_wrap = EyeTracker(self.settings.TRACKER_ADDRESS)
+        # Initiate the EyeTracker class with a specific address
+        self.tracker = EyeTracker(self.settings.TRACKER_ADDRESS)
 
+        # Always include eye openness data in gaze stream
+        if "has_eye_openness_data" in self.tracker.capabilities:
+            self.tracker.set_include_eye_openness_in_gaze(True)
 
         # Start the eye tracker logger
-        self.tracker_wrap.start_logging()
+        self.tracker.start_logging()
 
-
-        # Store recorded data in lists
-        self.gaze_data_container = []
+        # Store timestamped messages in a list
         self.msg_container = []
-        self.sync_data_container = []
-        self.image_data_container = []
-        self.external_signal_container = []
-        self.stream_errors_container = []
-        self.eye_openness_data_container = []
 
         self.user_position_guide_data = None
-
         self.all_validation_results = []
-
-        # When recording, store data or just it online without storing
-        self.store_data = False
 
         self.clock = core.Clock()
 
@@ -171,42 +140,25 @@ class myTobii(object):
                  'right_gaze_origin_validity',
                  'right_gaze_point_validity']
 
-        self.old_timestamp = 0
-
-        # Placeholder for eye images
-        self.eye_image = deque(maxlen=2) # To store the most recent eye images
-                                            # for the left and right eyes
-        self.image_type = None
-        self.eye_image_write = False
-
-
-        # Internal variable to keep track of whether samples
-        # are put into the buffer or not
-        self.__buffer_active = False
-        self.buf = []
-
-        # Initiate direct access to barebone SDK functionallity
-        self.rawTracker = rawTracker(self.settings.TRACKER_ADDRESS)
-        self.tracker = self.rawTracker.tracker
-
         # Only the tobii pro spectrum and the tobii pro fusion can record eye images
-        if tr.CAPABILITY_HAS_EYE_IMAGES in self.tracker.device_capabilities:
+        # Never record eye images for other models
+        if not self.tracker.has_stream('eye_image'):
             self.settings.RECORD_EYE_IMAGES_DURING_CALIBRATION = False
 
-        # set sampling frequency
+        # Check and set sampling frequency if not correct
         Fs = self.get_sample_rate()
         if Fs != self.settings.SAMPLING_RATE:
             self.set_sample_rate(self.settings.SAMPLING_RATE)
 
-        # Assert that the selected tracking mode is supported
+        # Assert that the selected tracking mode is supported (human, primate)
         assert np.any([tracking_mode == self.settings.TRACKING_MODE \
-                        for tracking_mode in self.tracker.get_all_eye_tracking_modes()]), \
+                        for tracking_mode in self.tracker.supported_modes]), \
             "The given tracking mode is not supported. \
-            Supported are: {}".format(self.tracker.get_all_eye_tracking_modes())
+            Supported modes are: {}".format(self.tracker.supported_modes)
 
         try:
-            print('Current tracking mode: {}'.format(self.tracker.get_eye_tracking_mode()))
-            self.tracker.set_eye_tracking_mode(self.settings.TRACKING_MODE)
+            print('Current tracking mode: {}'.format(self.tracker.tracking_mode))
+            self.tracker.tracking_mode = self.settings.TRACKING_MODE
         except NameError:
             print('Tracking mode not found: {}'.format(self.settings.TRACKING_MODE))
 
@@ -227,7 +179,7 @@ class myTobii(object):
 
         '''
 
-        # Find out ratio aspect of the stimulus screen (16:10) or
+        # Find out ratio aspect of the stimulus screen
         screen_res = self.win.size
         ratio = screen_res[0] / float(screen_res[1])
 
@@ -343,8 +295,6 @@ class myTobii(object):
                                          fillColor = 'red', units='deg')
         self.et_sample_r = visual.Circle(self.win_temp, radius = self.settings.graphics.ET_SAMPLE_RADIUS,
                                          fillColor = 'blue', units='deg')
-        # self.et_line_l = visual.Line(self.win_temp, lineColor = 'red', units='deg', lineWidth=0.4)
-        # self.et_line_r = visual.Line(self.win_temp, lineColor = 'blue', units='deg', lineWidth=0.4)
 
         if self.win_operator:
             self.raw_et_sample_l = visual.Circle(self.win_temp, radius = 0.01,
@@ -354,8 +304,6 @@ class myTobii(object):
             self.current_point = helpers.MyDot2(self.win_temp, units='norm',
                                          outer_diameter=0.05,
                                          inner_diameter=0.02)
-
-
 
         # Show images (eye image, validation resutls)
         self.eye_image_stim_l = visual.ImageStim(self.win_temp, units='norm',
@@ -385,6 +333,56 @@ class myTobii(object):
         pass
 
     #%%
+    def start_recording(self,   gaze_data=False,
+                                sync_data=False,
+                                image_data=False,
+                                stream_errors=False,
+                                external_signal=False,
+                                user_position_guide=False):
+        ''' Starts recording
+        '''
+
+        if gaze_data:
+            self.tracker.start('gaze')
+        if sync_data:
+            self.tracker.start('time_sync')
+        if image_data and self.tracker.has_stream('eye_image'):
+            self.tracker.start('eye_image')
+        if stream_errors:
+            self.tracker.start('notification')
+        if user_position_guide:
+            self.tracker.start('positioning')
+        if external_signal and self.tracker.has_stream('external_signal'):
+            self.tracker.start('external_signal')
+
+    #%%
+    def stop_recording(self,   gaze_data=False,
+                                sync_data=False,
+                                image_data=False,
+                                stream_errors=False,
+                                external_signal=False,
+                                user_position_guide=False):
+        ''' Starts recording
+        '''
+
+        if gaze_data:
+            self.tracker.stop('gaze')
+        if sync_data:
+            self.tracker.stop('time_sync')
+        if image_data and self.tracker.has_stream('eye_image'):
+            self.tracker.stop('eye_image')
+        if stream_errors:
+            self.tracker.stop('notification')
+        if user_position_guide:
+            self.tracker.stop('positioning')
+        if external_signal and self.tracker.has_stream('external_signal'):
+            self.tracker.stop('external_signal')
+
+    #%%
+    def is_connected(self):
+        pass
+
+    #%%
     def calibrate(self, win, win_operator=None,
                   eye='both', calibration_number = 'second'):
         ''' Enters the calibration screen and gives the user control
@@ -398,8 +396,7 @@ class myTobii(object):
                                  has finished
 
         '''
-        # if self.settings.eye_tracker_name != 'Tobii Pro Spectrum':
-        if not tr.CAPABILITY_CAN_DO_MONOCULAR_CALIBRATION in self.tracker.device_capabilities:
+        if not "can_do_monocular_calibration" in self.tracker.capabilities:
             assert eye=='both', 'Monocular calibrations available only in Tobii Pro Spectrum'
 
         # Generate coordinates for calibration in PsychoPy and
@@ -439,41 +436,31 @@ class myTobii(object):
                                      inner_diameter=self.settings.graphics.TARGET_SIZE_INNER)
             self.animator = helpers.AnimatedCalibrationDisplay(self.win, target, 'animate_point')
 
-        # Screen based calibration
-        # if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
-        if tr.CAPABILITY_CAN_DO_MONOCULAR_CALIBRATION in self.tracker.device_capabilities:
-            self.calibration = tr.ScreenBasedMonocularCalibration(self.tracker)
-            if 'both' in eye:
-    #            self.calibration = tr.ScreenBasedCalibration(self.tracker)
-                self.eye_to_calibrate = tr.SELECTED_EYE_BOTH
-            elif 'left' in eye:
-                self.eye_to_calibrate = tr.SELECTED_EYE_LEFT
-            else:
-                self.eye_to_calibrate = tr.SELECTED_EYE_RIGHT
-        else:
-            self.calibration = tr.ScreenBasedCalibration(self.tracker)
-
         # Main control loop
         action = 'setup'
         self.deviations = [] # List to store validation accuracies
-        self.start_recording(store_data=False,
-                             gaze_data=True,
-                             sync_data=True,
-                             wrapper=False)
+        self.tracker.start('gaze')
+        self.tracker.start('time_sync')
 
         calibration_started = False
 
+        # Select action
         while True:
             self.action = action
             if 'setup' in action:
                 action = self._check_head_position()
             elif 'cal' in action:
 
-                # Enter calibration mode if binocular calibration or if first
-                # bi-monocular calibration
+                # Enter calibration mode
                 if not calibration_started:
-                    if self.eye == 'both' or self.calibration_number == 'first':
-                        self.calibration.enter_calibration_mode()
+                    if self.eye == 'both':
+                        # Enter calibration mode
+                        self.tracker.enter_calibration_mode(False) # doMonocular=False
+                    else:
+                        if "can_do_monocular_calibration" in self.tracker.capabilities:
+                            self.tracker.enter_calibration_mode(True) # doMonocular=True
+
+                res = self._wait_for_action_complete()
 
                 # Default to last calibration when a new
                 # Calibration is run
@@ -497,16 +484,28 @@ class myTobii(object):
                 # Leave calibration mode if binocular calibration or if second
                 # bi-monocular calibration
                 if calibration_started:
-                    if self.eye == 'both' or self.calibration_number == 'second':
-                        self.calibration.leave_calibration_mode()
+                    if self.eye == 'both':
+                        self.tracker.leave_calibration_mode(False)
+                        res = self._wait_for_action_complete()
+
+                    else:
+                        if self.calibration_number == 'second':
+                            self.tracker.leave_calibration_mode(True)
+                            res = self._wait_for_action_complete()
 
                 # Break out of loop
                 break
             elif 'quit' in action:
                 if calibration_started:
-                    self.calibration.leave_calibration_mode()
-                self.stop_recording(gaze_data=True,
-                            sync_data=True, wrapper=False)
+                    if self.eye == 'both':
+                        self.tracker.leave_calibration_mode(False)
+                    else:
+                        self.tracker.leave_calibration_mode(True)
+
+                    res = self._wait_for_action_complete()
+
+                self.stop('gaze')
+                self.stop('time_sync')
                 self.win.close()
                 if self.win_operator:
                     self.win_operator.close()
@@ -517,8 +516,8 @@ class myTobii(object):
 
             core.wait(0.1)
 
-        self.stop_recording(gaze_data=True,
-                            sync_data=True, wrapper=False)
+        self.stop('gaze')
+        self.stop('time_sync')
 
         # Save all calibrations (appending 'used' means that the calibration was used)
         for i, devs in enumerate(self.deviations):
@@ -558,19 +557,16 @@ class myTobii(object):
     def _draw_gaze(self):
         '''Shows gaze contingent cursor'''
 
-        d = self.get_latest_sample()
-        lx = d['left_gaze_point_on_display_area'][0]
-        ly = d['left_gaze_point_on_display_area'][1]
-        rx = d['right_gaze_point_on_display_area'][0]
-        ry = d['right_gaze_point_on_display_area'][1]
+        d = self.tracker.peek_N('gaze',1)
 
+        lx = d.left.gaze_point.on_display_area.x
+        ly = d.left.gaze_point.on_display_area.y
+        rx = d.right.gaze_point.on_display_area.x
+        ry = d.right.gaze_point.on_display_area.y
 
-#        if self.eye == 'left' or self.eye == 'both':
         self.et_sample_l.pos = helpers.tobii2deg(np.array([[lx, ly]]),
                                                  self.win_temp.monitor)
         self.et_sample_l.draw()
-
-#        if self.eye == 'right' or self.eye == 'both':
         self.et_sample_r.pos = helpers.tobii2deg(np.array([[rx, ry]]),
                                                  self.win_temp.monitor)
         self.et_sample_r.draw()
@@ -594,24 +590,17 @@ class myTobii(object):
         self.store_data = False
 
         # Start streaming of eye images
-        # if (self.settings.eye_tracker_name == 'Tobii Pro Spectrum' or
-        #     self.settings.eye_tracker_name == 'Tobii Pro Fusion'):
-        if tr.CAPABILITY_HAS_EYE_IMAGES in self.tracker.device_capabilities:
-            self.start_recording(image_data=True, store_data = self.store_data,
-                                 wrapper=False)
-
+        if self.tracker.has_stream('eye_image'):
+            self.tracker.start('eye_image')
 
         # Start user positioning guide
-        self.start_recording(user_position_guide=True,
-                             store_data = self.store_data,
-                             wrapper=False)
+        self.tracker.start('positioning')
 
         core.wait(0.5)
 
         if not self.get_latest_sample():
             self.win.close()
             raise ValueError('Eye tracker switched on?')
-
 
         # Initiate parameters of head class (shown on participant screen)
         et_head = helpers.EThead(self.win)
@@ -636,10 +625,8 @@ class myTobii(object):
             # Get keys
             k = event.getKeys()
 
-            # Draw setup button information  and check whether is was selected
-            # if (self.settings.eye_tracker_name == 'Tobii Pro Spectrum' or
-            #         self.settings.eye_tracker_name == 'Tobii Pro Fusion'):
-            if tr.CAPABILITY_HAS_EYE_IMAGES in self.tracker.device_capabilities:
+            # Draw setup button information and check whether is was selected
+            if self.tracker.has_stream('eye_image'):
                 self.setup_button.draw()
                 self.setup_button_text.draw()
                 if self.settings.graphics.SETUP_BUTTON in k or (self.mouse.isPressedIn(self.setup_button, buttons=[0]) and not image_button_pressed):
@@ -648,8 +635,8 @@ class myTobii(object):
                     image_button_pressed = True
 
              # Get position of eyes in track box
-            sample = self.get_latest_sample()
-            sample_user_position = self.get_latest_user_position_guide_sample()
+            sample = self.tracker.peek_N('gaze',1)
+            sample_user_position = self.tracker.peek_N('positioning',1)
 
             # Draw et head on participant screen
             et_head.update(sample, sample_user_position, eye=self.eye)
@@ -666,9 +653,8 @@ class myTobii(object):
             self.instruction_text.draw()
 
             # Get and draw distance information
-            l_pos = self.get_latest_sample()['left_gaze_origin_in_user_coordinate_system'][2]
-            r_pos = self.get_latest_sample()['right_gaze_origin_in_user_coordinate_system'][2]
-
+            l_pos = sample.left.gaze_point.on_display_area.x
+            r_pos = sample.right.gaze_point.on_display_area.x
 
             try:
                 with warnings.catch_warnings():
@@ -710,12 +696,12 @@ class myTobii(object):
         # Stop streaming of eye images
         # if  (self.settings.eye_tracker_name == 'Tobii Pro Spectrum' or
         #             self.settings.eye_tracker_name == 'Tobii Pro Fusion'):
-        if tr.CAPABILITY_HAS_EYE_IMAGES in self.tracker.device_capabilities:
-            self.stop_recording(image_data=True, wrapper=False)
+        if self.tracker.has_stream('eye_image'):
+            self.tracker.stop('eye_image')
         self.mouse.setVisible(0)
 
         # Stop user position guide
-        self.stop_recording(user_position_guide=True, wrapper=False)
+        self.traker.stop('positioning')
 
         # Clear the screen
         self.win.flip()
@@ -742,17 +728,31 @@ class myTobii(object):
         self.current_point.draw()
 
         # Draw data for the left and right eyes
-        self.raw_et_sample_l.pos = helpers.tobii2norm(np.expand_dims(sample['left_gaze_point_on_display_area'], axis=0))
-        self.raw_et_sample_r.pos = helpers.tobii2norm(np.expand_dims(sample['right_gaze_point_on_display_area'], axis=0))
+        self.raw_et_sample_l.pos = helpers.tobii2norm(np.expand_dims(sample.left.gaze_point.on_display_area.x, axis=0))
+        self.raw_et_sample_r.pos = helpers.tobii2norm(np.expand_dims(sample.right.gaze_point.on_display_area.x, axis=0))
         self.raw_et_sample_l.draw()
         self.raw_et_sample_r.draw()
 
         # Draw eye images for the left and right eyes
         self._draw_eye_image()
 
+    #%%
+    def _wait_for_action_complete(self):
+        ''' Wait for an action to finish (and see if i succeded)
 
+        returns:
+            information about the completed action
+            res-  e.g.,
+            print(res.work_item.action)
+            print(res.work_item.coordinates)
+            print(res.status_string)
+        '''
 
+        res = None
+        while res==None:
+            res = self.tracker.calibration_retrieve_result()
 
+        return res
 
     #%%
     def _run_calibration(self):
@@ -768,15 +768,13 @@ class myTobii(object):
         if self.win_operator:
             self.win_operator.flip()
 
-        self.store_data = True
+        # self.store_data = True
 
         paval=self.settings.PACING_INTERVAL
 
         # Optional start recording of eye images
         if self.settings.RECORD_EYE_IMAGES_DURING_CALIBRATION or self.win_operator:
-            self.start_recording(image_data=True, wrapper=False)
-
-
+            self.tracker.start('eye_image')
 
         core.wait(0.5)
         self.send_message('Calibration_start')
@@ -789,11 +787,10 @@ class myTobii(object):
         t0 = self.clock.getTime()
         i = 0
         pos_old = [0, 0]
-        calibration_done = False
         animation_state = 'static'
         tick = 0
         autopace = self.settings.AUTO_PACE
-        while not calibration_done:
+        while True:
 
             k = event.getKeys()
 
@@ -816,7 +813,8 @@ class myTobii(object):
                 self.cal_dot.draw()
 
             if self.win_operator:
-                self._draw_operator_screen(tobii_data, self.get_latest_sample())
+                self._draw_operator_screen(tobii_data,
+                                           self.tracker.peek_N('gaze', 1))
                 self.win_temp.flip()
 
             self.win.flip()
@@ -839,20 +837,12 @@ class myTobii(object):
                     i += 1
 
                     # Collect some calibration data
-                    # if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
-                    if tr.CAPABILITY_CAN_DO_MONOCULAR_CALIBRATION in self.tracker.device_capabilities:
-                        if self.eye == 'left':
-                            if self.calibration.collect_data(tobii_data[0], tobii_data[1], self.eye_to_calibrate) != tr.CALIBRATION_STATUS_SUCCESS_LEFT_EYE:
-                                self.calibration.collect_data(tobii_data[0], tobii_data[1], self.eye_to_calibrate)
-                        elif self.eye == 'right':
-                            if self.calibration.collect_data(tobii_data[0], tobii_data[1], self.eye_to_calibrate) != tr.CALIBRATION_STATUS_SUCCESS_RIGHT_EYE:
-                                self.calibration.collect_data(tobii_data[0], tobii_data[1], self.eye_to_calibrate)
-                        else:
-                            if self.calibration.collect_data(tobii_data[0], tobii_data[1], self.eye_to_calibrate) != tr.CALIBRATION_STATUS_SUCCESS:
-                                self.calibration.collect_data(tobii_data[0], tobii_data[1], self.eye_to_calibrate)
+                    if self.eye == 'both':
+                        self.tracker.calibration_collect_data(tobii_data)
                     else:
-                        if self.calibration.collect_data(tobii_data[0], tobii_data[1]) != tr.CALIBRATION_STATUS_SUCCESS:
-                            self.calibration.collect_data(tobii_data[0], tobii_data[1])
+                        self.tracker.calibration_collect_data(tobii_data, self.eye)
+
+                    res = self._wait_for_action_complete()
 
                     if i == self.settings.N_CAL_TARGETS:
                         self.final_cal_position = copy.deepcopy(pos)
@@ -863,9 +853,6 @@ class myTobii(object):
                     tick = 0
                     animation_state = 'move'
 
-
-
-
             # Abort calibration if esc is pressed (and go back to setup screen)
             if 'escape' in k:
                 return action
@@ -875,40 +862,32 @@ class myTobii(object):
                 action = 'cal'
                 return action
 
-
             tick += 1
 
         # Apply the calibration and get the calibration results
-        calibration_result = self.calibration.compute_and_apply()
-        self.calibration_results = calibration_result
+        self.tracker.calibration_compute_and_apply()
+        res = self._wait_for_action_complete()
+
+        self.calibration_results = res
         print("Compute and apply returned {0} and collected at {1} points.".
-              format(calibration_result.status, len(calibration_result.calibration_points)))
+              format(res.status, len(res.calibration_points)))
 
         # Accept of redo the calibration?
-        if 'success' in calibration_result.status:
+        if 'success' in res.status:
             action = 'val'
-            # if 'Tobii Pro Spectrum' in self.settings.eye_tracker_name:
-            #     print(self.eye, self.eye_to_calibrate)
-
-            cal_data = self._generate_calibration_image(calibration_result)
-#                pos, xy_pos = self.run_validation()
-#                self.generate_validation_image(pos, xy_pos)
-#                self.win.flip()
-#                event.waitKeys()
-#                calibration_completed = True
+            cal_data = self._generate_calibration_image(res)
         else:
             self.instruction_text.text = 'Calibration unsuccessful.'
             self.instruction_text.draw()
             self.win.flip()
             core.wait(1)
 
-#        self.calibration.leave_calibration_mode()
         self.send_message('Calibration_stop')
 
         # Stop recording of eye images unless validation is next
         if 'val' not in action:
             if self.settings.RECORD_EYE_IMAGES_DURING_CALIBRATION or self.win_operator:
-                self.stop_recording(image_data=True, wrapper=False)
+                self.tracker.stop('eye_image')
 
         return action
 
@@ -926,8 +905,8 @@ class myTobii(object):
         for p in calibration_result.calibration_points:
 
             # Draw calibration dots
-            x_dot = p.position_on_display_area[0]
-            y_dot = p.position_on_display_area[1]
+            x_dot = p.position_on_display_area.x
+            y_dot = p.position_on_display_area.y
             self.cal_dot.fillColor = 'white'
             xy_dot = helpers.tobii2deg(np.array([[x_dot, y_dot]]),
                                        self.win.monitor)
@@ -937,8 +916,8 @@ class myTobii(object):
             if self.eye == 'both' or self.eye == 'left':
                 # Save gaze data for left eye to list
                 for si in p.calibration_samples: # For each sample
-                    samples_l = si.left_eye.position_on_display_area
-                    x, y = samples_l
+                    x = si.left_eye.position_on_display_area.x
+                    y = si.left_eye.position_on_display_area.y
                     xy_sample = helpers.tobii2deg(np.array([[x, y]]),
                                                   self.win.monitor) # Tobii and psychopy have different coord systems
                     xys_left.append([xy_sample[0][0], xy_sample[0][1]])
@@ -947,8 +926,8 @@ class myTobii(object):
             if self.eye == 'both' or self.eye == 'right':
                 # Save gaze data for right eye to list
                 for si in p.calibration_samples:
-                    samples_r = si.right_eye.position_on_display_area
-                    x, y = samples_r
+                    x = si.right_eye.position_on_display_area.x
+                    y = si.right_eye.position_on_display_area.y
                     xy_sample = helpers.tobii2deg(np.array([[x, y]]),
                                                   self.win.monitor) # Tobii and psychopy have different coord systems
                     xys_right.append([xy_sample[0][0], xy_sample[0][1]])
@@ -994,12 +973,15 @@ class myTobii(object):
             -
         '''
         with open(filename + '.bin', "wb") as f:
-            calibration_data = self.tracker.retrieve_calibration_data()
+            self.tracker.calibration_get_data()
+            res = self.wait_for_action_complete()
+            print(res.work_item.action)
+            print(res.status_string)
 
             # None is returned on empty calibration.
-            if calibration_data is not None:
+            if res.calibration_data is not None:
                 print("Saving calibration to file {} for eye tracker with serial number {}.".format(filename, self.tracker.serial_number))
-                f.write(self.tracker.retrieve_calibration_data())
+                f.write(res.calibration_data)
             else:
                 print("No calibration available for eye tracker with serial number {0}.".format(self.tracker.serial_number))
     #%%
@@ -1017,14 +999,15 @@ class myTobii(object):
         # Don't apply empty calibrations.
         if len(calibration_data) > 0:
             print("Applying calibration {} on eye tracker with serial number {}.".format(filename, self.tracker.serial_number))
-            self.tracker.apply_calibration_data(calibration_data)
-
+            self.tracker.calibration_apply_data(calibration_data)
+            res = self.wait_for_action_complete()
+            print(res.work_item.action)
+            print(res.status_string)
 
     #%%
     def _run_validation(self):
         ''' Runs a validation to check the accuracy of the calibration
         '''
-
 
         target_pos = self.VAL_POS
         paval = self.settings.PACING_INTERVAL
@@ -1087,15 +1070,15 @@ class myTobii(object):
             if tick == 0 and animation_state == 'static':
                 self.send_message('validation point {} at position {} {}'.format(i, pos[0], pos[1]))
 
-            # Start collecting validation data for a point 500 ms after its onset
-            if (self.clock.getTime() >= 0.500 and self.clock.getTime() < 0.800) and not buffer_started:
-                self.start_ring_buffer(sample_buffer_length=300)
-                buffer_started = True
+            # # Start collecting validation data for a point 500 ms after its onset
+            # if (self.clock.getTime() >= 0.500 and self.clock.getTime() < 0.800) and not buffer_started:
+            #     self.start_ring_buffer(sample_buffer_length=300)
+            #     buffer_started = True
 
-            if self.clock.getTime() >= 0.800 and buffer_started:
-                sample = self.consume_ring_buffer()
-                self.stop_ring_buffer()
-                buffer_started = False
+            # Get the last 300 ms of data from the buffer
+            if self.clock.getTime() >= 0.800:
+                sample = self.tracker.peek_N('gaze',
+                                             int(self.sampling_frequency * 0.300))
 
             # Time to switch to a new point
             if self.settings.AUTO_PACE > 0 or 'space' in k:
@@ -1106,19 +1089,17 @@ class myTobii(object):
 
                     # Save data as xy list
                     for s in sample:
-                        xy_pos.append([s['system_time_stamp'],
-                                       s['left_gaze_point_on_display_area'][0],
-                                       s['left_gaze_point_on_display_area'][1],
-                                       s['right_gaze_point_on_display_area'][0],
-                                       s['right_gaze_point_on_display_area'][1],
+                        xy_pos.append([s.system_time_stamp,
+                                       s.left.gaze_point.on_display_area.x,
+                                       s.left.gaze_point.on_display_area.y,
+                                       s.right.gaze_point.on_display_area.x,
+                                       s.right.gaze_point.on_display_area.y,
                                        pos[0], pos[1]])
                     pos_old = pos[:]
 
                     self.clock.reset()
                     tick = 0
                     animation_state = 'move'
-
-
 
                     i += 1
 
@@ -1188,7 +1169,7 @@ class myTobii(object):
 
         # Stop recording of eye images
         if self.settings.RECORD_EYE_IMAGES_DURING_CALIBRATION or self.win_operator:
-            self.stop_recording(image_data=True, wrapper=False)
+            self.tracker.stop('eye_image')
 
         self.store_data = False
 #
@@ -1253,7 +1234,7 @@ class myTobii(object):
             u - (x, y, z) in UCS in mm
         '''
 
-        display_area = self.tracker.get_display_area()
+        display_area = self.tracker.display_area
 
 #        print("Bottom Left: {0}".format(display_area.bottom_left))
 #        print("Bottom Right: {0}".format(display_area.bottom_right))
@@ -1296,22 +1277,22 @@ class myTobii(object):
             n_invalid_samples = 0
             for i, sample in enumerate(point_data):
 
-                gaze_vector = (sample[eye + '_gaze_point_in_user_coordinate_system'][0] -
-                               sample[eye + '_gaze_origin_in_user_coordinate_system'][0],
-                               sample[eye + '_gaze_point_in_user_coordinate_system'][1] -
-                               sample[eye + '_gaze_origin_in_user_coordinate_system'][1],
-                               sample[eye + '_gaze_point_in_user_coordinate_system'][2] -
-                               sample[eye + '_gaze_origin_in_user_coordinate_system'][2])
+                gaze_vector = (eval(f"sample.{eye}.gaze_point.in_user_coordinate_system.x") -
+                               eval(f"sample.{eye}.gaze_origin.in_user_coordinate_system.x"),
+                               eval(f"sample.{eye}.gaze_point.in_user_coordinate_system.y") -
+                               eval(f"sample.{eye}.gaze_origin.in_user_coordinate_system.y"),
+                               eval(f"sample.{eye}.gaze_point.in_user_coordinate_system.z") -
+                               eval(f"sample.{eye}.gaze_origin.in_user_coordinate_system.z"))
 
                 if np.any(np.isnan(gaze_vector)):
                     n_invalid_samples += 1
 
                 eye_to_valpoint_vector = (val_point_position[0] -
-                               sample[eye + '_gaze_origin_in_user_coordinate_system'][0],
+                               eval(f"sample.{eye}.gaze_origin.in_user_coordinate_system.x"),
                                val_point_position[1] -
-                               sample[eye + '_gaze_origin_in_user_coordinate_system'][1],
+                               eval(f"sample.{eye}.gaze_origin.in_user_coordinate_system.y"),
                                val_point_position[2] -
-                               sample[eye + '_gaze_origin_in_user_coordinate_system'][2])
+                               eval(f"sample.{eye}.gaze_origin.in_user_coordinate_system.z"))
 
                 # Compute RMS (diff between consecutive samples) and deviation
                 deviation_per_sample.append(helpers.angle_between(gaze_vector, eye_to_valpoint_vector))
@@ -1597,9 +1578,14 @@ class myTobii(object):
         info['model']  = self.tracker.model
         info['name']  = self.tracker.device_name
         info['firmware_version'] = self.tracker.firmware_version
-        info['tracking_mode']  = self.tracker.get_eye_tracking_mode()
-        info['sampling_frequency']  = self.tracker.get_gaze_output_frequency()
-
+        info['runtime_version'] = self.tracker.runtime_version
+        info['tracking_mode']  = self.tracker.tracking_mode
+        info['sampling_frequency']  = self.tracker.frequency
+        info['track_box']  = self.tracker.track_box
+        info['display_area']  = self.tracker.display_area
+        info['python_version'] = '.'.join([str(sys.version_info[0]),
+                                           str(sys.version_info[1]),
+                                           str(sys.version_info[2])])
 
         return info
 
@@ -1608,58 +1594,7 @@ class myTobii(object):
         ''' Get system time stamp
         '''
 
-        return tr.get_system_time_stamp()
-
-    #%%
-    def start_ring_buffer(self, sample_buffer_length=3):
-        '''Starts sample buffer'''
-
-        # Initialize the ring buffer
-        self.buf = helpers.RingBuffer(maxlen=sample_buffer_length)
-        self.__buffer_active = True
-
-    #%%
-    def peek_buffer(self, n_samples):
-        '''
-
-
-        Args:
-            n_samples (int): number of samples to return
-
-        Returns:
-            python object with n_samples et samples
-
-        '''
-        return self.tracker_wrap.peek_N('gaze',n_samples)
-
-    # %%
-    def consume_buffer(self, n_samples):
-        '''
-
-
-        Args:
-            n_samples (int): number of samples to return
-
-        Returns:
-            python object with n_samples et samples
-
-        '''
-        return self.tracker_wrap.consume_N('gaze',n_samples)
-
-    #%%
-    def stop_ring_buffer(self):
-        '''Stops sample buffer'''
-        self.__buffer_active = False
-
-    #%%
-    def consume_ring_buffer(self):
-        ''' Consume all samples and empty buffer'''
-        return self.buf.get_all()
-
-    #%%
-    def peek_ring_buffer(self):
-        ''' Get samples in buffer without emptying the buffer '''
-        return self.buf.peek()
+        return EyeTracker.get_system_time_stamp()
 
     #%%
     def send_message(self, msg, ts=None):
@@ -1670,307 +1605,6 @@ class myTobii(object):
             ts = self.get_system_time_stamp()
         self.msg_container.append([ts, msg])
 
-    #%%
-    def get_latest_sample(self, wrapper=True):
-        ''' Gets the most recent sample
-        '''
-        return self.gaze_data
-
-    #%%
-    def get_latest_user_position_guide_sample(self):
-        ''' Gets the most recent sample
-        '''
-        return self.user_position_guide_data
-
-    #%%
-    def start_recording(self,   gaze_data=False,
-                                sync_data=False,
-                                image_data=False,
-                                stream_errors=False,
-                                external_signal=False,
-                                user_position_guide=False,
-                                store_data=True,
-                                wrapper=True):
-        ''' Starts recording
-        '''
-
-        if wrapper:
-            if gaze_data:
-                success = self.tracker_wrap.start('gaze')
-                if tr.CAPABILITY_HAS_EYE_OPENNESS_DATA in self.tracker.device_capabilities:
-                    # Include eye openness signal in gaze stream automatically when
-                    # starting the gaze stream
-                    self.tracker_wrap.set_include_eye_openness_in_gaze(True)
-            if sync_data:
-                success = self.tracker_wrap.start('time_sync')
-            if image_data:
-                success = self.tracker_wrap.start('eye_image')
-            if stream_errors:
-                success = self.tracker_wrap.start('notification')
-            if user_position_guide:
-                success = self.tracker_wrap.start('positioning')
-            if external_signal:
-                success = self.tracker_wrap.start('external_signal')
-        else:
-            if gaze_data:
-                self.subscribe_to_gaze_data()
-                if tr.CAPABILITY_HAS_EYE_OPENNESS_DATA in self.tracker.device_capabilities:
-                    self.subscribe_to_eye_openness_data()
-
-            if sync_data:
-                self.subscribe_to_time_synchronization_data()
-            if image_data:
-                self.subscribe_to_eye_images()
-            if stream_errors:
-                self.subscribe_to_stream_errors()
-            if user_position_guide:
-                self.subscribe_to_user_position_guide()
-            if external_signal:
-                self.subscribe_to_external_signal()
-
-            self.store_data = store_data
-
-        core.wait(0.5)
-    #%%
-    def stop_recording(self,    gaze_data=False,
-                                sync_data=False,
-                                image_data=False,
-                                stream_errors=False,
-                                external_signal=False,
-                                user_position_guide=False,
-                                wrapper=True):
-        ''' Stops recording
-        '''
-
-        if wrapper:
-            if gaze_data:
-                success = self.tracker_wrap.stop('gaze')
-            if sync_data:
-                success = self.tracker_wrap.stop('time_sync')
-            if image_data:
-                success = self.tracker_wrap.stop('eye_image')
-            if stream_errors:
-                success = self.tracker_wrap.stop('notification')
-            if user_position_guide:
-                success = self.tracker_wrap.stop('positioning')
-            if external_signal:
-                success = self.tracker_wrap.stop('external_signal')
-        else:
-
-            if gaze_data:
-                self.unsubscribe_from_gaze_data()
-                if tr.CAPABILITY_HAS_EYE_OPENNESS_DATA in self.tracker.device_capabilities:
-                # if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
-                    self.unsubscribe_from_eye_openness_data()
-            if sync_data:
-                self.unsubscribe_from_time_synchronization_data()
-            if image_data:
-                self.unsubscribe_from_eye_images()
-            if stream_errors:
-                self.unsubscribe_from_stream_errors()
-            if user_position_guide:
-                self.unsubscribe_from_user_position_guide()
-            if external_signal:
-                self.unsubscribe_from_external_signal()
-
-        # Stop writing to file
-        self.store_data = False
-
-    #%%
-    def _user_position_guide_callback(self, user_position_data):
-        ''' Callback function for external signals
-        '''
-
-        self.user_position_guide_data = user_position_data
-
-    #%%
-    def subscribe_to_user_position_guide(self):
-        ''' Starts subscribing to gaze data
-        '''
-        self.tracker.subscribe_to(tr.EYETRACKER_USER_POSITION_GUIDE, self._user_position_guide_callback, as_dictionary=True)
-
-    #%%
-    def unsubscribe_from_user_position_guide(self):
-        ''' Starts subscribing to gaze data
-        '''
-        self.tracker.unsubscribe_from(tr.EYETRACKER_USER_POSITION_GUIDE, self._user_position_guide_callback)
-
-    #%%
-    def _external_signal_callback(self, callback_object):
-        ''' Callback function for external signals
-        '''
-
-        if self.store_data:
-            self.external_signal_container.append(callback_object)
-
-    #%%
-    def subscribe_to_external_signal(self):
-        ''' Starts subscribing to gaze data
-        '''
-        self.tracker.subscribe_to(tr.EYETRACKER_EXTERNAL_SIGNAL, self._external_signal_callback, as_dictionary=True)
-
-    #%%
-    def unsubscribe_from_external_signal(self):
-        ''' Starts subscribing to gaze data
-        '''
-        self.tracker.unsubscribe_from(tr.EYETRACKER_EXTERNAL_SIGNAL, self._external_signal_callback)
-
-
-    #%%
-    def subscribe_to_eye_openness_data(self):
-        ''' Starts subscribing to gaze data
-        '''
-        self.tracker.subscribe_to(tr.EYETRACKER_EYE_OPENNESS_DATA, self._eye_openness_callback, as_dictionary=True)
-
-    #%%
-    def unsubscribe_from_eye_openness_data(self):
-        ''' Starts subscribing to gaze data
-        '''
-        self.tracker.unsubscribe_from(tr.EYETRACKER_EYE_OPENNESS_DATA, self._eye_openness_callback)
-
-    #%%
-    def _eye_openness_callback(self, eye_openness_data):
-        self.eye_openness_data_container.append([eye_openness_data["device_time_stamp"],
-                                                eye_openness_data["system_time_stamp"],
-                                                eye_openness_data["left_eye_validity"],
-                                                eye_openness_data["left_eye_openness_value"],
-                                                eye_openness_data["right_eye_validity"],
-                                                eye_openness_data["right_eye_openness_value"]])
-
-    #%%
-    def _gaze_data_callback(self, callback_object):
-        '''
-        Callback function for gaze data
-        Contineously pulls the state of the eye tracker
-        that is, the same sample may be return multiple times
-
-        '''
-        self.gaze_data = callback_object
-
-        if self.__buffer_active:
-            self.buf.append(callback_object)
-
-        time_stamp = int(callback_object['device_time_stamp'])
-        if time_stamp == self.old_timestamp:
-            print('no new sample generated')
-            return
-        else:
-            if self.store_data:
-                gdata = (callback_object['device_time_stamp'],
-                         callback_object['system_time_stamp'],
-                         callback_object['left_gaze_point_on_display_area'][0],
-                         callback_object['left_gaze_point_on_display_area'][1],
-                         callback_object['left_gaze_point_in_user_coordinate_system'][0],
-                         callback_object['left_gaze_point_in_user_coordinate_system'][1],
-                         callback_object['left_gaze_point_in_user_coordinate_system'][2],
-                         callback_object['left_gaze_origin_in_trackbox_coordinate_system'][0],
-                         callback_object['left_gaze_origin_in_trackbox_coordinate_system'][1],
-                         callback_object['left_gaze_origin_in_trackbox_coordinate_system'][2],
-                         callback_object['left_gaze_origin_in_user_coordinate_system'][0],
-                         callback_object['left_gaze_origin_in_user_coordinate_system'][1],
-                         callback_object['left_gaze_origin_in_user_coordinate_system'][2],
-                         callback_object['left_pupil_diameter'],
-                         callback_object['left_pupil_validity'],
-                         callback_object['left_gaze_origin_validity'],
-                         callback_object['left_gaze_point_validity'],
-                         callback_object['right_gaze_point_on_display_area'][0],
-                         callback_object['right_gaze_point_on_display_area'][1],
-                         callback_object['right_gaze_point_in_user_coordinate_system'][0],
-                         callback_object['right_gaze_point_in_user_coordinate_system'][1],
-                         callback_object['right_gaze_point_in_user_coordinate_system'][2],
-                         callback_object['right_gaze_origin_in_trackbox_coordinate_system'][0],
-                         callback_object['right_gaze_origin_in_trackbox_coordinate_system'][1],
-                         callback_object['right_gaze_origin_in_trackbox_coordinate_system'][2],
-                         callback_object['right_gaze_origin_in_user_coordinate_system'][0],
-                         callback_object['right_gaze_origin_in_user_coordinate_system'][1],
-                         callback_object['right_gaze_origin_in_user_coordinate_system'][2],
-                         callback_object['right_pupil_diameter'],
-                         callback_object['right_pupil_validity'],
-                         callback_object['right_gaze_origin_validity'],
-                         callback_object['right_gaze_point_validity'])
-
-                self.gaze_data_container.append(gdata)
-
-        self.old_timestamp = time_stamp
-    #%%
-    def subscribe_to_gaze_data(self):
-        ''' Starts subscribing to gaze data
-        '''
-        self.tracker.subscribe_to(tr.EYETRACKER_GAZE_DATA, self._gaze_data_callback, as_dictionary=True)
-
-    #%%
-    def unsubscribe_from_gaze_data(self):
-        ''' Starts subscribing to gaze data
-        '''
-        self.tracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA, self._gaze_data_callback)
-
-
-
-    #%%
-    def get_eye_image(self, im_info):
-        ''' Converts an eye image returned from the Tobii SDK to
-        a numpy array
-
-        Args:
-            im_info - dict with info about image as returned by the SDK
-
-        Returns:
-            nparr
-
-        '''
-
-#        print("System time: {0}, Device time {1}, Camera id {2}".format(self.eye_image['system_time_stamp'],
-#                                                                         self.eye_image['device_time_stamp'],
-#                                                                         self.eye_image['camera_id']))
-#        im_info = self.eye_image
-
-        #image = PhotoImage(data=base64.standard_b64encode(self.eye_image['image_data']))
-        #print(self.eye_image)
-                # tim = Image.open(temp_im)
-
-        temp_im = StringIO(im_info['image_data'])
-        nparr = np.array(Image.open(temp_im))
-
-
-        # nparr = np.array(list(tim.getdata()))
-
-        # tim.save("temp.gif","GIF")
-
-        # # Full frame or zoomed in image
-        # # For fusion, image type is 'eye_image_type_multi_roi'
-        # if im_info['image_type'] == 'eye_image_type_full':
-        #     eye_image_size = self.settings.graphics.EYE_IMAGE_SIZE_PIX_FULL_FRAME
-        #     #tim.save("temp_full.gif","GIF")
-        # elif im_info['image_type'] == 'eye_image_type_cropped':
-        #     eye_image_size = self.settings.graphics.EYE_IMAGE_SIZE_PIX
-        #     #tim.save("temp_small.gif","GIF")
-        # else:
-        #     eye_image_size = [512, 512]
-        #     nparr_t = np.zeros((512* 512))
-        #     nparr_t[:len(nparr)] = nparr
-        #     nparr = nparr_t.copy()
-        #     #tim.save("temp_unknown.gif","GIF")
-
-
-
-        # #print(len(nparr))
-        # nparr = np.reshape(nparr, eye_image_size)
-        nparr = np.rot90(nparr, k = 2)
-        nparr = (nparr / float(nparr.max()) * 2.0) - 1
-#
-#        # Fit image to a 1024x1024s container (must be power of 2)
-#        im_sz = 1024
-#
-#        # Scale the eye image
-#        im_final = np.zeros([im_sz, im_sz])
-#        row_idx = (im_sz - eye_image_size[0]) / 2
-#        col_idx = (im_sz - eye_image_size[1]) / 2
-#        im_final[int(row_idx):int(row_idx+eye_image_size[0]),
-#                 int(col_idx):int(col_idx+eye_image_size[1])] = np.rot90(nparr, 2)
-
-        #print(im_final.flatten().min(), im_final.flatten().max())
-
-        return nparr
     #%%
     def _advanced_setup(self):
         ''' Shows eye image and tracking monitor
@@ -1987,14 +1621,12 @@ class myTobii(object):
 
         action = 'setup'
 
-        self.start_recording(image_data=True, store_data = False,
-                             wrapper=False)
+        self.tracker.start('eye_image')
 
         dist = 0
         done = False
 
         while not done:
-
 
             # Draw eye image
             self._draw_eye_image()
@@ -2013,19 +1645,14 @@ class myTobii(object):
                 self.setup_dot.draw()
 
             # Get position of each eye in track box
-            sample = self.get_latest_sample()
+            sample = self.tracker.peek_N('gaze',1)
 
             # Show tracking monitor
             self._draw_tracking_monitor(sample)
 
-
-            # Get eye tracker distance
-            xyz_pos_eye_l = sample['left_gaze_origin_in_user_coordinate_system']
-            xyz_pos_eye_r = sample['right_gaze_origin_in_user_coordinate_system']
-
-            dist = np.nanmean([xyz_pos_eye_l[2], xyz_pos_eye_r[2]])
-#            dist = (xyz_pos_eye_l[2] +
-#                    xyz_pos_eye_r[2]) / 2.0
+            # Distance from eye to eye tracker
+            dist = np.nanmean([sample.left.gaze_origin.in_user_coordinate_system.z,
+                               sample.right.gaze_origin.in_user_coordinate_system.z])
 
             # Draw distance info
             self.instruction_text.text = ' '.join(['Distance:', str(dist /10.0)[:2], 'cm'])
@@ -2046,7 +1673,11 @@ class myTobii(object):
 
             self.win.flip()
 
-        self.stop_recording(image_data=True, wrapper=False)
+        self.tracker.stop('eye_image')
+
+        # Consume image buffer (these data should not be saved)
+        self.tracker.consume_N('eye_image')
+
         self.mouse.setVisible(0)
 
         return action
@@ -2057,33 +1688,29 @@ class myTobii(object):
         ''' Draw left and right eye image
         '''
 
-        if tr.CAPABILITY_HAS_EYE_IMAGES in self.tracker.device_capabilities:
+        if self.tracker.has_stream('eye_image'):
 
-            for i, eye_im in enumerate(list(self.eye_image)):
+            # Grab the two most recent eye images from the buffer
+            eye_images = self.tracker.peek_N('eye_image', 2)
 
-                if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
-                    eye_im['region_id'] == 0
+            for eye_im in enumerate(eye_images):
 
-                im_arr = self.get_eye_image(eye_im)
-                # print(eye_im['camera_id']), eye_im['region_id']
+                # Read eye image
+                im_arr = eye_im.image
+
                 # Always display image from camera_id == 0 on left side
-                if eye_im['camera_id'] == 0:
-                    if eye_im['region_id'] == 0:
+                if eye_im.camera_id == 0:
+                    if eye_im.region_id == 0:
                         self.eye_image_stim_l.image = im_arr
                     else:
                         self.eye_image_stim_r_1.image = im_arr
                 else:
-                    if eye_im['region_id'] == 0:
+                    if eye_im.region_id == 0:
                         self.eye_image_stim_r.image = im_arr
                     else:
                         self.eye_image_stim_l_1.image = im_arr
 
-                # elif eye_im['camera_id'] == 2:
-                #     self.eye_image_stim_l_1.image = im_arr
-                # else:
-                #     self.eye_image_stim_r_1.image = im_arr
-
-
+            # Draw eye images
             self.eye_image_stim_l.draw()
             self.eye_image_stim_r.draw()
 
@@ -2093,92 +1720,28 @@ class myTobii(object):
                 self.eye_image_stim_r_1.draw()
 
     #%%
-    def _eye_image_callback(self, im):
-        ''' Here eye images are accessed and optionally saved to list
-        Called every time a new eye image is available.
-
-        Args:
-            im - dict with information about eye image
-
-        '''
-
-        # Make eye image dict available to rest of class
-        self.eye_image.append(im)
-
-        # Store image dict in list, if self.store_data = True
-        if self.store_data:
-            self.image_data_container.append(im[-1])
-
-    #%%
-    def subscribe_to_eye_images(self):
-        ''' Starts sending eye images
-        '''
-        print('subscribe')
-        self.tracker.subscribe_to(tr.EYETRACKER_EYE_IMAGES,
-                                  self._eye_image_callback,
-                                  as_dictionary=True)
-
-    #%%
-    def unsubscribe_from_eye_images(self):
-        ''' Stops sending eye images
-        '''
-#        self.eye_image_write = False
-        self.tracker.unsubscribe_from(tr.EYETRACKER_EYE_IMAGES, self._eye_image_callback)
-    #%%
-    def _time_sync_callback(self, time_synchronization_data):
-        ''' Callback for sync data
-        '''
-#        print(time_synchronization_data)
-        if self.store_data:
-            self.sync_data_container.append(time_synchronization_data)
-
-    #%%
-    def subscribe_to_time_synchronization_data(self):
-        self.tracker.subscribe_to(tr.EYETRACKER_TIME_SYNCHRONIZATION_DATA,
-                                  self._time_sync_callback, as_dictionary=True)
-    #%%
-    def unsubscribe_from_time_synchronization_data(self):
-        self.tracker.unsubscribe_from(tr.EYETRACKER_TIME_SYNCHRONIZATION_DATA)
-
-    #%%
-    def _stream_errors_callback(self, stream_errors):
-        ''' Callback for stream_errors
-        '''
-        if self.store_data:
-            self.stream_errors_container.append(stream_errors)
-
-    #%%
-    def subscribe_to_stream_errors(self):
-        self.tracker.subscribe_to(tr.EYETRACKER_STREAM_ERRORS,
-                                  self._stream_errors_callback, as_dictionary=True)
-    #%%
-    def unsubscribe_from_stream_errors(self):
-        self.tracker.unsubscribe_from(tr.EYETRACKER_STREAM_ERRORS)
-
-    #%%
     def set_sample_rate(self, Fs):
         '''Sets the sample rate
         '''
 
-        print([i for i in self.tracker.get_all_gaze_output_frequencies()], Fs)
-        assert np.any([int(i) == Fs for i in self.tracker.get_all_gaze_output_frequencies()]), "Supported frequencies are: {}".format(self.tracker.get_all_gaze_output_frequencies())
+        # print([i for i in self.tracker.supported_frequencies], Fs)
+        assert np.any([int(i) == Fs for i in self.tracker.supported_frequencies]), "Supported frequencies are: {}".format(self.tracker.supported_frequencies)
 
-        self.tracker.set_gaze_output_frequency(int(Fs))
+        self.tracker.frequency = int(Fs)
     #%%
     def get_sample_rate(self):
         '''Gets the sample rate
         '''
-        return self.tracker.get_gaze_output_frequency()
+        return self.tracker.frequency
 
     #%%
-    def save_data(self, *argv, filename=None):
-        ''' Saves the data to pickle
-        If you want to read the pickle, see the 'resources' folder
+    def save_data(self, filename=None):
+        ''' Saves the data to HDF5 container
+        If you want to read the data, see the 'resources' folder
 
         Args:
             filename - if a filename is given, it overrides the name stored in
             settings (self.settings.FILENAME). Should be a string, e.g., 'fp1'
-            *argv refers to additional information you want to add to the same pickle
         '''
 
         if filename:
@@ -2186,50 +1749,34 @@ class myTobii(object):
         else:
             fname = self.settings.FILENAME[:-4]
 
-        # Dump other collected information to file
-        with open(fname + '.pkl','wb') as fp:
-            pickle.dump(self.gaze_data_container, fp)
-            pickle.dump(self.msg_container, fp)
-            pickle.dump(self.eye_openness_data_container, fp)
-            pickle.dump(self.external_signal_container, fp)
-            pickle.dump(self.sync_data_container, fp)
-            pickle.dump(self.stream_errors_container, fp)
-            pickle.dump(self.image_data_container, fp)
-            pickle.dump(self.calibration_history(), fp)
-            pickle.dump(self.system_info(), fp)
-            pickle.dump(self.settings, fp)
-            python_version = '.'.join([str(sys.version_info[0]),
-                                  str(sys.version_info[1]),
-                                  str(sys.version_info[2])])
-            pickle.dump(python_version, fp)
+        # Put everything in a HDF5 container
+        # Save messages as HDF5 container
+        df_msg = pd.DataFrame(self.msg_container,  columns=['system_time_stamp', 'msg'])
+        df_msg.to_csv(fname + '_msg.h5', key='msg', mode='w')
 
-            for arg in argv:
-                pickle.dump(arg, fp)
+        # Save tracker/python version info as json
+        with open(fname + '_info.json', "w") as outfile:
+            json.dump(self.system_info(), outfile)
+
+        # Save image stream in the same HDF5 container
+
+        # Save all other gaze streams in the same HDF5 container
+
+        # Save calibration history to HDF5 container
 
         # Clear data containers
-        self.gaze_data_container = []
-        self.eye_openness_data_container = []
         self.msg_container = []
-        self.sync_data_container = []
-        self.image_data_container = []
-        self.external_signal_container = []
-        self.stream_errors_container = []
         self.all_validation_results = []
 
         # Stop logging and Save data from the python wrapper
-        l=self.tracker_wrap.get_log(True)  # True means the log is consumed. False (default) its only peeked.
-        # pickle.dump(l,open( "save.pkl", "wb" ))
-        # l2 = pickle.load( open( "save.pkl", "rb" ) )
-        # print(l2)
-        self.tracker_wrap.stop_logging()
-
+        l=self.tracker.get_log(True)  # True means the log is consumed. False (default) its only peeked.
+        self.tracker.stop_logging()
 
         # Consume all samples from the buffer
-        all_samples = self.tracker_wrap.consume_N('gaze',sys.maxsize)
+        all_samples = self.tracker.consume_N('gaze',sys.maxsize)
         print(all_samples[0])
 
-        # sample_list = []
-        # for s in all_samples:
+
 
         #     sample_list.append([s.device_time_stamp,
         #              s.system_time_stamp,
@@ -2268,167 +1815,5 @@ class myTobii(object):
         #              s.right.eye_openness.diameter,
         #              s.right.eye_openness.validity.valid.value])
 
-    #%%
-    def de_init(self):
-        '''
-        '''
-
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-class rawTracker(object):
-    ''' Acess Tobii SDK’s eye tracker handle to call its functions directly
-    '''
-
-    def __init__(self, tracker_address):
-        self.tracker = tr.EyeTracker(tracker_address)
-
-    #%% FUNCTIONS
-    def apply_calibration_data(self, data):
-        ''' Sets the provided calibration data to the eye tracker, which means
-        it will be active calibration.
-
-        Args: data: from eyetracker.retrieve_calibration_data()
-
-        '''
-        return self.tracker.apply_calibration_data(data)
-
-    def apply_licenses(self, licenses):
-        ''' Sets a key ring of licenses or a single license for unlocking
-        features of the eye tracker.
-        Args: -
-            licenses
-
-        '''
-        return self.tracker.apply_licenses(licenses)
-
-    def clear_applied_licenses(self):
-        ''' Clears any previously applied licenses.'''
-        return self.tracker.clear_applied_licenses()
-
-    def get_all_eye_tracking_modes(self):
-        ''' Gets a tuple of eye tracking modes supported by the eye tracker.
-        Returns:
-            uple of strings with available eye tracking modes.
-        '''
-        return self.tracker.get_all_eye_tracking_modes
-
-    def get_all_gaze_output_frequencies(self):
-        '''
-        Returns:
-            Tuple of floats with all gaze output frequencies.
-        '''
-        return self.tracker.get_all_gaze_output_frequencies()
-
-    def get_display_area(self):
-        '''
-        Returns:
-            Display area in the user coordinate system as a DisplayArea object.
-            Data Fields:
-
-         	bottom_left
-         	Gets the bottom left corner of the active display area as a three valued tuple.
-
-         	bottom_right
-         	Gets the bottom left corner of the active display area as a three valued tuple.
-
-         	height
-         	Gets the height in millimeters of the active display area.
-
-         	top_left
-         	Gets the top left corner of the active display area as a three valued tuple.
-
-         	top_right
-         	Gets the top right corner of the active display area as a three valued tuple.
-
-         	width
-         	Gets the width in millimeters of the active display area.
-
-        '''
-        return self.tracker.get_display_area()
-
-    def get_eye_tracking_mode(self):
-        '''
-        Returns:
-            String with the current eye tracking mode.
-        '''
-
-        return self.tracker.get_eye_tracking_mode()
-
-    def get_gaze_output_frequency(self):
-        ''' Gets the gaze output frequency of the eye tracker.
-        Returns
-            Float with the current gaze output frequency.
-        '''
-        return self.tracker.get_gaze_output_frequency()
-
-
-    def get_track_box(self):
-        ''' Gets the track box of the eye tracker.
-
-        Returns
-            Track box in the user coordinate system as a TrackBox object.
-
-            track_box.back_lower_left
-            track_box.back_lower_right
-            track_box.back_upper_left
-            track_box.back_upper_right
-            track_box.front_lower_left
-            track_box.front_lower_right
-            track_box.front_upper_left
-            track_box.front_upper_right
-
-        '''
-
-        return self.tracker.get_track_box()
-
-    def retrieve_calibration_data(self):
-        ''' Gets the calibration data used currently by the eye tracker.
-        '''
-        return self.tracker.retrieve_calibration_data()
-
-    def set_device_name(self, name):
-        ''' Changes the device name.
-
-            This is not supported by all eye trackers.
-        Args:
-            name - str
-        '''
-        try:
-            self.tracker.set_device_name(name)
-            print("The eye tracker changed name to {0}".format(self.tracker.device_name))
-        except tr.EyeTrackerFeatureNotSupportedError:
-            print("This eye tracker doesn't support changing the device name.")
-        except tr.EyeTrackerLicenseError:
-            print("You need a higher level license to change the device name.")
-
-    def set_eye_tracking_mode(self, mode):
-        '''Sets the eye tracking mode of the eye tracker.
-        '''
-        return self.tracker.set_eye_tracking_mode(mode)
-
-    def set_gaze_output_frequency(self, Fs):
-        ''' Sets the gaze output frequency of the eye tracker.
-        '''
-        return self.tracker.set_gaze_output_frequency(Fs)
-
-    #%% DATA FIELDS
-
-    def address(self):
-        return self.tracker.address
-
-    def device_capabilities(self):
-        return self.tracker.device_capabilities
-
-    def device_name(self):
-        return self.tracker.device_name
-
-    def firmware_version(self):
-        return self.tracker.firmware_version
-
-    def model(self):
-        return self.tracker.model
-
-    def serial_number(self):
-        return self.tracker.serial_number
 
 
