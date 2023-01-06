@@ -76,9 +76,7 @@ tracker.calibrate(win)
 n_buffer_samples = 1
 
 # Start eye tracker
-tracker.start_recording(gaze_data=True,
-                        store_data=False)
-
+tracker.start_recording(gaze_data=True)
 
 # Define some colors
 black = 'black'  # (0, 0, 0)
@@ -225,7 +223,7 @@ class Player():
         """ Update the player position. """
 
         # Peek in the eye tracker buffer
-        data = tracker.peek_buffer(n_samples=n_buffer_samples)
+        data = tracker.peek_N('gaze', n_buffer_samples)
 
         # Convert from Tobii coordinate system to ssv
         lx = [d.left.gaze_point.on_display_area.x for d in data]
