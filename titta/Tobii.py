@@ -5,6 +5,8 @@ Created on Thu Jun 01 14:11:57 2017
 @author: Marcus
 
 ToDO: Add information about monitor to system_info() dict.
+* Consume data when then do not need to be stored, e.g. head setup
+* Save data in HDF5 container.
 
     """
 from __future__ import print_function # towards Python 3 compatibility
