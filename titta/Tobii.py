@@ -21,6 +21,7 @@ import json
 import numpy as np
 from titta import helpers_tobii as helpers
 import TittaPy
+import h5py
 # from TittaPy import EyeTracker
 
 
@@ -345,11 +346,11 @@ class myTobii(object):
 
         if gaze_data:
             self.tracker.start('gaze')
-        if sync_data:
+        if sync_data and self.tracker.has_stream('time_sync'):
             self.tracker.start('time_sync')
         if image_data and self.tracker.has_stream('eye_image'):
             self.tracker.start('eye_image')
-        if stream_errors:
+        if stream_errors and self.tracker.has_stream('notification'):
             self.tracker.start('notification')
         if user_position_guide:
             self.tracker.start('positioning')
@@ -699,6 +700,10 @@ class myTobii(object):
 
         # Stop user position guide
         self.tracker.stop('positioning')
+
+        # Clear streams
+        self.tracker.clear('eye_image')
+        self.tracker.clear('positioning')
 
         # Clear the screen
         self.win.flip()
@@ -1738,8 +1743,6 @@ class myTobii(object):
                 self.eye_image_stim_l_1.draw()
                 self.eye_image_stim_r_1.draw()
 
-        # self.tracker.clear('eye_image') after the calibration
-
     #%%
     def set_sample_rate(self, Fs):
         '''Sets the sample rate
@@ -1770,20 +1773,46 @@ class myTobii(object):
         else:
             fname = self.settings.FILENAME[:-4]
 
-        # Put everything in a HDF5 container
+        # Save gaze data to HDF5 container
+        pd.DataFrame.from_dict(self.tracker.consume_N('gaze',sys.maxsize))\
+            .to_hdf(fname + '.h5', key='gaze')
+
         # Save messages as HDF5 container
         df_msg = pd.DataFrame(self.msg_container,  columns=['system_time_stamp', 'msg'])
-        df_msg.to_csv(fname + '_msg.h5', key='msg', mode='w')
+        df_msg.to_hdf(fname + '.h5', key='msg')
 
         # Save tracker/python version info as json
         with open(fname + '_info.json', "w") as outfile:
             json.dump(self.system_info(), outfile)
 
         # Save image stream in the same HDF5 container
+        h5f = h5py.File(fname + '.h5', 'a')
+        h5f.create_dataset('eye_image', data=self.tracker.consume_N('eye_image'))
 
         # Save all other gaze streams in the same HDF5 container
+        if self.tracker.has_stream('time_sync'):
+            pd.DataFrame.from_dict(self.tracker.consume_N('time_sync',sys.maxsize))\
+                .to_hdf(fname + '.h5', key='time_sync')
 
-        # Save calibration history to HDF5 container
+        # Save all other data streams in the same HDF5 container
+        if self.tracker.has_stream('time_sync'):
+            pd.DataFrame.from_dict(self.tracker.consume_N('time_sync',sys.maxsize))\
+                .to_hdf(fname + '.h5', key='time_sync')
+
+        if self.tracker.has_stream('external_signal'):
+            pd.DataFrame.from_dict(self.tracker.consume_N('external_signal',sys.maxsize))\
+                .to_hdf(fname + '.h5', key='external_signal')
+
+       # Save calibration history to HDF5 container
+        df_cal = pd.DataFrame(self.calibration_history(),  columns=['calibration_no',
+                                                                  'offset_left_eye (deg)',
+                                                                  'offset_right_eye (deg)',
+                                                                  'RMS_S2S_left_eye (deg)',
+                                                                  'RMS_S2S_right_eye (deg)',
+                                                                  'Prop_data_loss_left_eye',
+                                                                  'Prop_data_loss_right_eye',
+                                                                  'Calibration used'])
+        df_cal.to_hdf(fname + '.h5', key='calibration_history')
 
         # Clear data containers
         self.msg_container = []
@@ -1793,9 +1822,7 @@ class myTobii(object):
         l=TittaPy.get_log(True)  # True means the log is consumed. False (default) its only peeked.
         TittaPy.stop_logging()
 
-        # Consume all samples from the buffer
-        all_samples = self.tracker.consume_N('gaze',sys.maxsize)
-        print(all_samples[0])
+
 
 
 
