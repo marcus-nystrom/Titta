@@ -307,7 +307,7 @@ class EThead(object):
 
                 relevant info in sample is
 
-                sample.left.gaze_origin.in_user_coordinate_system
+                sample['left_gaze_origin_in_user_coordinate_system']
                 sample.right.gaze_origin.in_user_coordinate_system
                 sample.left.gaze_origin.in_trackbox_coordinate_system
                 sample.right.gaze_origin.in_trackbox_coordinate_system
@@ -339,13 +339,13 @@ class EThead(object):
             self.eye_r_closed.fillColor = (1, -1, -1)
 
         #%% 1. Compute the average position of the head ellipse
-        xyz_pos_eye_l = (sample_user_pos.left.user_position.x,
-                         sample_user_pos.left.user_position.y,
-                         sample_user_pos.left.user_position.z)
+        xyz_pos_eye_l = (sample_user_pos['left_user_position_x'][0],
+                         sample_user_pos['left_user_position_y'][0],
+                         sample_user_pos['left_user_position_z'][0])
 
-        xyz_pos_eye_r = (sample_user_pos.right.user_position.x,
-                         sample_user_pos.right.user_position.y,
-                         sample_user_pos.right.user_position.z)
+        xyz_pos_eye_r = (sample_user_pos['right_user_position_x'][0],
+                         sample_user_pos['right_user_position_y'][0],
+                         sample_user_pos['right_user_position_z'][0])
 
         # Valid data from the eyes?
         self.right_eye_valid = np.sum(np.isnan(xyz_pos_eye_r)) == 0 # boolean
@@ -431,10 +431,10 @@ class EThead(object):
         #%% Compute the position and size of the pupils
 #        print(self.eye_l.pos)
         self.pupil_l.pos = self.eye_l.pos
-        self.pupil_l.vertices = self.eye_l.vertices * (sample.left.pupil_diameter - 1)*2 / 16
+        self.pupil_l.vertices = self.eye_l.vertices * (sample['left_pupil_diameter'][0] - 1)*2 / 16
 
         self.pupil_r.pos = self.eye_r.pos
-        self.pupil_r.vertices = self.eye_r.vertices * (sample.right.pupil_diameter - 1)*2 / 16
+        self.pupil_r.vertices = self.eye_r.vertices * (sample['right_pupil_diameter'][0] - 1)*2 / 16
 
 #        print(self.eye_l.pos, self.eye_r.pos)
 

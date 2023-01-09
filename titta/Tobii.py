@@ -7,6 +7,7 @@ Created on Thu Jun 01 14:11:57 2017
 ToDO: Add information about monitor to system_info() dict.
 * Consume data when then do not need to be stored, e.g. head setup
 * Save data in HDF5 container.
+*                     # Save data as xy list (Change so it's saved to a np.array directly)
 
     """
 from __future__ import print_function # towards Python 3 compatibility
@@ -19,7 +20,8 @@ import warnings
 import json
 import numpy as np
 from titta import helpers_tobii as helpers
-from TittaPy import EyeTracker
+import TittaPy
+# from TittaPy import EyeTracker
 
 
 #%%
@@ -65,12 +67,12 @@ class myTobii(object):
         for k in range(4):
 
             # if the tracker doesn't connect, try four times to reconnect
-            ets = EyeTracker.find_all_eye_trackers()
+            ets = TittaPy.find_all_eye_trackers()
             for et in ets:
 
                 # Check if the desired eye tracker is found
-                if et.model == self.settings.eye_tracker_name:
-                    self.settings.TRACKER_ADDRESS = et.address
+                if et['model'] == self.settings.eye_tracker_name:
+                    self.settings.TRACKER_ADDRESS = et['address']
                     break
                 else:
                     core.wait(1)
@@ -83,21 +85,21 @@ class myTobii(object):
                 raise Exception('No eye tracker was found')
             else:
                 raise Exception('The desired eye tracker not found. \
-                                These are available: ' + ' '.join([str(m.model) for m in ets]))
+                                These are available: ' + ' '.join([str(['model']) for m in ets]))
 
         if self.settings.PACING_INTERVAL < 0.8:
             raise Exception('Calibration pacing interval must be \
                             larger or equal to 0.8 s')
 
         # Initiate the EyeTracker class with a specific address
-        self.tracker = EyeTracker(self.settings.TRACKER_ADDRESS)
+        self.tracker = TittaPy.EyeTracker(self.settings.TRACKER_ADDRESS)
 
         # Always include eye openness data in gaze stream
-        if "has_eye_openness_data" in self.tracker.capabilities:
+        if TittaPy.capability.has_eye_openness_data in self.tracker.capabilities:
             self.tracker.set_include_eye_openness_in_gaze(True)
 
         # Start the eye tracker logger
-        self.tracker.start_logging()
+        TittaPy.start_logging()
 
         # Store timestamped messages in a list
         self.msg_container = []
@@ -143,9 +145,11 @@ class myTobii(object):
                  'right_gaze_point_validity']
 
         # Only the tobii pro spectrum and the tobii pro fusion can record eye images
-        # Never record eye images for other models
+        # Never record eye images for other models, override defaults
         if not self.tracker.has_stream('eye_image'):
-            self.settings.RECORD_EYE_IMAGES_DURING_CALIBRATION = False
+            if self.settings.RECORD_EYE_IMAGES_DURING_CALIBRATION:
+                print('Warning: This eye tracker does not support eye images')
+                self.settings.RECORD_EYE_IMAGES_DURING_CALIBRATION = False
 
         # Check and set sampling frequency if not correct
         Fs = self.get_sample_rate()
@@ -329,11 +333,6 @@ class myTobii(object):
         self.accuracy_image = visual.ImageStim(self.win_temp, image=None,units='norm', size=(2,2),
                                           pos=(0, 0))
 
-
-    #%%
-    def is_connected(self):
-        pass
-
     #%%
     def start_recording(self,   gaze_data=False,
                                 sync_data=False,
@@ -358,7 +357,7 @@ class myTobii(object):
             self.tracker.start('external_signal')
 
     #%%
-    def stop_recording(self,   gaze_data=False,
+    def stop_recording(self,    gaze_data=False,
                                 sync_data=False,
                                 image_data=False,
                                 stream_errors=False,
@@ -381,10 +380,6 @@ class myTobii(object):
             self.tracker.stop('external_signal')
 
     #%%
-    def is_connected(self):
-        pass
-
-    #%%
     def calibrate(self, win, win_operator=None,
                   eye='both', calibration_number = 'second'):
         ''' Enters the calibration screen and gives the user control
@@ -398,7 +393,7 @@ class myTobii(object):
                                  has finished
 
         '''
-        if not "can_do_monocular_calibration" in self.tracker.capabilities:
+        if TittaPy.capability.can_do_monocular_calibration in self.tracker.capabilities:
             assert eye=='both', 'Monocular calibrations available only in Tobii Pro Spectrum'
 
         # Generate coordinates for calibration in PsychoPy and
@@ -459,7 +454,7 @@ class myTobii(object):
                         # Enter calibration mode
                         self.tracker.enter_calibration_mode(False) # doMonocular=False
                     else:
-                        if "can_do_monocular_calibration" in self.tracker.capabilities:
+                        if TittaPy.capability.can_do_monocular_calibration in self.tracker.capabilities:
                             self.tracker.enter_calibration_mode(True) # doMonocular=True
 
                 res = self._wait_for_action_complete()
@@ -600,7 +595,7 @@ class myTobii(object):
 
         core.wait(0.5)
 
-        if not self.get_latest_sample():
+        if not self.tracker.has_stream('gaze'):
             self.win.close()
             raise ValueError('Eye tracker switched on?')
 
@@ -655,8 +650,8 @@ class myTobii(object):
             self.instruction_text.draw()
 
             # Get and draw distance information
-            l_pos = sample.left.gaze_point.on_display_area.x
-            r_pos = sample.right.gaze_point.on_display_area.x
+            l_pos = sample['left_gaze_point_on_display_area_x'][-1]
+            r_pos = sample['right_gaze_point_on_display_area_x'][-1]
 
             try:
                 with warnings.catch_warnings():
@@ -703,7 +698,7 @@ class myTobii(object):
         self.mouse.setVisible(0)
 
         # Stop user position guide
-        self.traker.stop('positioning')
+        self.tracker.stop('positioning')
 
         # Clear the screen
         self.win.flip()
@@ -730,8 +725,8 @@ class myTobii(object):
         self.current_point.draw()
 
         # Draw data for the left and right eyes
-        self.raw_et_sample_l.pos = helpers.tobii2norm(np.expand_dims(sample.left.gaze_point.on_display_area.x, axis=0))
-        self.raw_et_sample_r.pos = helpers.tobii2norm(np.expand_dims(sample.right.gaze_point.on_display_area.x, axis=0))
+        self.raw_et_sample_l.pos = helpers.tobii2norm(np.expand_dims(sample[-1][-1].left.gaze_point.on_display_area.x, axis=0))
+        self.raw_et_sample_r.pos = helpers.tobii2norm(np.expand_dims(sample[-1][-1].right.gaze_point.on_display_area.x, axis=0))
         self.raw_et_sample_l.draw()
         self.raw_et_sample_r.draw()
 
@@ -846,6 +841,10 @@ class myTobii(object):
 
                     res = self._wait_for_action_complete()
 
+                    print(res['work_item']['action'])
+                    print(res['work_item']['coordinates'])
+                    print(res['status_string'])
+
                     if i == self.settings.N_CAL_TARGETS:
                         self.final_cal_position = copy.deepcopy(pos)
                         break
@@ -866,16 +865,17 @@ class myTobii(object):
 
             tick += 1
 
-        # Apply the calibration and get the calibration results
+        # Apply the calibration
         self.tracker.calibration_compute_and_apply()
         res = self._wait_for_action_complete()
 
-        self.calibration_results = res
-        print("Compute and apply returned {0} and collected at {1} points.".
-              format(res.status, len(res.calibration_points)))
+        print(res['work_item']['action'])
+        print(res['status_string'])
+        print(res['calibration_result'])
+
 
         # Accept of redo the calibration?
-        if 'success' in res.status:
+        if res['status'] == 0:
             action = 'val'
             cal_data = self._generate_calibration_image(res)
         else:
@@ -883,6 +883,21 @@ class myTobii(object):
             self.instruction_text.draw()
             self.win.flip()
             core.wait(1)
+
+        # print(f"Compute and apply returned {0} and collected at {1} points.".
+        #       format(res.status_string, len(res.calibration_data)))
+
+        # Get the calibration data
+        self.tracker.calibration_get_data()
+        res = self._wait_for_action_complete()
+
+        # print(res.work_item.action)
+        print(res['status_string'])
+        # print(res['calibration_data'])
+
+        self.calibration_results = res['calibration_data']
+
+
 
         self.send_message('Calibration_stop')
 
@@ -897,6 +912,7 @@ class myTobii(object):
     #%%
     def _generate_calibration_image(self, calibration_result):
         ''' Generates visual representation of calibration results
+        Plot only those who are valid and used?
         '''
 
         cal_data = []   # where calibration deviations are stored
@@ -904,11 +920,11 @@ class myTobii(object):
         xys_right = []  # container for gaze data (right eye)
 
         # Display the results to the user (loop over each calibration point)
-        for p in calibration_result.calibration_points:
+        for p in calibration_result['calibration_result']['points']:
 
             # Draw calibration dots
-            x_dot = p.position_on_display_area.x
-            y_dot = p.position_on_display_area.y
+            x_dot = p['position_on_display_area_x']
+            y_dot = p['position_on_display_area_y']
             self.cal_dot.fillColor = 'white'
             xy_dot = helpers.tobii2deg(np.array([[x_dot, y_dot]]),
                                        self.win.monitor)
@@ -917,23 +933,24 @@ class myTobii(object):
 
             if self.eye == 'both' or self.eye == 'left':
                 # Save gaze data for left eye to list
-                for si in p.calibration_samples: # For each sample
-                    x = si.left_eye.position_on_display_area.x
-                    y = si.left_eye.position_on_display_area.y
-                    xy_sample = helpers.tobii2deg(np.array([[x, y]]),
-                                                  self.win.monitor) # Tobii and psychopy have different coord systems
-                    xys_left.append([xy_sample[0][0], xy_sample[0][1]])
-                    cal_data.append([x_dot, y_dot, x, y, 'left'])
+                x = p['samples_left_position_on_display_area_x']
+                y = p['samples_left_position_on_display_area_y']
+                xy_sample = helpers.tobii2deg(np.array([x, y]),
+                                              self.win.monitor) # Tobii and psychopy have different coord systems
+                for xy in xy_sample.T:
+                    xys_left.append([xy[0], xy[1]])
+                    cal_data.append([x_dot, y_dot, xy[0], xy[1], 'left'])
+
 
             if self.eye == 'both' or self.eye == 'right':
-                # Save gaze data for right eye to list
-                for si in p.calibration_samples:
-                    x = si.right_eye.position_on_display_area.x
-                    y = si.right_eye.position_on_display_area.y
-                    xy_sample = helpers.tobii2deg(np.array([[x, y]]),
-                                                  self.win.monitor) # Tobii and psychopy have different coord systems
-                    xys_right.append([xy_sample[0][0], xy_sample[0][1]])
-                    cal_data.append([x_dot, y_dot, x, y, 'right'])
+                 # Save gaze data for right eye to list
+                 x = p['samples_right_position_on_display_area_x']
+                 y = p['samples_right_position_on_display_area_y']
+                 xy_sample = helpers.tobii2deg(np.array([x, y]),
+                                               self.win.monitor) # Tobii and psychopy have different coord systems
+                 for xy in xy_sample.T:
+                     xys_right.append([xy[0], xy[1]])
+                     cal_data.append([x_dot, y_dot, xy[0], xy[1], 'right'])
 
         samples = visual.ElementArrayStim(self.win,
                                           sizes=0.1,
@@ -967,7 +984,7 @@ class myTobii(object):
         return cal_data
 
     #%%
-    def save_calibration(self, filename):
+    def _save_calibration(self, filename):
         ''' Save the calibration to a .bin file
         Args:
             filename: test
@@ -987,7 +1004,7 @@ class myTobii(object):
             else:
                 print("No calibration available for eye tracker with serial number {0}.".format(self.tracker.serial_number))
     #%%
-    def load_calibration(self, filename):
+    def _load_calibration(self, filename):
         ''' Loads the calibration to a .bin file
         Args:
             filename: test
@@ -1080,7 +1097,7 @@ class myTobii(object):
             # Get the last 300 ms of data from the buffer
             if self.clock.getTime() >= 0.800:
                 sample = self.tracker.peek_N('gaze',
-                                             int(self.sampling_frequency * 0.300))
+                                             int(self.tracker.frequency * 0.300))
 
             # Time to switch to a new point
             if self.settings.AUTO_PACE > 0 or 'space' in k:
@@ -1089,13 +1106,13 @@ class myTobii(object):
                     # Collect validation data from this point
                     validation_data.append(sample)
 
-                    # Save data as xy list
-                    for s in sample:
-                        xy_pos.append([s.system_time_stamp,
-                                       s.left.gaze_point.on_display_area.x,
-                                       s.left.gaze_point.on_display_area.y,
-                                       s.right.gaze_point.on_display_area.x,
-                                       s.right.gaze_point.on_display_area.y,
+                    # Save data as xy list (Change so it's saved to a np.array directly)
+                    for i in range(len(sample['system_time_stamp'])):
+                        xy_pos.append([sample['system_time_stamp'][i],
+                                       sample['left_gaze_point_on_display_area.x'][i],
+                                       sample['left_gaze_point_on_display_area.y'][i],
+                                       sample['right_gaze_point_on_display_area.x'][i],
+                                       sample['right_gaze_point_on_display_area.y'][i],
                                        pos[0], pos[1]])
                     pos_old = pos[:]
 
@@ -1245,10 +1262,10 @@ class myTobii(object):
 #        print("Top Right: {0}".format(display_area.top_right))
 #        print("Width: {0}".format(display_area.width))
 
-        dx = (np.array(display_area.top_right) - np.array(display_area.top_left)) * v[0]
-        dy = (np.array(display_area.bottom_left) - np.array(display_area.top_left)) * v[1]
+        dx = (np.array(display_area['top_right']) - np.array(display_area['top_left'])) * v[0]
+        dy = (np.array(display_area['bottom_left']) - np.array(display_area['top_left'])) * v[1]
 
-        u = np.array(display_area.top_left) + dx + dy
+        u = np.array(display_area['top_left']) + dx + dy
 
         return u
     #%%
@@ -1256,12 +1273,12 @@ class myTobii(object):
         ''' Computes data quality (deviation, rms) per validation point
 
         Args:
-            validation_data - list with validation data per point
-                validation_data[k] - dict with keys (see self.header)
+            validation_data - list with validation data per validation point
+                validation_data[k] - dict with keys (see self.header), contains, e.g.,
+                len(sample['system_time_stamp']
             val_point_positions - list with [x, y] pos of validation point
                                     in ADCS
             eye - 'left' or 'right'
-
         '''
         # For each point
         deviation_per_point = []
@@ -1272,36 +1289,36 @@ class myTobii(object):
 
             val_point_position = self._adcs2ucs(val_point_positions[p])
 
-            # For each sample
+            # For each sample (in a validation point)
             deviation_per_sample = []
             angle_between_samples = []
             gaze_vector_old = 0
             n_invalid_samples = 0
             for i, sample in enumerate(point_data):
+                for i in range(len(sample['system_time_stamp'])):
+                    gaze_vector = (sample[f"[{eye}_gaze_point_in_user_coordinate_system_x"][i] -
+                                   sample[f"[{eye}_gaze_origin_in_user_coordinate_system_x"][i],
+                                   sample[f"[{eye}_gaze_point_in_user_coordinate_system_y"][i] -
+                                   sample[f"[{eye}_gaze_origin_in_user_coordinate_system_y"][i],
+                                   sample[f"[{eye}_gaze_point_in_user_coordinate_system_z"][i] -
+                                   sample[f"[{eye}_gaze_origin_in_user_coordinate_system_z"][i])
 
-                gaze_vector = (eval(f"sample.{eye}.gaze_point.in_user_coordinate_system.x") -
-                               eval(f"sample.{eye}.gaze_origin.in_user_coordinate_system.x"),
-                               eval(f"sample.{eye}.gaze_point.in_user_coordinate_system.y") -
-                               eval(f"sample.{eye}.gaze_origin.in_user_coordinate_system.y"),
-                               eval(f"sample.{eye}.gaze_point.in_user_coordinate_system.z") -
-                               eval(f"sample.{eye}.gaze_origin.in_user_coordinate_system.z"))
+                    if np.any(np.isnan(gaze_vector)):
+                        n_invalid_samples += 1
 
-                if np.any(np.isnan(gaze_vector)):
-                    n_invalid_samples += 1
+                    eye_to_valpoint_vector = (val_point_position[0] -
+                                   sample[f"[{eye}_gaze_origin_in_user_coordinate_system_x"][i],
+                                   val_point_position[1] -
+                                   sample[f"[{eye}_gaze_origin_in_user_coordinate_system_y"][i],
+                                   val_point_position[2] -
+                                   sample[f"[{eye}_gaze_origin_in_user_coordinate_system_z"][i])
 
-                eye_to_valpoint_vector = (val_point_position[0] -
-                               eval(f"sample.{eye}.gaze_origin.in_user_coordinate_system.x"),
-                               val_point_position[1] -
-                               eval(f"sample.{eye}.gaze_origin.in_user_coordinate_system.y"),
-                               val_point_position[2] -
-                               eval(f"sample.{eye}.gaze_origin.in_user_coordinate_system.z"))
+                    # Compute RMS (diff between consecutive samples) and deviation
+                    deviation_per_sample.append(helpers.angle_between(gaze_vector, eye_to_valpoint_vector))
+                    if i > 0:
+                        angle_between_samples.append(helpers.angle_between(gaze_vector, gaze_vector_old))
 
-                # Compute RMS (diff between consecutive samples) and deviation
-                deviation_per_sample.append(helpers.angle_between(gaze_vector, eye_to_valpoint_vector))
-                if i > 0:
-                    angle_between_samples.append(helpers.angle_between(gaze_vector, gaze_vector_old))
-
-                gaze_vector_old = gaze_vector
+                    gaze_vector_old = gaze_vector
 
             # Compute averages per point
             deviation_per_point.append(np.rad2deg(np.nanmedian(deviation_per_sample)))
@@ -1327,7 +1344,7 @@ class myTobii(object):
 
         # get (and save) validation screen image
         nCalibrations = len(self.deviations)
-        self.save_calibration(str(nCalibrations))
+        self._save_calibration(str(nCalibrations))
         core.wait(0.2)
 
         # Add image as texture
@@ -1481,7 +1498,7 @@ class myTobii(object):
             # Check if mouse is clicked to select a calibration
             for i, button in enumerate(select_accuracy_rect):
                 if self.mouse.isPressedIn(button):
-                    self.load_calibration(str(i + 1))  # Load the selected calibration
+                    self._load_calibration(str(i + 1))  # Load the selected calibration
                     if show_validation_image:
                         fname = 'validation_image' + str(i + 1) + '.png'
                     else:
@@ -1510,7 +1527,7 @@ class myTobii(object):
             elif k:
                 if k[0].isdigit():
                     if any([s for s in range(nCalibrations+1) if s == int(k[0])]):
-                        self.load_calibration(k[0])  # Load the selected calibration
+                        self._load_calibration(k[0])  # Load the selected calibration
                         fname = 'validation_image' + str(k[0]) + '.png'
                         self.accuracy_image.image = fname
                         self.selected_calibration = int(k[0])
@@ -1596,7 +1613,7 @@ class myTobii(object):
         ''' Get system time stamp
         '''
 
-        return EyeTracker.get_system_time_stamp()
+        return TittaPy.get_system_timestamp()
 
     #%%
     def send_message(self, msg, ts=None):
@@ -1653,8 +1670,8 @@ class myTobii(object):
             self._draw_tracking_monitor(sample)
 
             # Distance from eye to eye tracker
-            dist = np.nanmean([sample.left.gaze_origin.in_user_coordinate_system.z,
-                               sample.right.gaze_origin.in_user_coordinate_system.z])
+            dist = np.nanmean([sample['left_gaze_origin_in_user_coordinate_system_z'],
+                               sample['right_gaze_origin_in_user_coordinate_system_z']])
 
             # Draw distance info
             self.instruction_text.text = ' '.join(['Distance:', str(dist /10.0)[:2], 'cm'])
@@ -1693,21 +1710,21 @@ class myTobii(object):
         if self.tracker.has_stream('eye_image'):
 
             # Grab the two most recent eye images from the buffer
-            eye_images = self.tracker.peek_N('eye_image', 2)
+            eye_images = self.tracker.consume_N('eye_image',2,'end')
 
-            for eye_im in enumerate(eye_images):
+            for i in range(len(eye_images['image'])):
 
                 # Read eye image
-                im_arr = eye_im.image
+                im_arr = eye_images['image'][i]
 
                 # Always display image from camera_id == 0 on left side
-                if eye_im.camera_id == 0:
-                    if eye_im.region_id == 0:
+                if eye_images['camera_id'][i] == 0:
+                    if eye_images['region_id'][i] == 0:
                         self.eye_image_stim_l.image = im_arr
                     else:
                         self.eye_image_stim_r_1.image = im_arr
                 else:
-                    if eye_im.region_id == 0:
+                    if eye_images['region_id'][i] == 0:
                         self.eye_image_stim_r.image = im_arr
                     else:
                         self.eye_image_stim_l_1.image = im_arr
@@ -1720,6 +1737,8 @@ class myTobii(object):
             if self.settings.eye_tracker_name == 'Tobii Pro Fusion':
                 self.eye_image_stim_l_1.draw()
                 self.eye_image_stim_r_1.draw()
+
+        # self.tracker.clear('eye_image') after the calibration
 
     #%%
     def set_sample_rate(self, Fs):
@@ -1771,8 +1790,8 @@ class myTobii(object):
         self.all_validation_results = []
 
         # Stop logging and Save data from the python wrapper
-        l=self.tracker.get_log(True)  # True means the log is consumed. False (default) its only peeked.
-        self.tracker.stop_logging()
+        l=TittaPy.get_log(True)  # True means the log is consumed. False (default) its only peeked.
+        TittaPy.stop_logging()
 
         # Consume all samples from the buffer
         all_samples = self.tracker.consume_N('gaze',sys.maxsize)
