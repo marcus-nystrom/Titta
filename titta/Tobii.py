@@ -1654,8 +1654,10 @@ class myTobii(object):
 
         if gaze_data:
             self.subscribe_to_gaze_data()
-            if tr.CAPABILITY_HAS_EYE_OPENNESS_DATA in self.tracker.device_capabilities:
-            # if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
+            if not hasattr(tr, 'CAPABILITY_HAS_EYE_OPENNESS_DATA'):
+                pass  # using an older version of tobii_research lib (<2.10)
+            elif tr.CAPABILITY_HAS_EYE_OPENNESS_DATA in self.tracker.device_capabilities:
+                # if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
                 self.subscribe_to_eye_openness_data()
         if sync_data:
             self.subscribe_to_time_synchronization_data()
@@ -1683,7 +1685,9 @@ class myTobii(object):
 
         if gaze_data:
             self.unsubscribe_from_gaze_data()
-            if tr.CAPABILITY_HAS_EYE_OPENNESS_DATA in self.tracker.device_capabilities:
+            if not hasattr(tr, 'CAPABILITY_HAS_EYE_OPENNESS_DATA'):
+                pass  # using an older version of tobii_research lib (<2.10)
+            elif tr.CAPABILITY_HAS_EYE_OPENNESS_DATA in self.tracker.device_capabilities:
             # if self.settings.eye_tracker_name == 'Tobii Pro Spectrum':
                 self.unsubscribe_from_eye_openness_data()
         if sync_data:
