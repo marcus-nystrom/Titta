@@ -1,5 +1,4 @@
 # Import relevant modules
-import h5py
 import pandas as pd
 from psychopy import visual, monitors
 import numpy as np
@@ -110,6 +109,15 @@ for image in images:
             tracker.send_message(''.join(['onset_', im_name]))
 
     tracker.send_message(''.join(['offset_', im_name]))
+
+    # Exaple of how to get the most recent gaze sample
+    sample = tracker.buffer.peekN('gaze', 1)
+
+    # Get the 10 most recent samples
+    # sample = tracker.buffer.peekN('gaze', 10)
+
+    # print(sample['left_gaze_on_display_area_x'])
+    # print(sample['right_gaze_on_display_area_x'])
 
 win.flip()
 tracker.stop_recording(gaze=True)
