@@ -6,7 +6,7 @@
  http://programarcadegames.com/
  http://simpson.edu/computer-science/
 
- Adaped to PsychoPy by Marcus Nystrom.
+ Adaped to PsychoPy and Titta by Marcus Nystrom.
 """
 
 # --- Import libraries used for this program
@@ -223,11 +223,11 @@ class Player():
         """ Update the player position. """
 
         # Peek in the eye tracker buffer
-        data = tracker.peek_N('gaze', n_buffer_samples)
+        data = tracker.buffer.peek_N('gaze', n_buffer_samples)
 
         # Convert from Tobii coordinate system to ssv
-        lx = [d.left.gaze_point.on_display_area.x for d in data]
-        rx = [d.right.gaze_point.on_display_area.x for d in data]
+        lx = data['left_gaze_point_on_display_area_x']
+        rx = data['right_gaze_point_on_display_area_x']
 
         # update position only if contains no nan
         if np.any(np.isnan(np.array(lx) * np.array(rx))):
