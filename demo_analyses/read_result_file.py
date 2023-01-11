@@ -31,7 +31,8 @@ with h5py.File(filename, "r") as f:
     print("Keys: %s" % f.keys())
 
     # Read the eye_image group
-    eye_image_group = f['eye_image']
+    eye_image_group = f.get('eye_image')
+    print("Groupe items: %s" % eye_image_group.items())
 
     # Read eye images from group (each image is a HDF dataset)
     # eye_images is a list of 2D arrays (the eye images)
