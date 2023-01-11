@@ -8,6 +8,9 @@ ToDO: Add information about monitor to system_info() dict.
 * Consume data when then do not need to be stored, e.g. head setup
 * Save data in HDF5 container.
 *                     # Save data as xy list (Change so it's saved to a np.array directly)
+* Test write/read of all streams
+* remove annying messages at start up. FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if tex in ["none", "None", "color"]:
 
     """
 from psychopy import visual, core, event
@@ -655,8 +658,8 @@ class myTobii(object):
             self.instruction_text.draw()
 
             # Get and draw distance information
-            l_pos = sample['left_gaze_point_on_display_area_x'][-1]
-            r_pos = sample['right_gaze_point_on_display_area_x'][-1]
+            l_pos = sample['left_gaze_origin_in_user_coordinates_z'][0]
+            r_pos = sample['right_gaze_origin_in_user_coordinates_z'][0]
 
             try:
                 with warnings.catch_warnings():
