@@ -76,7 +76,7 @@ tracker.calibrate(win)
 n_buffer_samples = 1
 
 # Start eye tracker
-tracker.start_recording(gaze_data=True)
+tracker.start_recording(gaze=True)
 
 # Define some colors
 black = 'black'  # (0, 0, 0)
@@ -331,8 +331,7 @@ while not exit_program:
         my_clock.reset()
 
 # Stop eye tracker and clean up
-tracker.stop_recording(gaze_data=True)
-tracker.de_init()
+tracker.stop_recording(gaze=True)
 
 try:
 
