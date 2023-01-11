@@ -13,7 +13,6 @@ ToDO: Add information about monitor to system_info() dict.
   if tex in ["none", "None", "color"]:
 
     """
-from psychopy import visual, core, event
 import pandas as pd
 import copy
 import sys
@@ -26,6 +25,17 @@ import numpy as np
 from titta import helpers_tobii as helpers
 import TittaPy
 import h5py
+
+# test if psychopy available
+# TODO: make sure titta can be run without psychopy
+HAS_PSYCHOPY = False
+try:
+    import psychopy
+    from psychopy import visual, core, event
+except:
+    pass
+else:
+    HAS_PSYCHOPY = True
 
 
 #%%
@@ -344,7 +354,9 @@ class myTobii(object):
                                 notifications=False,
                                 external_signal=False,
                                 positioning=False):
-        ''' Starts recording
+        ''' Starts recording streams
+        See bug re. positioning stream (not issue here)
+        https://github.com/dcnieho/Titta/blob/master/tests/positioningStreamBug.m
         '''
 
         if gaze:
@@ -367,9 +379,10 @@ class myTobii(object):
                                 notifications=False,
                                 external_signal=False,
                                 positioning=False):
-        ''' Starts recording
+        ''' Stops recording streams
         '''
-
+        if positioning:
+            self.buffer.stop('positioning')
         if gaze:
             self.buffer.stop('gaze')
         if time_sync:
@@ -378,8 +391,6 @@ class myTobii(object):
             self.buffer.stop('eye_image')
         if notifications:
             self.buffer.stop('notification')
-        if positioning:
-            self.buffer.stop('positioning')
         if external_signal and self.buffer.has_stream('external_signal'):
             self.buffer.stop('external_signal')
 
@@ -1618,6 +1629,10 @@ class myTobii(object):
         info['python_version'] = '.'.join([str(sys.version_info[0]),
                                            str(sys.version_info[1]),
                                            str(sys.version_info[2])])
+        info['psychopy_version'] = psychopy.__version__
+        # info['titta_version'] = titta.__version_
+        # TODO titta version
+        # info['git_revision'] = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
 
         return info
 
@@ -1785,7 +1800,7 @@ class myTobii(object):
         if filename:
             fname = filename
         else:
-            fname = self.settings.FILENAME[:-4]
+            fname = self.settings.FILENAME
 
         # Check if the filename already exists, if so append to name
         i = 1
@@ -1830,6 +1845,9 @@ class myTobii(object):
         if self.buffer.has_stream('external_signal'):
             temp = self.buffer.consume_N('external_signal',sys.maxsize)
             pd.DataFrame.from_dict(temp).to_hdf(fname + '.h5', key='external_signal')
+        if self.buffer.has_stream('notification'):
+            temp = self.buffer.consume_N('notification',sys.maxsize)
+            pd.DataFrame.from_dict(temp).to_hdf(fname + '.h5', key='notification')
 
        # Save calibration history to HDF5 container
         df_cal = pd.DataFrame(self.calibration_history(),  columns=['offset_left_eye (deg)',
@@ -1851,7 +1869,7 @@ class myTobii(object):
         temp = self.buffer.consume_N('eye_image')
         if len(temp['image']) > 0:
 
-            with h5py.File('test.h5', 'a') as hf:
+            with h5py.File(fname + '.h5', 'a') as hf:
                 grp = hf.create_group('eye_image')
 
                 # Save each frame as a separate dataset in this group
