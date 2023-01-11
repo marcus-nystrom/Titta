@@ -46,7 +46,7 @@ et_name = 'Tobii Pro Spectrum'
 
 # Change any of the default dettings?e
 settings = Titta.get_defaults(et_name)
-settings.FILENAME = 'testfile.tsv'
+settings.FILENAME = 'testfile'
 settings.N_CAL_TARGETS = 5
 
 # Example of how to change the graphics; here, the color of the 'start calibration' button
@@ -126,10 +126,10 @@ tracker.stop_recording(gaze=True)
 win.close()
 if dual_screen_setup:
     win_op.close()
-tracker.save_data()  # Also save screen geometry from the monitor object
+tracker.save_data()
 
 # %% Read the gaze stream from the HDF5 container
-filename = settings.FILENAME[:-4] + '.h5'
+filename = settings.FILENAME + '.h5'
 df_gaze = pd.read_hdf(filename, 'gaze')
 
 # %%
