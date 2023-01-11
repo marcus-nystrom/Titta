@@ -265,8 +265,11 @@ class EThead(object):
                                          lineColor = HEAD_POS_CIRCLE_FIXED_COLOR,
                                          fillColor = None,
                                          lineWidth=4, units='height')
+
+        # Size=None (If None is specified, the size will be set with values passed to width and height)
         self.moving_ellipse = visual.ShapeStim(win,  lineColor = yellow_linecolor,
                                          lineWidth=4, units='height',
+                                         size=None,
                                          fillColor=yellow, opacity=0.5)
 
 
@@ -376,12 +379,6 @@ class EThead(object):
         self.moving_ellipse.pos = ((avg_pos[0] - 0.5) * -1 - self.offset[0] ,
                                 (avg_pos[1] - 0.5) * -1 - self.offset[1])
 
-        self.moving_ellipse.height = (avg_pos[2] - 0.5)*-1 * 0.5 + self.HEAD_POS_ELLIPSE_MOVING_HEIGHT
-
-        # Control min size of head ellipse
-        if self.moving_ellipse.height < self.HEAD_POS_ELLIPSE_MOVING_MIN_HEIGHT:
-            self.moving_ellipse.height = self.HEAD_POS_ELLIPSE_MOVING_MIN_HEIGHT
-
         # Compute roll and yaw data from 3D information about the eyes
         # in the headbox (if both eyes are valid)
         if self.left_eye_valid and self.right_eye_valid:
@@ -403,8 +400,14 @@ class EThead(object):
         # Compute the ellipse height and width
         # The width should be zero if yaw = pi/2 rad (90 deg)
         # The width should be equal to the height if yaw = 0
-        self.head_width = self.moving_ellipse.height - \
-                          np.abs(yaw) / np.pi * (self.moving_ellipse.height)
+        ellipse_height = (avg_pos[2] - 0.5)*-1 * 0.2 + self.HEAD_POS_ELLIPSE_MOVING_HEIGHT
+
+        # Control min size of head ellipse
+        if ellipse_height < self.HEAD_POS_ELLIPSE_MOVING_MIN_HEIGHT:
+            ellipse_height = self.HEAD_POS_ELLIPSE_MOVING_MIN_HEIGHT
+
+        self.head_width = ellipse_height - \
+                          np.abs(yaw) / np.pi * (ellipse_height)
 
 #        print(self.moving_ellipse.pos, self.moving_ellipse.height,
 #              self.head_width, roll, yaw)
@@ -412,7 +415,7 @@ class EThead(object):
         # Get head ellipse points to draw
         ellipse_points_head = ellipse(xy = (0, 0),
                                       width= self.head_width,
-                                      height=self.moving_ellipse.height,
+                                      height=ellipse_height,
                                       angle=roll)
 
         # update position and shape of head ellipse
