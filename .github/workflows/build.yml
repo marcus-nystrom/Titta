@@ -1,4 +1,4 @@
-name: Build executables and publish 📦 to PyPI
+name: Publish Python 🐍 distributions 📦 to PyPI
 
 on:
   workflow_dispatch:
