@@ -4,6 +4,7 @@ from psychopy import visual, monitors
 import numpy as np
 import matplotlib.pyplot as plt
 from titta import Titta, helpers_tobii as helpers
+import h5py
 
 dummy_mode = False
 bimonocular_calibration = False
@@ -49,6 +50,8 @@ settings = Titta.get_defaults(et_name)
 settings.FILENAME = 'testfile'
 settings.N_CAL_TARGETS = 5
 
+# Use settings.__dict__ to see all available settings
+
 # Example of how to change the graphics; here, the color of the 'start calibration' button
 # settings.graphics.COLOR_CAL_BUTTON = 'green'
 # settings.graphics.TEXT_COLOR = 'green'
@@ -86,8 +89,13 @@ else:
     else:
         tracker.calibrate(win)
 
-# %% Record some data
-tracker.start_recording(gaze=True)
+# %% Record some data. Normally only gaze stream is started
+tracker.start_recording(gaze=True,
+                        time_sync=True,
+                        eye_image=True,
+                        notifications=True,
+                        external_signal=True,
+                        positioning=True)
 
 # Present fixation dot and wait for one second
 for i in range(monitor_refresh_rate):
@@ -111,7 +119,7 @@ for image in images:
     tracker.send_message(''.join(['offset_', im_name]))
 
     # Exaple of how to get the most recent gaze sample
-    sample = tracker.buffer.peekN('gaze', 1)
+    sample = tracker.buffer.peek_N('gaze', 1)
 
     # Get the 10 most recent samples
     # sample = tracker.buffer.peekN('gaze', 10)
@@ -120,7 +128,14 @@ for image in images:
     # print(sample['right_gaze_on_display_area_x'])
 
 win.flip()
-tracker.stop_recording(gaze=True)
+
+# Stop streams (if available). Normally only gaze stream is stopped
+tracker.stop_recording(gaze=True,
+                       time_sync=True,
+                       eye_image=True,
+                       notifications=True,
+                       external_signal=True,
+                       positioning=True)
 
 # Close window and save data
 win.close()
@@ -130,11 +145,39 @@ tracker.save_data()
 
 # %% Read the gaze stream from the HDF5 container
 filename = settings.FILENAME + '.h5'
+
+# Load streams recorded from the eye tracker to pandas data frames
 df_gaze = pd.read_hdf(filename, 'gaze')
+df_msg = pd.read_hdf(filename, 'msg')
+
+df_calibration_history = pd.read_hdf(filename, 'calibration_history')
+
+df_time_sync = pd.read_hdf(filename, 'time_sync')
+df_external_signal = pd.read_hdf(filename, 'external_signal')
+df_notification = pd.read_hdf(filename, 'notification')
+
+# Read eye images (if recorded)
+with h5py.File(filename, "r") as f:
+    # Print all root level object names (aka keys)
+    # these can be group or dataset names
+    print("Keys: %s" % f.keys())
+
+    # Read the eye_image group
+    eye_image_group = f.get('eye_image')
+    print("Groupe items: %s" % eye_image_group.items())
+
+    # Read eye images from group (each image is a HDF dataset)
+    # eye_images is a list of 2D arrays (the eye images)
+    eye_images = [i[:] for i in eye_image_group.values()] # Gives list of arrays with eye images
+
 
 # %%
 # Plot some data (e.g., the horizontal data from the left eye)
 plt.close('all')
+plt.plot(np.diff(df_gaze['system_time_stamp']))
+
+
+plt.figure()
 t = (df_gaze['system_time_stamp'] - df_gaze['system_time_stamp'][0]) / 1000
 plt.plot(t, df_gaze['left_gaze_point_on_display_area_x'])
 plt.plot(t, df_gaze['left_gaze_point_on_display_area_y'])
