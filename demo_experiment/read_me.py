@@ -149,36 +149,38 @@ filename = settings.FILENAME + '.h5'
 # Load streams recorded from the eye tracker to pandas data frames
 df_gaze = pd.read_hdf(filename, 'gaze')
 df_msg = pd.read_hdf(filename, 'msg')
-
 df_calibration_history = pd.read_hdf(filename, 'calibration_history')
-
-df_time_sync = pd.read_hdf(filename, 'time_sync')
-df_external_signal = pd.read_hdf(filename, 'external_signal')
-df_notification = pd.read_hdf(filename, 'notification')
 df_log = pd.read_hdf(filename, 'log')
 
+# These may not be available
+if tracker.buffer.has_stream('time_sync'):
+    df_time_sync = pd.read_hdf(filename, 'time_sync')
+if tracker.buffer.has_stream('external_signal'):
+    df_external_signal = pd.read_hdf(filename, 'external_signal')
+if tracker.buffer.has_stream('notification'):
+    df_notification = pd.read_hdf(filename, 'notification')
 
 # Read eye images (if recorded)
-with h5py.File(filename, "r") as f:
-    # Print all root level object names (aka keys)
-    # these can be group or dataset names
-    print("Keys: %s" % f.keys())
+if tracker.buffer.has_stream('eye_image'):
+    with h5py.File(filename, "r") as f:
+        # Print all root level object names (aka keys)
+        # these can be group or dataset names
+        print("Keys: %s" % f.keys())
 
-    # Read the eye_image group
-    eye_image_group = f.get('eye_image')
-    print("Groupe items: %s" % eye_image_group.items())
+        # Read the eye_image group
+        eye_image_group = f.get('eye_image')
+        print("Groupe items: %s" % eye_image_group.items())
 
-    # Read eye images from group (each image is a HDF dataset)
-    # eye_images is a list of 2D arrays (the eye images)
-    eye_images = [i[:] for i in eye_image_group.values()] # Gives list of arrays with eye images
+        # Read eye images from group (each image is a HDF dataset)
+        # eye_images is a list of 2D arrays (the eye images)
+        eye_images = [i[:] for i in eye_image_group.values()] # Gives list of arrays with eye images
 
-eye_image_metadata = pd.read_hdf(filename, 'eye_metadata')
+    eye_image_metadata = pd.read_hdf(filename, 'eye_metadata')
 
 # %%
-# Plot some data (e.g., the horizontal data from the left eye)
+# Plot some data from the gaze stream
 plt.close('all')
 plt.plot(np.diff(df_gaze['system_time_stamp']))
-
 
 plt.figure()
 t = (df_gaze['system_time_stamp'] - df_gaze['system_time_stamp'][0]) / 1000
