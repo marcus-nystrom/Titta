@@ -18,6 +18,7 @@ from psychopy import core, event, misc, visual, monitors, data, gui
 import pandas as pd
 from titta import Titta, helpers_tobii as helpers
 
+show_dlg = False
 
 #%% Monitor/geometry
 MY_MONITOR                  = 'testMonitor' # needs to exists in PsychoPy monitor center
@@ -37,20 +38,23 @@ mon.setSizePix(SCREEN_RES)
 settings = Titta.get_defaults('Tobii Pro Spectrum')
 
 # Show dialogue box
-info = {'Enter your name':'your name', 'Device':['Eye tracker','Mouse']}
+if show_dlg:
+    info = {'Enter your name':'your name', 'Device':['Eye tracker','Mouse']}
 
-dictDlg = gui.DlgFromDict(dictionary=info,
-        title='Breakout')
-if dictDlg.OK:
-    print(info)
+    dictDlg = gui.DlgFromDict(dictionary=info,
+            title='Breakout')
+    if dictDlg.OK:
+        print(info)
+    else:
+        print('User Cancelled')
+        core.quit()
+
+    info['dateStr']= data.getDateStr()
+    player_name = '_'.join([info['Enter your name'], info['dateStr']])
 else:
-    print('User Cancelled')
-    core.quit()
-
-info['dateStr']= data.getDateStr()
-player_name = '_'.join([info['Enter your name'], info['dateStr']])
-
-
+    player_name='test'
+    info= {}
+    info['Device'] = 'Mouse'
 c = core.Clock()
 my_clock = core.Clock()
 
@@ -226,8 +230,8 @@ class Player():
         data = tracker.buffer.peek_N('gaze', n_buffer_samples)
 
         # Convert from Tobii coordinate system to ssv
-        lx = data['left_gaze_point_on_display_area_x']
-        rx = data['right_gaze_point_on_display_area_x']
+        lx = data['left_gaze_on_display_area_x']
+        rx = data['right_gaze_on_display_area_x']
 
         # update position only if contains no nan
         if np.any(np.isnan(np.array(lx) * np.array(rx))):
