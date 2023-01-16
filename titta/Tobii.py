@@ -25,6 +25,7 @@ import numpy as np
 import h5py
 import time
 import TittaPy
+import titta
 from titta import helpers_tobii as helpers
 
 # test if psychopy available
@@ -1632,8 +1633,7 @@ class myTobii(object):
                                            str(sys.version_info[2])])
         info['psychopy_version'] = psychopy.__version__
         info['TittaPy_version'] = TittaPy.__version__
-        # info['titta_version'] = titta.__version_
-        # TODO titta version
+        info['titta_version'] = titta.__version_
         # info['git_revision'] = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
 
         return info
