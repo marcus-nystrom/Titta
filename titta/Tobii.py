@@ -22,9 +22,10 @@ import pickle
 from pathlib import Path
 import os
 import numpy as np
-from titta import helpers_tobii as helpers
-import TittaPy
 import h5py
+import time
+import TittaPy
+from titta import helpers_tobii as helpers
 
 # test if psychopy available
 # TODO: make sure titta can be run without psychopy
@@ -60,6 +61,10 @@ class myTobii(object):
     def init(self):
         ''' Apply settings and check capabilities
         '''
+
+        # Start the eye tracker logger
+        TittaPy.start_logging()
+
         # Update the number of calibration point (if changed by the user)
         if self.settings.N_CAL_TARGETS == 13:
             self.settings.CAL_POS_TOBII = self.settings.CAL_TARGETS[:]
@@ -111,9 +116,6 @@ class myTobii(object):
         # Always include eye openness data in gaze stream
         if TittaPy.capability.has_eye_openness_data in self.buffer.capabilities:
             self.buffer.set_include_eye_openness_in_gaze(True)
-
-        # Start the eye tracker logger
-        TittaPy.start_logging()
 
         # Store timestamped messages in a list
         self.msg_container = []
@@ -937,7 +939,7 @@ class myTobii(object):
 
 
     #%%
-    def _generate_calibration_image(self, calibration_result):
+    def _generate_calibration_image(self, calibration_result): # TODO: display of gaze data on image does not seem correct
         ''' Generates visual representation of calibration results
         Plot only those who are valid and used?
         '''
@@ -967,7 +969,6 @@ class myTobii(object):
                 for xy in xy_sample.T:
                     xys_left.append([xy[0], xy[1]])
                     cal_data.append([x_dot, y_dot, xy[0], xy[1], 'left'])
-
 
             if self.eye == 'both' or self.eye == 'right':
                  # Save gaze data for right eye to list
@@ -1630,6 +1631,7 @@ class myTobii(object):
                                            str(sys.version_info[1]),
                                            str(sys.version_info[2])])
         info['psychopy_version'] = psychopy.__version__
+        info['TittaPy_version'] = TittaPy.__version__
         # info['titta_version'] = titta.__version_
         # TODO titta version
         # info['git_revision'] = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
@@ -1797,6 +1799,8 @@ class myTobii(object):
                 THis is to prevent file from being overwritten
         '''
 
+        t0 = time.time()
+
         if filename:
             fname = filename
         else:
@@ -1844,9 +1848,22 @@ class myTobii(object):
             pd.DataFrame.from_dict(temp).to_hdf(fname + '.h5', key='time_sync')
         if self.buffer.has_stream('external_signal'):
             temp = self.buffer.consume_N('external_signal',sys.maxsize)
+
+            # Change external_signal_change_type type into list
+            temp['change_type'] = [t.name for t in temp['change_type']]
+
             pd.DataFrame.from_dict(temp).to_hdf(fname + '.h5', key='external_signal')
-        if self.buffer.has_stream('notification'):
+        if self.buffer.has_stream('notification'): # TODO: can notifications be stored like this? Check format.
+            '''
+            your performance may suffer as PyTables will pickle object types that it cannot
+            map directly to c-types [inferred_type->mixed,key->block2_values] [items->Index(['notification_type', 'display_area', 'errors_or_warnings'], dtype='object')]
+            [t.name for t in temp['notification_type']]
+            '''
             temp = self.buffer.consume_N('notification',sys.maxsize)
+
+            # Change notification type into list
+            temp['notification_type'] = [t.name for t in temp['notification_type']]
+
             pd.DataFrame.from_dict(temp).to_hdf(fname + '.h5', key='notification')
 
        # Save calibration history to HDF5 container
@@ -1879,7 +1896,8 @@ class myTobii(object):
 
             # # Remove the numpy image and save the rest
             del temp['image']
-            del temp['type']
+            # del temp['type'] # TODO: how to save this?
+            temp['type'] = [t.name for t in temp['type']] # LIst of strings, e.g, "full_image", "cropped_image"
             pd.DataFrame.from_dict(temp).to_hdf(fname + '.h5', key='eye_metadata')
 
 
@@ -1888,53 +1906,19 @@ class myTobii(object):
         self.all_validation_results = []
 
         # Stop logging and Save data from the python wrapper
-        l=TittaPy.get_log(True)  # True means the log is consumed. False (default) its only peeked.
+        # TODO: how to save log file?
         TittaPy.stop_logging()
+        l=TittaPy.get_log(True)  # True means the log is consumed. False (default) its only peeked.
+        if len(l) > 0:
+            d =  {}
+            for key in list(l[0].keys()):
+                d[key] = [i[key] for i in l]
+
+        print(f'Took {time.time() - t0} s to save the data')
 
         # Save logging version info as json
         # with open(fname + '_logging.json', "w") as outfile:
             # json.dump(l, outfile)
-
-
-
-
-
-        #     sample_list.append([s.device_time_stamp,
-        #              s.system_time_stamp,
-        #              s.left.gaze_point.on_display_area.x,
-        #              s.left.gaze_point.on_display_area.y,
-        #              s.left.gaze_point.in_user_coordinates.x,
-        #              s.left.gaze_point.in_user_coordinates.y,
-        #              s.left.gaze_point.in_user_coordinates.z,
-        #              s.left.gaze_origin.in_track_box_coordinates.x,
-        #              s.left.gaze_origin.in_track_box_coordinates.y,
-        #              s.left.gaze_origin.in_track_box_coordinates.z,
-        #              s.left.gaze_origin.in_user_coordinates.x,
-        #              s.left.gaze_origin.in_user_coordinates.y,
-        #              s.left.gaze_origin.in_user_coordinates.z,
-        #              s.left.pupil.diameter,
-        #              s.left.pupil.validity.valid.value,
-        #              s.left.gaze_origin.validity.valid.value,
-        #              s.left.gaze_point.validity.valid.value,
-        #              s.left.eye_openness.diameter,
-        #              s.left.eye_openness.validity.valid.value,
-        #              s.right.gaze_point.on_display_area.x,
-        #              s.right.gaze_point.on_display_area.y,
-        #              s.right.gaze_point.in_user_coordinates.x,
-        #              s.right.gaze_point.in_user_coordinates.y,
-        #              s.right.gaze_point.in_user_coordinates.z,
-        #              s.right.gaze_origin.in_track_box_coordinates.x,
-        #              s.right.gaze_origin.in_track_box_coordinates.y,
-        #              s.right.gaze_origin.in_track_box_coordinates.z,
-        #              s.right.gaze_origin.in_user_coordinates.x,
-        #              s.right.gaze_origin.in_user_coordinates.y,
-        #              s.right.gaze_origin.in_user_coordinates.z,
-        #              s.right.pupil.diameter,
-        #              s.right.pupil.validity.valid.value,
-        #              s.right.gaze_origin.validity.valid.value,
-        #              s.right.gaze_point.validity.valid.value,
-        #              s.right.eye_openness.diameter,
-        #              s.right.eye_openness.validity.valid.value])
 
 
 
