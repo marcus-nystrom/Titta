@@ -48,7 +48,7 @@ et_name = 'Tobii Pro Spectrum'
 # Change any of the default dettings?e
 settings = Titta.get_defaults(et_name)
 settings.FILENAME = 'testfile'
-settings.N_CAL_TARGETS = 5
+settings.N_CAL_TARGETS = 0
 
 # Use settings.__dict__ to see all available settings
 
@@ -155,6 +155,8 @@ df_calibration_history = pd.read_hdf(filename, 'calibration_history')
 df_time_sync = pd.read_hdf(filename, 'time_sync')
 df_external_signal = pd.read_hdf(filename, 'external_signal')
 df_notification = pd.read_hdf(filename, 'notification')
+df_log = pd.read_hdf(filename, 'log')
+
 
 # Read eye images (if recorded)
 with h5py.File(filename, "r") as f:
@@ -170,6 +172,7 @@ with h5py.File(filename, "r") as f:
     # eye_images is a list of 2D arrays (the eye images)
     eye_images = [i[:] for i in eye_image_group.values()] # Gives list of arrays with eye images
 
+eye_image_metadata = pd.read_hdf(filename, 'eye_metadata')
 
 # %%
 # Plot some data (e.g., the horizontal data from the left eye)

@@ -1914,11 +1914,12 @@ class myTobii(object):
             for key in list(l[0].keys()):
                 d[key] = [i[key] for i in l]
 
+        # Save log file
+        pd.DataFrame.from_dict(d).to_hdf(fname + '.h5', key='log')
+
         print(f'Took {time.time() - t0} s to save the data')
 
-        # Save logging version info as json
-        # with open(fname + '_logging.json', "w") as outfile:
-            # json.dump(l, outfile)
+
 
 
 
