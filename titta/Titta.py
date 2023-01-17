@@ -91,7 +91,7 @@ class Settings(object):
 
         # Parameters for calibration
         self.PACING_INTERVAL = 1.0           # How long to present the dot until samples are collected
-        self.AUTO_PACE = 1                   # autoaccept (2), semi autoaccept (1, accept first point, default)
+        self.AUTO_PACE = 2                   # autoaccept (2), semi autoaccept (1, accept first point, default)
                                         # of accept with space bar (0)
 
         self.ANIMATE_CALIBRATION = True      # Static or animated calibration dots
