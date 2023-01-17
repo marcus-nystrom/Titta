@@ -7,11 +7,5 @@ To extract trial data, compute data quality, and classify fixation, perform the 
 * Adjust the settings in `I2MC_example.py` to match your experimental setup. Check under '# NECESSARY VARIABLES' in the beginning of the file. 
 * Run `detect_fixations.py`. This will produce a folder `output` that contains a text file with all the fixations (allfixations.txt) and images visualizing the result of the fixation detection.
 
-If you prefer Jupyter notebooks, `Titta data processing.ipynb` does the same steps.
-
 When fixations have been detected, they can be mapped to specific AOIs (see the `AOI_example` folder).
-
-
-To read result pickles (files ending with .pkl) containing data from a recording using Titta, use `read_result_pickle.py`
-
 
