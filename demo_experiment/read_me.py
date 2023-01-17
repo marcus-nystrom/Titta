@@ -38,7 +38,7 @@ if dual_screen_setup:
 
 
 im_names = ['im1.jpeg', 'im2.jpeg', 'im3.jpeg']
-stimulus_duration = 0.1
+stimulus_duration = 3
 
 # %%  ET settings
 et_name = 'Tobii Pro Spectrum'
@@ -48,7 +48,8 @@ et_name = 'Tobii Pro Spectrum'
 # Change any of the default dettings?e
 settings = Titta.get_defaults(et_name)
 settings.FILENAME = 'testfile'
-settings.N_CAL_TARGETS = 0
+settings.N_CAL_TARGETS = 3
+settings.DEBUG = False
 
 # Use settings.__dict__ to see all available settings
 
@@ -66,8 +67,8 @@ tracker.init()
 win = visual.Window(monitor=mon, fullscr=FULLSCREEN,
                     screen=1, size=SCREEN_RES, units='deg')
 if dual_screen_setup:
-    win_op = visual.Window(monitor = mon_op, fullscr = FULLSCREEN,
-                    screen=0, size=SCREEN_RES, units = 'norm')
+    win_op = visual.Window(monitor = mon_op, fullscr = FULLSCREEN_OP,
+                    screen=0, size=SCREEN_RES_OP, units = 'norm')
 
 fixation_point = helpers.MyDot2(win)
 
@@ -92,7 +93,7 @@ else:
 # %% Record some data. Normally only gaze stream is started
 tracker.start_recording(gaze=True,
                         time_sync=True,
-                        eye_image=True,
+                        eye_image=False,
                         notifications=True,
                         external_signal=True,
                         positioning=True)
@@ -132,7 +133,7 @@ win.flip()
 # Stop streams (if available). Normally only gaze stream is stopped
 tracker.stop_recording(gaze=True,
                        time_sync=True,
-                       eye_image=True,
+                       eye_image=False,
                        notifications=True,
                        external_signal=True,
                        positioning=True)
@@ -144,56 +145,64 @@ if dual_screen_setup:
 tracker.save_data()
 
 # %% Read the gaze stream from the HDF5 container
-filename = settings.FILENAME + '.h5'
+if not dummy_mode:
+    filename = settings.FILENAME + '.h5'
 
-# Load streams recorded from the eye tracker to pandas data frames
-df_gaze = pd.read_hdf(filename, 'gaze')
-df_msg = pd.read_hdf(filename, 'msg')
-df_calibration_history = pd.read_hdf(filename, 'calibration_history')
-df_log = pd.read_hdf(filename, 'log')
-
-# These may not be available
-if tracker.buffer.has_stream('time_sync'):
-    df_time_sync = pd.read_hdf(filename, 'time_sync')
-if tracker.buffer.has_stream('external_signal'):
-    df_external_signal = pd.read_hdf(filename, 'external_signal')
-if tracker.buffer.has_stream('notification'):
-    df_notification = pd.read_hdf(filename, 'notification')
-
-# Read eye images (if recorded)
-if tracker.buffer.has_stream('eye_image'):
+    # Find out what is recorded
     with h5py.File(filename, "r") as f:
         # Print all root level object names (aka keys)
         # these can be group or dataset names
         print("Keys: %s" % f.keys())
+        keys = f.keys()
 
-        # Read the eye_image group
-        eye_image_group = f.get('eye_image')
-        print("Groupe items: %s" % eye_image_group.items())
+    # Load streams recorded from the eye tracker to pandas data frames
+    df_gaze = pd.read_hdf(filename, 'gaze')
+    df_msg = pd.read_hdf(filename, 'msg')
+    df_calibration_history = pd.read_hdf(filename, 'calibration_history')
+    df_log = pd.read_hdf(filename, 'log')
 
-        # Read eye images from group (each image is a HDF dataset)
-        # eye_images is a list of 2D arrays (the eye images)
-        eye_images = [i[:] for i in eye_image_group.values()] # Gives list of arrays with eye images
+    # These may not be available
+    if "time_sync" in keys:
+        df_time_sync = pd.read_hdf(filename, 'time_sync')
+    if "external_signal" in keys:
+        df_external_signal = pd.read_hdf(filename, 'external_signal')
+    if "notification" in keys:
+        df_notification = pd.read_hdf(filename, 'notification')
 
-    eye_image_metadata = pd.read_hdf(filename, 'eye_metadata')
+    # Read eye images (if recorded)
+    if "eye_image" in keys:
+        with h5py.File(filename, "r") as f:
+            # Print all root level object names (aka keys)
+            # these can be group or dataset names
+            print("Keys: %s" % f.keys())
 
-# %%
-# Plot some data from the gaze stream
-plt.close('all')
-plt.plot(np.diff(df_gaze['system_time_stamp']))
+            # Read the eye_image group
+            eye_image_group = f.get('eye_image')
+            print("Groupe items: %s" % eye_image_group.items())
 
-plt.figure()
-t = (df_gaze['system_time_stamp'] - df_gaze['system_time_stamp'][0]) / 1000
-plt.plot(t, df_gaze['left_gaze_point_on_display_area_x'])
-plt.plot(t, df_gaze['left_gaze_point_on_display_area_y'])
-plt.xlabel('Time (ms)')
-plt.ylabel('x/y coordinate (normalized units)')
-plt.legend(['x', 'y'])
+            # Read eye images from group (each image is a HDF dataset)
+            # eye_images is a list of 2D arrays (the eye images)
+            eye_images = [i[:] for i in eye_image_group.values()] # Gives list of arrays with eye images
 
-plt.figure()
-plt.plot(t, df_gaze['left_eye_openness_diameter'])
-plt.plot(t, df_gaze['right_eye_openness_diameter'])
-plt.xlabel('Time (ms)')
-plt.ylabel('Eye openness (mm)')
-plt.legend(['left', 'right'])
-plt.show()
+        eye_image_metadata = pd.read_hdf(filename, 'eye_metadata')
+
+    # %%
+    # Plot some data from the gaze stream
+    plt.close('all')
+    plt.plot(np.diff(df_gaze['system_time_stamp']))
+
+    plt.figure()
+    t = (df_gaze['system_time_stamp'] - df_gaze['system_time_stamp'][0]) / 1000
+    plt.plot(t, df_gaze['left_gaze_point_on_display_area_x'])
+    plt.plot(t, df_gaze['left_gaze_point_on_display_area_y'])
+    plt.xlabel('Time (ms)')
+    plt.ylabel('x/y coordinate (normalized units)')
+    plt.legend(['x', 'y'])
+
+    plt.figure()
+    plt.plot(t, df_gaze['left_eye_openness_diameter'])
+    plt.plot(t, df_gaze['right_eye_openness_diameter'])
+    plt.xlabel('Time (ms)')
+    plt.ylabel('Eye openness (mm)')
+    plt.legend(['left', 'right'])
+    plt.show()
