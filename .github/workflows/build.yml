@@ -36,6 +36,7 @@ jobs:
         --outdir dist/
 
     - name: Publish distribution 📦 to PyPI
+      if: github.event_name == 'release' && github.event.action == 'published'
       uses: pypa/gh-action-pypi-publish@master
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
