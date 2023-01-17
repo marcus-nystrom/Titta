@@ -1005,12 +1005,12 @@ class myTobii(object):
         # Draw calibration gaze data samples for left eye and right eyes
         if self.eye == 'both' or self.eye == 'left':
             samples.xys = np.array(xys_left)
-            samples.colors = (1, 0, 0)
+            samples.colors = 'red'
             samples.draw()
 
         if self.eye == 'both' or self.eye == 'right':
             samples.xys = np.array(xys_right)
-            samples.colors = (0, 0, 1)
+            samples.colors = 'blue'
             samples.draw()
 
         # Save validation results as image
