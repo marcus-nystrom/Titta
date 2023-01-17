@@ -7,6 +7,10 @@ Created on Thu Jun 01 14:11:57 2017
 
 from psychopy import visual, core, event
 import time
+import pandas as pd
+import h5py
+import os
+from pathlib import Path
 from titta import helpers_tobii as helpers
 from threading import Thread
 import numpy as np
@@ -204,9 +208,6 @@ class Connect(object):
                                 external_signal=False,
                                 positioning=False):
         print('stop_recording')
-    #%%
-    def save_data(self, *argv, filename=None):
-        print('save_data')
 
     #%%
     def set_dummy_mode(self):
@@ -250,6 +251,14 @@ class Connect(object):
         '''
         print('get sample rate')
         return 0
+
+    #%%
+    def save_data(self, *argv, filename=None, append_version=True):
+        ''' Saves the data to HDF5 container
+        If you want to read the data, see the 'resources' folder
+        '''
+
+        print('save data')
 
 
 
