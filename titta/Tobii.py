@@ -28,6 +28,7 @@ import TittaPy
 import titta
 from titta import helpers_tobii as helpers
 
+# TODO: add support for the Tobii Pro Spark
 # test if psychopy available
 # TODO: make sure titta can be run without psychopy
 HAS_PSYCHOPY = False
@@ -411,7 +412,9 @@ class myTobii(object):
                                  has finished
 
         '''
-        if TittaPy.capability.can_do_monocular_calibration in self.buffer.capabilities:
+
+        # Only the Tobii Pro Spectrum currently support calibrating one eye at the time
+        if not TittaPy.capability.can_do_monocular_calibration in self.buffer.capabilities:
             assert eye=='both', 'Monocular calibrations available only in Tobii Pro Spectrum'
 
         # Generate coordinates for calibration in PsychoPy and
@@ -475,7 +478,7 @@ class myTobii(object):
                         self.buffer.enter_calibration_mode(False) # doMonocular=False
                         res = self._wait_for_action_complete()
                     else:
-                        if TittaPy.capability.can_do_monocular_calibration in self.buffer.capabilities:
+                        if self.calibration_number == 'first':
                             self.buffer.enter_calibration_mode(True) # doMonocular=True
                             res = self._wait_for_action_complete()
                         if self.settings.DEBUG:
@@ -653,9 +656,14 @@ class myTobii(object):
                     show_eye_images = not show_eye_images
                     image_button_pressed = True
 
-             # Get position of eyes in track box
+             # Get position of eyes in track box (wait for valid samples)
             sample = self.buffer.peek_N('gaze',1)
+            while len(sample['left_pupil_diameter']) == 0:
+                sample = self.buffer.peek_N('gaze',1)
+
             sample_user_position = self.buffer.peek_N('positioning',1)
+            while len(sample_user_position['left_user_position_x']) == 0:
+                sample_user_position = self.buffer.peek_N('positioning',1)
 
             # Draw et head on participant screen
             et_head.update(sample, sample_user_position, eye=self.eye)
@@ -754,8 +762,12 @@ class myTobii(object):
         self.current_point.draw()
 
         # Draw data for the left and right eyes
-        self.raw_et_sample_l.pos = helpers.tobii2norm(np.expand_dims(sample[-1][-1].left.gaze_point.on_display_area.x, axis=0))
-        self.raw_et_sample_r.pos = helpers.tobii2norm(np.expand_dims(sample[-1][-1].right.gaze_point.on_display_area.x, axis=0))
+        self.raw_et_sample_l.pos = helpers.tobii2norm(np.expand_dims((sample['left_gaze_point_on_display_area_x'][0],
+                                                                      sample['left_gaze_point_on_display_area_y'][0]),
+                                                                      axis=0))
+        self.raw_et_sample_r.pos = helpers.tobii2norm(np.expand_dims((sample['right_gaze_point_on_display_area_x'][0],
+                                                                      sample['right_gaze_point_on_display_area_y'][0]),
+                                                                      axis=0))
         self.raw_et_sample_l.draw()
         self.raw_et_sample_r.draw()
 
@@ -1109,7 +1121,7 @@ class myTobii(object):
                 self.cal_dot.draw()
 
             if self.win_operator:
-                self._draw_operator_screen(target_pos[i, :2], self.get_latest_sample())
+                self._draw_operator_screen(target_pos[i, :2], self.buffer.peek_N('gaze',1))
                 self.win_temp.flip()
 
             self.win.flip()
@@ -1195,7 +1207,7 @@ class myTobii(object):
             sd_l = np.nan
             data_loss_l = np.nan
 
-
+        # FIXME: C:\git\Titta\titta\Tobii.py:1205: RuntimeWarning: Mean of empty slice
         data_quality_values = [np.nanmean(deviation_l), np.nanmean(deviation_r),
                                 np.nanmean(rms_l), np.nanmean(rms_r),
                                 np.nanmean(sd_l), np.nanmean(sd_r),
@@ -1633,7 +1645,7 @@ class myTobii(object):
                                            str(sys.version_info[2])])
         info['psychopy_version'] = psychopy.__version__
         info['TittaPy_version'] = TittaPy.__version__
-        info['titta_version'] = titta.__version_
+        info['titta_version'] = titta.__version__
         # info['git_revision'] = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
 
         return info
@@ -1853,7 +1865,7 @@ class myTobii(object):
             temp['change_type'] = [t.name for t in temp['change_type']]
 
             pd.DataFrame.from_dict(temp).to_hdf(fname + '.h5', key='external_signal')
-        if self.buffer.has_stream('notification'): # TODO: can notifications be stored like this? Check format.
+        if self.buffer.has_stream('notification'): # TODO: can notifications be stored like this? Check format. Same with logs. Remove these fields before storing?
             '''
             your performance may suffer as PyTables will pickle object types that it cannot
             map directly to c-types [inferred_type->mixed,key->block2_values] [items->Index(['notification_type', 'display_area', 'errors_or_warnings'], dtype='object')]
@@ -1896,17 +1908,14 @@ class myTobii(object):
 
             # # Remove the numpy image and save the rest
             del temp['image']
-            # del temp['type'] # TODO: how to save this?
             temp['type'] = [t.name for t in temp['type']] # LIst of strings, e.g, "full_image", "cropped_image"
             pd.DataFrame.from_dict(temp).to_hdf(fname + '.h5', key='eye_metadata')
-
 
         # Clear data containers
         self.msg_container = []
         self.all_validation_results = []
 
         # Stop logging and Save data from the python wrapper
-        # TODO: how to save log file?
         TittaPy.stop_logging()
         l=TittaPy.get_log(True)  # True means the log is consumed. False (default) its only peeked.
         if len(l) > 0:
