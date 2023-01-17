@@ -1,5 +1,14 @@
 # -*- coding: utf-8 -*-
 
+'''
+To run this demo,
+1) open a new External Presenter in Tobii Pro Lab
+2) navigate to the 'record'-tab in Pro Lab
+3) run this script
+
+Data can after the recording be viewed in Pro Lab under the Analyze tab.
+'''
+
 # Import modules
 from psychopy import visual, monitors, core
 from titta import Titta, helpers_tobii as helpers
