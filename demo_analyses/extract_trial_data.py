@@ -9,7 +9,7 @@ Adapted to handle data recorded from the read_my.py demo. Each .pkl-file
 contains data from one participant
 
 """
-import pickle
+import h5py
 import numpy as np
 import pandas as pd
 import os
