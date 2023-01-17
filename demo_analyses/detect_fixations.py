@@ -61,7 +61,7 @@ try:
     import I2MC
     import I2MC.plot
 except ImportError:
-    print('pip install I2MC')
+    raise ImportError('I2MC not found. pip install I2MC')
 import matplotlib.pyplot as plt
 import time
 start = time.time()
