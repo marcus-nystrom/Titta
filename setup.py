@@ -17,7 +17,7 @@ setup(
         "Source Code": main_ns['__url__'],
     },
     license=main_ns['__license__'],
-    
+
     packages=['titta'],
     python_requires=">=3.8",
     classifiers=[
@@ -33,6 +33,6 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 3',
     ],
-    install_requires=['numpy','pandas','h5py','TittaPy','websocket_client'],
+    install_requires=['numpy','pandas','h5py','TittaPy','websocket_client', 'tobii_research'],
     long_description=open('README.md').read(),
 )
