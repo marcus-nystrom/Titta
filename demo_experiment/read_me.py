@@ -1,11 +1,14 @@
 # Import relevant modules
-import pickle
 import pandas as pd
 from psychopy import visual, monitors
 import numpy as np
 import matplotlib.pyplot as plt
 from titta import Titta, helpers_tobii as helpers
+import h5py
 
+dummy_mode = False
+bimonocular_calibration = False
+dual_screen_setup = False
 
 # %%  Monitor/geometry
 MY_MONITOR = 'testMonitor'  # needs to exists in PsychoPy monitor center
@@ -19,6 +22,21 @@ mon = monitors.Monitor(MY_MONITOR)  # Defined in defaults file
 mon.setWidth(SCREEN_WIDTH)          # Width of screen (cm)
 mon.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
 mon.setSizePix(SCREEN_RES)
+
+if dual_screen_setup:
+    # Monitor/geometry operator screen
+    MY_MONITOR_OP                  = 'default' # needs to exists in PsychoPy monitor center
+    FULLSCREEN_OP                  = False
+    SCREEN_RES_OP                  = [1920, 1080]
+    SCREEN_WIDTH_OP                = 52.7 # cm
+    VIEWING_DIST_OP                = 63 #  # distance from eye to center of screen (cm)
+
+    mon_op = monitors.Monitor(MY_MONITOR_OP)  # Defined in defaults file
+    mon_op.setWidth(SCREEN_WIDTH_OP)          # Width of screen (cm)
+    mon_op.setDistance(VIEWING_DIST_OP)       # Distance eye / monitor (cm)
+    mon_op.setSizePix(SCREEN_RES_OP)
+
+
 im_names = ['im1.jpeg', 'im2.jpeg', 'im3.jpeg']
 stimulus_duration = 3
 
@@ -27,13 +45,17 @@ et_name = 'Tobii Pro Spectrum'
 # et_name = 'IS4_Large_Peripheral'
 # et_name = 'Tobii Pro Nano'
 
-dummy_mode = False
-bimonocular_calibration = False
-
 # Change any of the default dettings?e
 settings = Titta.get_defaults(et_name)
-settings.FILENAME = 'testfile.tsv'
-settings.N_CAL_TARGETS = 5
+settings.FILENAME = 'testfile'
+settings.N_CAL_TARGETS = 3
+settings.DEBUG = False
+
+# Use settings.__dict__ to see all available settings
+
+# Example of how to change the graphics; here, the color of the 'start calibration' button
+# settings.graphics.COLOR_CAL_BUTTON = 'green'
+# settings.graphics.TEXT_COLOR = 'green'
 
 # %% Connect to eye tracker and calibrate
 tracker = Titta.Connect(settings)
@@ -44,6 +66,9 @@ tracker.init()
 # Window set-up (this color will be used for calibration)
 win = visual.Window(monitor=mon, fullscr=FULLSCREEN,
                     screen=1, size=SCREEN_RES, units='deg')
+if dual_screen_setup:
+    win_op = visual.Window(monitor = mon_op, fullscr = FULLSCREEN_OP,
+                    screen=0, size=SCREEN_RES_OP, units = 'norm')
 
 fixation_point = helpers.MyDot2(win)
 
@@ -53,77 +78,131 @@ for im_name in im_names:
 
 #  Calibratse
 if bimonocular_calibration:
-    tracker.calibrate(win, eye='left', calibration_number='first')
-    tracker.calibrate(win, eye='right', calibration_number='second')
+    if dual_screen_setup:
+        tracker.calibrate(win, win_operator=win_op, eye='left', calibration_number = 'first')
+        tracker.calibrate(win, win_operator=win_op, eye='right', calibration_number = 'second')
+    else:
+        tracker.calibrate(win, eye='left', calibration_number='first')
+        tracker.calibrate(win, eye='right', calibration_number='second')
 else:
-    tracker.calibrate(win)
+    if dual_screen_setup:
+        tracker.calibrate(win, win_operator=win_op)
+    else:
+        tracker.calibrate(win)
 
-# %% Record some data
-tracker.start_recording(gaze_data=True, store_data=True)
+# %% Record some data. Normally only gaze stream is started
+tracker.start_recording(gaze=True,
+                        time_sync=True,
+                        eye_image=False,
+                        notifications=True,
+                        external_signal=True,
+                        positioning=True)
 
 # Present fixation dot and wait for one second
 for i in range(monitor_refresh_rate):
     fixation_point.draw()
     t = win.flip()
     if i == 0:
-        tracker.send_message('fix on')	
-		
+        tracker.send_message('fix on')
+
 tracker.send_message('fix off')
 
 # Wait exactly 3 * fps frames (3 s)
 np.random.shuffle(images)
 for image in images:
     im_name = image.image
-    for i in range(stimulus_duration * monitor_refresh_rate):
+    for i in range(int(stimulus_duration * monitor_refresh_rate)):
         image.draw()
         t = win.flip()
         if i == 0:
             tracker.send_message(''.join(['onset_', im_name]))
-		
+
     tracker.send_message(''.join(['offset_', im_name]))
 
+    # Exaple of how to get the most recent gaze sample
+    sample = tracker.buffer.peek_N('gaze', 1)
+
+    # Get the 10 most recent samples
+    # sample = tracker.buffer.peekN('gaze', 10)
+
+    # print(sample['left_gaze_on_display_area_x'])
+    # print(sample['right_gaze_on_display_area_x'])
+
 win.flip()
-tracker.stop_recording(gaze_data=True)
+
+# Stop streams (if available). Normally only gaze stream is stopped
+tracker.stop_recording(gaze=True,
+                       time_sync=True,
+                       eye_image=False,
+                       notifications=True,
+                       external_signal=True,
+                       positioning=True)
 
 # Close window and save data
 win.close()
-tracker.save_data(mon)  # Also save screen geometry from the monitor object
+if dual_screen_setup:
+    win_op.close()
+tracker.save_data()
 
-# %% Open some parts of the pickle and write et-data and messages to tsv-files.
-f = open(settings.FILENAME[:-4] + '.pkl', 'rb')
-gaze_data = pickle.load(f)
-msg_data = pickle.load(f)
-eye_openness_data = pickle.load(f)
+# %% Read the gaze stream from the HDF5 container
+if not dummy_mode:
+    filename = settings.FILENAME + '.h5'
 
-#  Save data and messages
-df_msg = pd.DataFrame(msg_data,  columns=['system_time_stamp', 'msg'])
-df_msg.to_csv(settings.FILENAME[:-4] + '_msg.tsv', sep='\t')
+    # Find out what is recorded
+    with h5py.File(filename, "r") as f:
+        # Print all root level object names (aka keys)
+        # these can be group or dataset names
+        keys = [key for key in f.keys()]
+        print(f'HDF5 keys: {keys}')
 
-df = pd.DataFrame(gaze_data, columns=tracker.header)
-df_eye_openness = pd.DataFrame(eye_openness_data,  columns=['device_time_stamp',
-                                                            'system_time_stamp',
-                                                            'left_eye_validity',
-                                                            'left_eye_openness_value',
-                                                            'right_eye_validity',
-                                                            'right_eye_openness_value'])
+    # Load streams recorded from the eye tracker to pandas data frames
+    df_gaze = pd.read_hdf(filename, 'gaze')
+    df_msg = pd.read_hdf(filename, 'msg')
+    df_calibration_history = pd.read_hdf(filename, 'calibration_history')
+    df_log = pd.read_hdf(filename, 'log')
 
-# Add the eye openness signal to the dataframe containing gaze data
-df_etdata = pd.merge(df, df_eye_openness, on=['system_time_stamp'])
-df_etdata.to_csv(settings.FILENAME[:-4] + '.tsv', sep='\t')
+    # These may not be available
+    if "time_sync" in keys:
+        df_time_sync = pd.read_hdf(filename, 'time_sync')
+    if "external_signal" in keys:
+        df_external_signal = pd.read_hdf(filename, 'external_signal')
+    if "notification" in keys:
+        df_notification = pd.read_hdf(filename, 'notification')
 
-# Plot some data (e.g., the horizontal data from the left eye)
-t = (df_etdata['system_time_stamp'] - df_etdata['system_time_stamp'][0]) / 1000
-plt.plot(t, df_etdata['left_gaze_point_on_display_area_x'])
-plt.plot(t, df_etdata['left_gaze_point_on_display_area_y'])
-plt.xlabel('Time (ms)')
-plt.ylabel('x/y coordinate (normalized units)')
-plt.legend(['x', 'y'])
-# plt.show()
+    # Read eye images (if recorded)
+    if "eye_image" in keys:
+        with h5py.File(filename, "r") as f:
+            # Print all root level object names (aka keys)
+            # these can be group or dataset names
+            print("Keys: %s" % f.keys())
 
-plt.figure()
-plt.plot(t, df_etdata['left_eye_openness_value'])
-plt.plot(t, df_etdata['right_eye_openness_value'])
-plt.xlabel('Time (ms)')
-plt.ylabel('Eye openness (mm)')
-plt.legend(['left', 'right'])
-plt.show()
+            # Read the eye_image group
+            eye_image_group = f.get('eye_image')
+            print("Groupe items: %s" % eye_image_group.items())
+
+            # Read eye images from group (each image is a HDF dataset)
+            # eye_images is a list of 2D arrays (the eye images)
+            eye_images = [i[:] for i in eye_image_group.values()] # Gives list of arrays with eye images
+
+        eye_image_metadata = pd.read_hdf(filename, 'eye_metadata')
+
+    # %%
+    # Plot some data from the gaze stream
+    plt.close('all')
+    plt.plot(np.diff(df_gaze['system_time_stamp']))
+
+    plt.figure()
+    t = (df_gaze['system_time_stamp'] - df_gaze['system_time_stamp'][0]) / 1000
+    plt.plot(t, df_gaze['left_gaze_point_on_display_area_x'])
+    plt.plot(t, df_gaze['left_gaze_point_on_display_area_y'])
+    plt.xlabel('Time (ms)')
+    plt.ylabel('x/y coordinate (normalized units)')
+    plt.legend(['x', 'y'])
+
+    plt.figure()
+    plt.plot(t, df_gaze['left_eye_openness_diameter'])
+    plt.plot(t, df_gaze['right_eye_openness_diameter'])
+    plt.xlabel('Time (ms)')
+    plt.ylabel('Eye openness (mm)')
+    plt.legend(['left', 'right'])
+    plt.show()

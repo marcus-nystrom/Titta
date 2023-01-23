@@ -9,7 +9,7 @@ Adapted to handle data recorded from the read_my.py demo. Each .pkl-file
 contains data from one participant
 
 """
-import pickle
+import h5py
 import numpy as np
 import pandas as pd
 import os
@@ -51,56 +51,17 @@ def extract_trial_data(df_et_data, df_msg, msg_onset, msg_offset):
     return df_stim
 
 # %%
-# header / column names
-header = ['device_time_stamp',
-         'system_time_stamp',
-         'left_gaze_point_on_display_area_x',
-         'left_gaze_point_on_display_area_y',
-         'left_gaze_point_in_user_coordinate_system_x',
-         'left_gaze_point_in_user_coordinate_system_y',
-         'left_gaze_point_in_user_coordinate_system_z',
-         'left_gaze_origin_in_trackbox_coordinate_system_x',
-         'left_gaze_origin_in_trackbox_coordinate_system_y',
-         'left_gaze_origin_in_trackbox_coordinate_system_z',
-         'left_gaze_origin_in_user_coordinate_system_x',
-         'left_gaze_origin_in_user_coordinate_system_y',
-         'left_gaze_origin_in_user_coordinate_system_z',
-         'left_pupil_diameter',
-         'left_pupil_validity',
-         'left_gaze_origin_validity',
-         'left_gaze_point_validity',
-         'right_gaze_point_on_display_area_x',
-         'right_gaze_point_on_display_area_y',
-         'right_gaze_point_in_user_coordinate_system_x',
-         'right_gaze_point_in_user_coordinate_system_y',
-         'right_gaze_point_in_user_coordinate_system_z',
-         'right_gaze_origin_in_trackbox_coordinate_system_x',
-         'right_gaze_origin_in_trackbox_coordinate_system_y',
-         'right_gaze_origin_in_trackbox_coordinate_system_z',
-         'right_gaze_origin_in_user_coordinate_system_x',
-         'right_gaze_origin_in_user_coordinate_system_y',
-         'right_gaze_origin_in_user_coordinate_system_z',
-         'right_pupil_diameter',
-         'right_pupil_validity',
-         'right_gaze_origin_validity',
-         'right_gaze_point_validity']
 
 # Read messages and et data all participants (one .pkl-file per participant)
-files = Path.cwd().glob('*.pkl')
+files = Path.cwd().glob('*.h5')
 
 for f in files:
 
-    pid = str(f).split(os.sep)[-1][:-4]
-
-    fh = open(f, 'rb')
-    gaze_data_container = pickle.load(fh)
-    msg_container = pickle.load(fh)
-    fh.close()
+    pid = str(f).split(os.sep)[-1][:-3]
 
     # Convert to pandas dataframes
-    df = pd.DataFrame(gaze_data_container, columns=header)
-    df_msg = pd.DataFrame(msg_container, columns=['system_time_stamp', 'msg'])
-
+    df_gaze = pd.read_hdf(f, 'gaze')
+    df_msg= pd.read_hdf(f, 'msg')
 
     # Read message for onset and offset
     # Assumption is that messages are on the form (must be unique)
@@ -127,7 +88,7 @@ for f in files:
 
     # Extract relevant trial data and save in format required by I2MC
     for t in trial_msg:
-        df_trial = extract_trial_data(df, df_msg, t[0], t[1])
+        df_trial = extract_trial_data(df_gaze, df_msg, t[0], t[1])
         df_trial.reset_index(inplace=True)
 
         filename = t[0].split('_')[1] + '.tsv'

@@ -4,14 +4,12 @@ Created on Fri Sep 16 15:29:39 2022
 
 @author: Marcus
 """
-
-import pickle
 import numpy as np
-import matplotlib.pyplot as plt
 from pathlib import Path
 import pandas as pd
 import errno
 import os
+import json
 
 # -*- coding: utf-8 -*-
 """
@@ -20,32 +18,28 @@ Created on Fri Sep 16 15:29:39 2022
 @author: Marcus
 """
 
+
 # Folder where the trails should be
 trial_folder = Path.cwd() / 'trials'
 
 #%% Compute data quality from pickle
 
-# Find unique participant pickle files (one per participant)
-files = Path.cwd().glob('*.pkl')
+files = Path.cwd().glob('*.h5')
 
-# Go through all files and compute data quality
 data_quality = []
-for fn in files:
+info = []
+for f in files:
 
-    f = open(fn, 'rb')
-    pid = fn.name.split('.')[0]
-    gaze_data_container = pickle.load(f)
-    msg_container = pickle.load(f)
-    eye_openness_data_container = pickle.load(f)
-    external_signal_container = pickle.load(f)
-    sync_data_container = pickle.load(f)
-    stream_errors_container = pickle.load(f)
-    image_data_container = pickle.load(f)
-    calibration_history = pickle.load(f)
-    system_info = pickle.load(f)
-    # settings = pickle.load(f)
-    # python_version = pickle.load(f)
-    f.close()
+    print(f)
+
+    # Load info about tracker
+    fh = open(str(f)[:-3] + '.json')
+    info.append(json.load(fh))
+
+    pid = str(f).split(os.sep)[-1][:-3]
+
+    # Convert to pandas dataframes
+    calibration_history = pd.read_hdf(f, 'calibration_history')
 
     # Go through all calibrations and select 'used' ones.
     # 'Used' means that it was the selected calibration
@@ -53,10 +47,10 @@ for fn in files:
     # be selected)
     # All data quality values here are recorded during the
     # validation procedure following directly after the calibration.
-    for c in calibration_history:
+    for i, row in calibration_history.iterrows():
         # if this calibration was 'used'?
-        if c[-1] == 'used':
-            data_quality.append([pid] + c[:-1])
+        if row['Calibration used'] == 'used':
+            data_quality.append([pid] + list(row.to_numpy()[:-1]))
 
     # Also compute precision and data loss from individual trials
 
@@ -92,17 +86,19 @@ for trial in trials:
     trial_name = '.'.join(str(trial).split(os.sep)[-1].split('.')[:2])
 
     # Check that no samples are missing (based on the expected number of samples)
-    expected_number_of_samples = (df_trial.system_time_stamp.iloc[-1] - df_trial.system_time_stamp.iloc[0]) / 1000 / 1000 * system_info['sampling_frequency']
+    expected_number_of_samples = (df_trial.system_time_stamp.iloc[-1] - df_trial.system_time_stamp.iloc[0]) / 1000 / 1000 * info[0]['sampling_frequency']
     recorded_number_of_samples = len(df_trial.system_time_stamp)
     percent_valid_samples = recorded_number_of_samples/expected_number_of_samples*100
     if percent_valid_samples < 99:
         print(f'WARNING: Trial is missing {100 - percent_valid_samples}% of the samples.')
     prop_missing_data = 1 - recorded_number_of_samples/expected_number_of_samples
+    if np.abs(prop_missing_data) < 0.001:
+        prop_missing_data = 0
 
     # Compute precision
     for eye in  ['left', 'right']:
         n_samples = len(df_trial)
-        n_valid_samples = np.nansum(df_trial[eye + '_gaze_point_validity'])
+        n_valid_samples = np.nansum(df_trial[eye + '_gaze_point_valid'])
         prop_invalid_samples = 1 - n_valid_samples / n_samples
         data_loss_trials.append([pid, trial_name, eye, n_samples,
                                  n_valid_samples, prop_invalid_samples, prop_missing_data])
