@@ -152,8 +152,8 @@ if not dummy_mode:
     with h5py.File(filename, "r") as f:
         # Print all root level object names (aka keys)
         # these can be group or dataset names
-        print("Keys: %s" % f.keys())
-        keys = f.keys()
+        keys = [key for key in f.keys()]
+        print(f'HDF5 keys: {keys}')
 
     # Load streams recorded from the eye tracker to pandas data frames
     df_gaze = pd.read_hdf(filename, 'gaze')
