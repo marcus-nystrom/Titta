@@ -6,9 +6,16 @@ Created on Tue Jun 06 16:20:36 2017
 """
 from psychopy import visual
 import numpy as np
-from psychopy.tools.monitorunittools import cm2deg, deg2pix
 import copy
 import warnings
+
+HAS_PSYCHOPY = False
+try:
+    from psychopy.tools.monitorunittools import cm2deg, deg2pix
+except:
+    pass
+else:
+    HAS_PSYCHOPY = True
 
 
 #%%
