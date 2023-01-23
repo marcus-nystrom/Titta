@@ -33,6 +33,6 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 3',
     ],
-    install_requires=['numpy','pandas','h5py','TittaPy','websocket_client', 'tobii_research'],
+    install_requires=['numpy','pandas','h5py','TittaPy','websocket_client'],
     long_description=open('README.md').read(),
 )
