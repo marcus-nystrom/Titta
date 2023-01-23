@@ -12,6 +12,8 @@ setup(
     author=main_ns['__author__'],
     author_email=main_ns['__email__'],
     description=main_ns['__description__'],
+    long_description=main_ns['__description__'],
+    long_description_content_type = 'text/plain',
     url=main_ns['__url__'],
     project_urls={
         "Source Code": main_ns['__url__'],
