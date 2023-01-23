@@ -5,7 +5,6 @@ Created on Mon Oct 29 08:39:57 2018
 @author: Marcus
 """
 
-from psychopy import core
 import numpy as np
 
 def get_defaults(et_name):
@@ -18,6 +17,8 @@ def get_defaults(et_name):
         settings.SAMPLING_RATE = 600
         settings.TRACKING_MODE = 'human'
     elif et_name == 'Tobii Pro Nano':
+        settings.SAMPLING_RATE = 60
+    elif et_name == 'Tobii Pro Spark':
         settings.SAMPLING_RATE = 60
     elif et_name == 'Tobii TX300':
         settings.SAMPLING_RATE = 300
@@ -42,8 +43,8 @@ def get_defaults(et_name):
     elif et_name == 'Tobii Pro Fusion':
         settings.SAMPLING_RATE = 120
     else:
-        print('eye tracker type not supported')
-        core.quit()
+        raise Exception('eye tracker type not supported')
+
     return settings
 
 
