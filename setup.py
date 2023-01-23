@@ -12,8 +12,8 @@ setup(
     author=main_ns['__author__'],
     author_email=main_ns['__email__'],
     description=main_ns['__description__'],
-    long_description=main_ns['__description__'],
-    long_description_content_type = 'text/plain',
+    long_description=open('README.md').read(),
+    long_description_content_type = 'text/markdown',
     url=main_ns['__url__'],
     project_urls={
         "Source Code": main_ns['__url__'],
@@ -36,5 +36,4 @@ setup(
         'Programming Language :: Python :: 3',
     ],
     install_requires=['numpy','pandas','h5py','TittaPy','websocket_client'],
-    long_description=open('README.md').read(),
 )
