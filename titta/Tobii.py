@@ -28,6 +28,9 @@ import TittaPy
 import titta
 from titta import helpers_tobii as helpers
 
+# Suppress FutureWarning
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 # TODO: add support for the Tobii Pro Spark
 # test if psychopy available
 # TODO: make sure titta can be run without psychopy
@@ -1042,12 +1045,14 @@ class myTobii(object):
 
         # None is returned on empty calibration.
         if calibration_data != None:
-            print("Saving calibration to file {} for eye tracker with serial number {}.".format(filename, self.buffer.serial_number))
+            if self.settings.DEBUG:
+                print("Saving calibration to file {} for eye tracker with serial number {}.".format(filename, self.buffer.serial_number))
 
             with open(filename + '.p', 'wb') as handle:
                 pickle.dump(calibration_data, handle)
         else:
-            print("No calibration available for eye tracker with serial number {0}.".format(self.buffer.serial_number))
+            if self.settings.DEBUG:
+                print("No calibration available for eye tracker with serial number {0}.".format(self.buffer.serial_number))
     #%%
     def _load_calibration(self, filename):
         ''' Loads the calibration to a .bin file
@@ -1062,7 +1067,8 @@ class myTobii(object):
 
         # Don't apply empty calibrations.
         if len(calibration_data) > 0:
-            print("Applying calibration {} on eye tracker with serial number {}.".format(filename, self.buffer.serial_number))
+            if self.settings.DEBUG:
+                print("Applying calibration {} on eye tracker with serial number {}.".format(filename, self.buffer.serial_number))
             self.buffer.calibration_apply_data(calibration_data)
             res = self._wait_for_action_complete()
 
@@ -1876,6 +1882,15 @@ class myTobii(object):
             # Change notification type into list
             temp['notification_type'] = [t.name for t in temp['notification_type']]
 
+            # Change change all others to strings to prevent above warning
+            # columns = ['errors_or_warnings', 'display_area', 'output_frequency',
+            #            'errors_or_warnings']
+            # df.loc[:,columns] = df[columns].applymap(str)
+            temp['errors_or_warnings'] = [str(t) for t in temp['errors_or_warnings']]
+            temp['display_area'] = [str(t) for t in temp['display_area']]
+            temp['output_frequency'] = [str(t) for t in temp['output_frequency']]
+            temp['errors_or_warnings'] = [str(t) for t in temp['errors_or_warnings']]
+
             pd.DataFrame.from_dict(temp).to_hdf(fname + '.h5', key='notification')
 
        # Save calibration history to HDF5 container
@@ -1922,6 +1937,10 @@ class myTobii(object):
             d =  {}
             for key in list(l[0].keys()):
                 d[key] = [i[key] for i in l]
+
+        # Convert to prevent warning when saving to Hdf5 (see notifications above)
+        d['level'] = [t.value for t in d['level']]
+        d['source'] = [t.name for t in d['source']]
 
         # Save log file
         pd.DataFrame.from_dict(d).to_hdf(fname + '.h5', key='log')
