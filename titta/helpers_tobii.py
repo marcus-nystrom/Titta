@@ -510,7 +510,7 @@ class AnimatedCalibrationDisplay(object):
         self.win = win
         self.function_name = function_name
         self.target = target # psychopy.visual object (should be in 'deg' units)
-        self.screen_refresh_rate = float(win.getActualFrameRate())
+        self.screen_refresh_rate = float(win.getActualFrameRate() or 60)
 
     def animate_target(self, point_number, position, tick):
         ''' Calls the target drawing function 'func'
