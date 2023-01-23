@@ -31,9 +31,7 @@ from titta import helpers_tobii as helpers
 # Suppress FutureWarning
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-# TODO: add support for the Tobii Pro Spark
 # test if psychopy available
-# TODO: make sure titta can be run without psychopy
 HAS_PSYCHOPY = False
 try:
     import psychopy
@@ -625,7 +623,7 @@ class myTobii(object):
 
         if not self.buffer.has_stream('gaze'):
             self.win.close()
-            raise ValueError('Eye tracker switched on?')
+            raise Exception('Eye tracker switched on?')
 
         # Initiate parameters of head class (shown on participant screen)
         et_head = helpers.EThead(self.win)
@@ -1838,11 +1836,12 @@ class myTobii(object):
                 # if the file exists
                 if fname + filename_ext == f_temp:
                     if not append_version:
-                        raise ValueError('Warning! Filename already exists')
+                        print('Warning! Filename already exists. Will be overwritten.')
                     else: # append '_i to filename
                         filename_ext = '_' + str(i)
-                        filename_exists = True
                         i += 1
+                    filename_exists = True
+                    break
 
             # If we've gone through all files without
             # a match, we ready!
@@ -1883,13 +1882,11 @@ class myTobii(object):
             temp['notification_type'] = [t.name for t in temp['notification_type']]
 
             # Change change all others to strings to prevent above warning
-            # columns = ['errors_or_warnings', 'display_area', 'output_frequency',
-            #            'errors_or_warnings']
+            # columns = ['errors_or_warnings', 'display_area', 'output_frequency']
             # df.loc[:,columns] = df[columns].applymap(str)
-            temp['errors_or_warnings'] = [str(t) for t in temp['errors_or_warnings']]
-            temp['display_area'] = [str(t) for t in temp['display_area']]
-            temp['output_frequency'] = [str(t) for t in temp['output_frequency']]
-            temp['errors_or_warnings'] = [str(t) for t in temp['errors_or_warnings']]
+            temp['display_area'] = [repr(t) for t in temp['display_area']]
+            temp['output_frequency'] = [repr(t) for t in temp['output_frequency']]
+            temp['errors_or_warnings'] = [repr(t) for t in temp['errors_or_warnings']]
 
             pd.DataFrame.from_dict(temp).to_hdf(fname + '.h5', key='notification')
 
@@ -1939,7 +1936,7 @@ class myTobii(object):
                 d[key] = [i[key] for i in l]
 
         # Convert to prevent warning when saving to Hdf5 (see notifications above)
-        d['level'] = [t.value for t in d['level']]
+        d['level'] = [t.name for t in d['level']]
         d['source'] = [t.name for t in d['source']]
 
         # Save log file
