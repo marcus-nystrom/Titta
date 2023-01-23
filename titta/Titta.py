@@ -97,7 +97,6 @@ class Settings(object):
 
         self.ANIMATE_CALIBRATION = True      # Static or animated calibration dots
         self.RECORD_EYE_IMAGES_DURING_CALIBRATION = False
-        self.RECORD_EXTERNAL_SIGNAL_DURING_CALIBRATION = False
         self.N_CAL_TARGETS = 5               # Valid: 0, 1, 5, 9, 13
 
         # List all possible calibration points (in Tobii's coordinate system)
