@@ -4,14 +4,6 @@ Created on Thu Jun 01 14:11:57 2017
 
 @author: Marcus
 
-ToDO: Add information about monitor to system_info() dict.
-* Consume data when then do not need to be stored, e.g. head setup
-* Save data in HDF5 container.
-*                     # Save data as xy list (Change so it's saved to a np.array directly)
-* Test write/read of all streams
-* remove annying messages at start up. FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
-  if tex in ["none", "None", "color"]:
-
     """
 import pandas as pd
 import copy
@@ -97,7 +89,7 @@ class myTobii(object):
                     self.settings.TRACKER_ADDRESS = et['address']
                     break
 
-            core.wait(1)
+            time.sleep(1)
 
         # If no tracker address could be set, the eye tracker was not found
         if len(self.settings.TRACKER_ADDRESS) == 0:
@@ -360,11 +352,11 @@ class myTobii(object):
                                 external_signal=False,
                                 positioning=False):
         ''' Starts recording streams
-        See bug re. positioning stream (not issue here)
+        See bug re. positioning stream (ordering of starting and stopping streams)
         https://github.com/dcnieho/Titta/blob/master/tests/positioningStreamBug.m
         '''
 
-        if gaze:
+        if gaze and self.buffer.has_stream('gaze'):
             self.buffer.start('gaze')
         if time_sync and self.buffer.has_stream('time_sync'):
             self.buffer.start('time_sync')
@@ -372,10 +364,11 @@ class myTobii(object):
             self.buffer.start('eye_image')
         if notifications and self.buffer.has_stream('notification'):
             self.buffer.start('notification')
-        if positioning:
-            self.buffer.start('positioning')
         if external_signal and self.buffer.has_stream('external_signal'):
             self.buffer.start('external_signal')
+        if positioning and self.buffer.has_stream('positioning'):
+            self.buffer.start('positioning')
+
 
     #%%
     def stop_recording(self,    gaze=False,
@@ -386,15 +379,15 @@ class myTobii(object):
                                 positioning=False):
         ''' Stops recording streams
         '''
-        if positioning:
+        if positioning and self.buffer.has_stream('positioning'):
             self.buffer.stop('positioning')
-        if gaze:
+        if gaze and self.buffer.has_stream('gaze'):
             self.buffer.stop('gaze')
-        if time_sync:
+        if time_sync and self.buffer.has_stream('time_sync'):
             self.buffer.stop('time_sync')
         if eye_image and self.buffer.has_stream('eye_image'):
             self.buffer.stop('eye_image')
-        if notifications:
+        if notifications and self.buffer.has_stream('notification'):
             self.buffer.stop('notification')
         if external_signal and self.buffer.has_stream('external_signal'):
             self.buffer.stop('external_signal')
@@ -538,7 +531,7 @@ class myTobii(object):
                 pass
 
 
-            core.wait(0.1)
+            core.wait(0.01)
 
         self.buffer.stop('gaze')
         self.buffer.stop('time_sync')
@@ -605,6 +598,9 @@ class myTobii(object):
         Four dot are shown in the corners. Ask the participants to fixate them
         to make sure there are not problems in the corners of the screen
         '''
+
+        t0  = self.get_system_time_stamp()
+
         if self.settings.DEBUG:
             print('start_head_positioning')
         # Clear all events in mouse buffer
@@ -612,14 +608,10 @@ class myTobii(object):
 
         self.mouse.setVisible(1)
 
-        # Start streaming of eye images
-        if self.buffer.has_stream('eye_image'):
-            self.buffer.start('eye_image')
-
         # Start user positioning guide
         self.buffer.start('positioning')
 
-        core.wait(0.5)
+        # core.wait(0.5)
 
         if not self.buffer.has_stream('gaze'):
             self.win.close()
@@ -696,7 +688,14 @@ class myTobii(object):
 
             # Show eye images if requested
             if show_eye_images:
+                # Start streaming of eye images
+                if self.buffer.has_stream('eye_image') and not self.buffer.is_recording('eye_image'):
+                    self.buffer.start('eye_image')
+
                 self._draw_eye_image()
+            else:
+                if self.buffer.has_stream('eye_image') and self.buffer.is_recording('eye_image'):
+                    self.buffer.stop('eye_image')
 
             # check whether someone left clicked any of the buttons or pressed 'space'
             if self.settings.graphics.CAL_BUTTON in k or self.mouse.isPressedIn(self.calibrate_button, buttons=[0]):
@@ -721,19 +720,17 @@ class myTobii(object):
             if self.win_operator:
                 self.win_temp.flip()
 
-        # Stop streaming of eye images
-        # if  (self.settings.eye_tracker_name == 'Tobii Pro Spectrum' or
-        #             self.settings.eye_tracker_name == 'Tobii Pro Fusion'):
-        if self.buffer.has_stream('eye_image'):
-            self.buffer.stop('eye_image')
         self.mouse.setVisible(0)
 
         # Stop user position guide
         self.buffer.stop('positioning')
 
-        # Clear streams
-        self.buffer.clear('eye_image')
-        self.buffer.clear('positioning')
+        # Clear information from all available streams
+        t1 = self.get_system_time_stamp()
+        self.buffer.clear_time_range('gaze', t0, t1)
+
+        if self.buffer.has_stream('eye_image'):
+            self.buffer.clear_time_range('eye_image', t0, t1)
 
         # Clear the screen
         self.win.flip()
@@ -811,9 +808,9 @@ class myTobii(object):
 
         # Optional start recording of eye images
         if self.settings.RECORD_EYE_IMAGES_DURING_CALIBRATION or self.win_operator:
-            self.buffer.start('eye_image')
+            if self.buffer.has_stream('eye_image') and not self.buffer.is_recording('eye_image'):
+                self.buffer.start('eye_image')
 
-        core.wait(0.5)
         self.send_message('Calibration_start')
 
         action = 'setup'
@@ -926,28 +923,13 @@ class myTobii(object):
             self.win.flip()
             core.wait(1)
 
-        # print(f"Compute and apply returned {0} and collected at {1} points.".
-        #       format(res.status_string, len(res.calibration_data)))
-
-        # # Get the calibration data
-        # self.buffer.calibration_get_data()
-        # res = self._wait_for_action_complete()
-
-        # if self.settings.DEBUG:
-        #     print(res['work_item']['action'])
-        #     print(res['status_string'])
-        #     print(res['calibration_data'])
-
-        # self.calibration_results = res['calibration_data']
-
-
-
         self.send_message('Calibration_stop')
 
         # Stop recording of eye images unless validation is next
         if 'val' not in action:
             if self.settings.RECORD_EYE_IMAGES_DURING_CALIBRATION or self.win_operator:
-                self.buffer.stop('eye_image')
+                if self.buffer.has_stream('eye_image') and self.buffer.is_recording('eye_image'):
+                    self.buffer.stop('eye_image')
 
         return action
 
@@ -1211,7 +1193,7 @@ class myTobii(object):
             sd_l = np.nan
             data_loss_l = np.nan
 
-        # FIXME: C:\git\Titta\titta\Tobii.py:1205: RuntimeWarning: Mean of empty slice
+        # FIXME: C:\git\Titta\titta\Tobii.py: RuntimeWarning: Mean of empty slice
         data_quality_values = [np.nanmean(deviation_l), np.nanmean(deviation_r),
                                 np.nanmean(rms_l), np.nanmean(rms_r),
                                 np.nanmean(sd_l), np.nanmean(sd_r),
@@ -1236,7 +1218,8 @@ class myTobii(object):
 
         # Stop recording of eye images
         if self.settings.RECORD_EYE_IMAGES_DURING_CALIBRATION or self.win_operator:
-            self.buffer.stop('eye_image')
+            if self.buffer.has_stream('eye_image') and self.buffer.is_recording('eye_image'):
+                self.buffer.stop('eye_image')
 
         return action
 
@@ -1257,7 +1240,6 @@ class myTobii(object):
                                           fieldSize = (5, 5),  #self.settings.SAMPLE_DOT_SIZE,
                                           nElements = gaze_positions.shape[0],
                                           elementTex=None, elementMask='circle', units='deg')
-        core.wait(0.1)
 
         # Show all dots...
         for p in dot_positions:
@@ -1378,6 +1360,10 @@ class myTobii(object):
     def _show_validation_screen(self):
         ''' Shows validation image after a validation has been completed
         '''
+
+        # Get timestamp
+        t0_clear = self.get_system_time_stamp()
+
         # Center position of presented calibration values
         x_pos_res = 0.55
         y_pos_res = 0.2
@@ -1387,7 +1373,6 @@ class myTobii(object):
         # get (and save) validation screen image
         nCalibrations = len(self.deviations)
         self._save_calibration(str(nCalibrations))
-        core.wait(0.2)
 
         # Add image as texture
         fname = 'validation_image' + str(self.selected_calibration)+'.png'
@@ -1519,22 +1504,18 @@ class myTobii(object):
 
                 # Highlight selected calibrations
                 if i == self.selected_calibration - 1: # Calibration selected
-#                    select_rect_text[i].color = self.settings.graphics.blue_active
                     select_accuracy_rect[i].fillColor = self.settings.graphics.blue_active
                     if nCalibrations > 1:
                         select_accuracy_rect[i].draw()
                         select_rect_text[i].draw()
                 else:
-#                    select_rect_text[i].color = self.settings.graphics.blue
                     select_accuracy_rect[i].fillColor = self.settings.graphics.blue
                     select_accuracy_rect[i].draw()
                     select_rect_text[i].draw()
 
                 # Then draw the accuracy values for each calibration preceded
                 # by Cal x (the calibration number)
-
                 for j, x in enumerate(x_pos):
-#                    print(i, j, accuracy_values[i][j] t, accuracy_values[i][j].pos)
                     accuracy_values[i][j].draw()
 
             # Check if mouse is clicked to select a calibration
@@ -1620,6 +1601,13 @@ class myTobii(object):
 
             self.win.flip()
 
+        # Clear data that were recorded during the validation screen
+        t1_clear = self.get_system_time_stamp()
+        self.buffer.clear_time_range('gaze', t0_clear, t1_clear)
+
+        if self.buffer.has_stream('eye_image'):
+            self.buffer.clear_time_range('eye_image', t0_clear, t1_clear)
+
         # Clear screen and return
         self.instruction_text.setColor([1, 1, 1], colorSpace='rgb')
         self.win.flip()
@@ -1670,85 +1658,6 @@ class myTobii(object):
             ts = self.get_system_time_stamp()
         self.msg_container.append([ts, msg])
 
-    #%%
-    def _advanced_setup(self):
-        ''' Shows eye image and tracking monitor
-        Good if you're having problems in the circle setup,
-        and want to see what's wrong.
-
-        '''
-
-        # This text object is used to show distance information
-        self.instruction_text.pos = (0, 0.7)
-
-        if self.settings.DEBUG:
-            print('advanced mode')
-
-        self.mouse.setVisible(1)
-
-        action = 'setup'
-
-        self.buffer.start('eye_image')
-
-        dist = 0
-        done = False
-
-        while not done:
-
-            # Draw eye image
-            self._draw_eye_image()
-
-            # Draw buttons
-            self.back_button.draw()
-            self.back_button_text.draw()
-
-            # Draw calibration button for all systems
-            self.calibrate_button.draw()
-            self.calibrate_button_text.draw()
-
-            # Draw four dots in the corners
-            for i in self.POS_CAL_CHECK_DOTS:
-                self.setup_dot.set_pos(i)
-                self.setup_dot.draw()
-
-            # Get position of each eye in track box
-            sample = self.buffer.peek_N('gaze',1)
-
-            # Show tracking monitor
-            self._draw_tracking_monitor(sample)
-
-            # Distance from eye to eye tracker
-            dist = np.nanmean([sample['left_gaze_origin_in_user_coordinate_system_z'],
-                               sample['right_gaze_origin_in_user_coordinate_system_z']])
-
-            # Draw distance info
-            self.instruction_text.text = ' '.join(['Distance:', str(dist /10.0)[:2], 'cm'])
-            self.instruction_text.draw()
-
-            # Check for keypress or mouse click to toggle visibility of pupil and CR corsshairs
-            # of move on with setup
-            k = event.getKeys()
-
-            if self.settings.graphics.BACK_BUTTON in k or self.mouse.isPressedIn(self.back_button, buttons=[0]):
-                action = 'setup'
-                break
-
-            if self.settings.graphics.CAL_BUTTON in k or self.mouse.isPressedIn(self.calibrate_button, buttons=[0]):
-                action = 'cal'
-                break
-
-
-            self.win.flip()
-
-        self.buffer.stop('eye_image')
-
-        # Consume image buffer (these data should not be saved)
-        self.buffer.consume_N('eye_image')
-
-        self.mouse.setVisible(0)
-
-        return action
-
 
     #%%
     def _draw_eye_image(self):
@@ -1758,7 +1667,7 @@ class myTobii(object):
         if self.buffer.has_stream('eye_image'):
 
             # Grab the two most recent eye images from the buffer
-            eye_images = self.buffer.consume_N('eye_image',2,'end')
+            eye_images = self.buffer.peek_N('eye_image', 2, 'end')
 
             for i in range(len(eye_images['image'])):
 
