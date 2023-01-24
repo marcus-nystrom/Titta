@@ -13,11 +13,11 @@ To minimize the risk of missing samples, the current repository uses TittaPy (`p
 
 
 ## To get started
-`pip install titta`
+`pip install Titta` (Currently does not work. Still waiting for Titta to be registered at PyPi)
 
 or
 
-`python -m pip install titta`
+`python -m pip install Titta`
 
 Then run `read_me.py` from the 'demos' folder (first change the monitor settings and the eye tracker name in `read_me.py`).
 
