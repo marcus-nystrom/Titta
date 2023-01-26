@@ -1,6 +1,6 @@
 __version__ = "2.0.0rc3"
 
-__title__ = "Titta"
+__title__ = "titta"
 __description__ = "Titta is a toolbox for using eye trackers from Tobii with Python, specifically offering integration with PsychoPy."
 __url__ = "https://github.com/marcus-nystrom/Titta"
 __uri__ = __url__
