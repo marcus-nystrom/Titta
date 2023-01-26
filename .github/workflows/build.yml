@@ -34,6 +34,13 @@ jobs:
         --sdist
         --wheel
         --outdir dist/
+        
+    - name: Upload wheel as release artifact
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      with:
+        files: "./dist/*.whl"
 
     - name: Publish distribution 📦 to PyPI
       if: github.event_name == 'release' && github.event.action == 'published'
