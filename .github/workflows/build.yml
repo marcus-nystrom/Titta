@@ -27,7 +27,7 @@ jobs:
         build
         --user
         
-    - name: Build a binary wheel and a source tarball
+    - name: Build a wheel and a source tarball
       run: >-
         python -m
         build
