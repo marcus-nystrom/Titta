@@ -1630,7 +1630,12 @@ class myTobii(object):
         info['runtime_version'] = self.buffer.runtime_version
         info['tracking_mode']  = self.buffer.tracking_mode
         info['sampling_frequency']  = self.buffer.frequency
-        info['track_box']  = self.buffer.track_box
+
+        try:
+            info['track_box']  = self.buffer.track_box
+        except:
+            print('track box not supported by this eye tracker')
+
         info['display_area']  = self.buffer.display_area
         info['python_version'] = '.'.join([str(sys.version_info[0]),
                                            str(sys.version_info[1]),
