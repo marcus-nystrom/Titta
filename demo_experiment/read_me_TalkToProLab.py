@@ -4,7 +4,8 @@
 To run this demo,
 1) open a new External Presenter in Tobii Pro Lab
 2) navigate to the 'record'-tab in Pro Lab
-3) run this script
+3) Make sure the External presenter button is red and says 'not connected' 
+4) run this script
 
 Data can after the recording be viewed in Pro Lab under the Analyze tab.
 '''
@@ -39,7 +40,7 @@ project_name = None # None or a project name that is open in Pro Lab.
 
 # Change any of the default settings?
 settings = Titta.get_defaults(et_name)
-settings.FILENAME = '09'
+settings.FILENAME = '10'
 
 # Participant ID and Project name for Lab
 pid = settings.FILENAME
