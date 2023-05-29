@@ -76,25 +76,24 @@ class myTobii(object):
         else:
             raise ValueError('Unvalid number of calibration points')
 
+
         # If no tracker address is given, find one automatically
-        # Sometimes you have to try a few times before it finds and eye tracker
-        for k in range(4):
-
-            # if the tracker doesn't connect, try four times to reconnect
-            ets = TittaPy.find_all_eye_trackers()
-            for et in ets:
-
-                # Check if the desired eye tracker is found
-                if et['model'] == self.settings.eye_tracker_name:
-                    self.settings.TRACKER_ADDRESS = et['address']
-                    break
-
-            time.sleep(1)
-
-        # If no tracker address could be set, the eye tracker was not found
         if len(self.settings.TRACKER_ADDRESS) == 0:
 
-            # List available eye trackers:
+            # Sometimes you have to try a few times before it finds and eye tracker
+            for k in range(4):
+
+                # if the tracker doesn't connect, try four times to reconnect
+                ets = TittaPy.find_all_eye_trackers()
+                for et in ets:
+
+                    # Check if the desired eye tracker is found
+                    if et['model'] == self.settings.eye_tracker_name:
+                        self.settings.TRACKER_ADDRESS = et['address']
+                        break
+
+                time.sleep(1)
+
             if len(ets) == 0:
                 raise Exception('No eye tracker was found')
             else:
