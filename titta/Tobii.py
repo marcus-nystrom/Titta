@@ -81,7 +81,9 @@ class myTobii(object):
         if len(self.settings.TRACKER_ADDRESS) == 0:
 
             # Sometimes you have to try a few times before it finds and eye tracker
-            for k in range(4):
+            tracker_found = False
+            k = 0
+            while not tracker_found and k < 3:
 
                 # if the tracker doesn't connect, try four times to reconnect
                 ets = TittaPy.find_all_eye_trackers()
@@ -90,15 +92,15 @@ class myTobii(object):
                     # Check if the desired eye tracker is found
                     if et['model'] == self.settings.eye_tracker_name:
                         self.settings.TRACKER_ADDRESS = et['address']
+                        tracker_found = True
                         break
 
                 time.sleep(1)
+                k += 1
 
-            if len(ets) == 0:
-                raise Exception('No eye tracker was found')
-            else:
+            if not tracker_found:
                 raise Exception('The desired eye tracker not found. \
-                                These are available: ' + ' '.join([str(['model']) for m in ets]))
+                                These are available: ' + ' '.join([str(m['model']) for m in ets]))
 
         if self.settings.PACING_INTERVAL < 0.8:
             raise Exception('Calibration pacing interval must be \
