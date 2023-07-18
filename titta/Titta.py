@@ -147,14 +147,14 @@ class Graphics(object):
         self.blue = blue
         self.blue_active = blue_active
 
-        self.TEXT_SIZE = 0.04 # Size of text
+        self.TEXT_SIZE = 0.04 # Size of text (norm)
         self.TEXT_COLOR = 'white'
 
-        self.ET_SAMPLE_RADIUS = 0.1 # in deg
+        self.ET_SAMPLE_RADIUS = 5 # in pix
 
         # SIze of calibration dots
-        self.TARGET_SIZE=0.6 # in deg
-        self.TARGET_SIZE_INNER=self.TARGET_SIZE / float(5)  # inner diameter of dot
+        self.TARGET_SIZE=30 # in pix
+        self.TARGET_SIZE_INNER=self.TARGET_SIZE / 6  # inner diameter of dot
 
         # Theses parameters are changed directly in the EThead class
         # self.HEAD_POS_CIRCLE_FIXED_COLOR = blue

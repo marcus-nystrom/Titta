@@ -92,20 +92,28 @@ def deg2tobii(pos, mon):
     #.. finally shift to tobii coordinate system
     return norm2tobii(pos)
 
-def tobii2pix(pos, mon):
+def tobii2pix(pos, win):
     ''' Converts from  Tobiis coordinate system [0, 1] to pixles.
     Note that the Tobii coordinate system start in the upper left corner
     and screen coordinate in the upper left corner
     Args:   pos: N x 2 array with calibratio position in [0, 1]
             screen_height: height of screen in cm
+
+
     '''
 
+    pos_temp = copy.deepcopy(pos)     # Center
+
     # Center
-    pos[:, 0] = pos[:, 0] * mon.getSizePix()[0]
-    pos[:, 1] = pos[:, 1] * mon.getSizePix()[1]
+    pos_temp[:, 0] = pos_temp[:, 0] - 0.5
+    pos_temp[:, 1] = (pos_temp[:, 1] - 0.5) * -1
+
+	# Convert to pixels
+    pos_temp[:, 0] = pos_temp[:, 0] * win.size[0]
+    pos_temp[:, 1] = pos_temp[:, 1] * win.size[1]
 
     # Convert to deg.
-    return pos
+    return pos_temp
 
 def pix2tobii(pos, mon):
     ''' Converts from PsychoPy pixels to Tobiis coordinate system [0, 1].
@@ -123,8 +131,8 @@ class MyDot2:
     '''
     Generates the best fixation target according to Thaler et al. (2013)
     '''
-    def __init__(self, win, outer_diameter=0.5, inner_diameter=0.1,
-                 outer_color = 'black', inner_color = 'white',units = 'deg'):
+    def __init__(self, win, outer_diameter=50, inner_diameter=10,
+                 outer_color = 'black', inner_color = 'white',units = 'pix'):
         '''
         Class to generate a stimulus dot with
         units are derived from the window
@@ -178,7 +186,7 @@ class MyDot2:
         get size of dot
         '''
 
-        return self.outer_dot.size
+        return self.outer_dot.radius * 2
 
 
     def draw(self):
@@ -509,7 +517,8 @@ class AnimatedCalibrationDisplay(object):
         '''
         self.win = win
         self.function_name = function_name
-        self.target = target # psychopy.visual object (should be in 'deg' units)
+        self.target = target # psychopy.visual object (should be in 'pix' units)
+        self.target_size = target.get_size()
         self.screen_refresh_rate = float(win.getActualFrameRate() or 60)
 
     def animate_target(self, point_number, position, tick):
@@ -527,8 +536,7 @@ class AnimatedCalibrationDisplay(object):
         Args:
             position - (x, y)
         '''
-
-        target_size = np.abs(1 - np.sin(3 * tick / self.screen_refresh_rate + 4*np.pi/2)) + 0.2
+        target_size = np.abs(self.target_size - self.target_size * np.sin(3 * tick / self.screen_refresh_rate + 4*np.pi/2)) + self.target_size / 5
         self.target.set_size(target_size)
         self.target.set_pos(position)
         self.target.draw()
@@ -540,7 +548,7 @@ class AnimatedCalibrationDisplay(object):
         move_completed = False
 
         # The target should have a fixed size when moving
-        self.target.set_size(2)
+        self.target.set_size(2 * self.target_size)
 
         # How many ticks should the movement be (one screen unit in one second)?
         n_steps = int(self.screen_refresh_rate / 2)

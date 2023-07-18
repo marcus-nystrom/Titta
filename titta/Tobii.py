@@ -76,7 +76,6 @@ class myTobii(object):
         else:
             raise ValueError('Unvalid number of calibration points')
 
-
         # If no tracker address is given, find one automatically
         if len(self.settings.TRACKER_ADDRESS) == 0:
 
@@ -219,7 +218,7 @@ class myTobii(object):
 
 
         # Setup stimuli for drawing calibration / validation targets
-        self.cal_dot = helpers.MyDot2(self.win, units='deg',
+        self.cal_dot = helpers.MyDot2(self.win, units='pix',
                                      outer_diameter=self.settings.graphics.TARGET_SIZE,
                                      inner_diameter=self.settings.graphics.TARGET_SIZE_INNER)
 
@@ -310,9 +309,9 @@ class myTobii(object):
 
         # Dot for showing et data
         self.et_sample_l = visual.Circle(self.win_temp, radius = self.settings.graphics.ET_SAMPLE_RADIUS,
-                                         fillColor = 'red', units='deg')
+                                         fillColor = 'red', units='pix')
         self.et_sample_r = visual.Circle(self.win_temp, radius = self.settings.graphics.ET_SAMPLE_RADIUS,
-                                         fillColor = 'blue', units='deg')
+                                         fillColor = 'blue', units='pix')
 
         if self.win_operator:
             self.raw_et_sample_l = visual.Circle(self.win_temp, radius = 0.01,
@@ -415,11 +414,11 @@ class myTobii(object):
         # Generate coordinates for calibration in PsychoPy and
         # Tobii coordinate system
         if self.settings.N_CAL_TARGETS > 0:
-            CAL_POS_DEG = helpers.tobii2deg(self.settings.CAL_POS_TOBII, win.monitor)
-            self.CAL_POS = np.hstack((self.settings.CAL_POS_TOBII, CAL_POS_DEG))
+            CAL_POS_PIX = helpers.tobii2pix(self.settings.CAL_POS_TOBII, win)
+            self.CAL_POS = np.hstack((self.settings.CAL_POS_TOBII, CAL_POS_PIX))
 
-        VAL_POS_DEG = helpers.tobii2deg(self.settings.VAL_POS_TOBII, win.monitor)
-        self.VAL_POS = np.hstack((self.settings.VAL_POS_TOBII, VAL_POS_DEG))
+        VAL_POS_PIX = helpers.tobii2pix(self.settings.VAL_POS_TOBII, win)
+        self.VAL_POS = np.hstack((self.settings.VAL_POS_TOBII, VAL_POS_PIX))
 
         # Create a temp variable for screen object
         if win_operator:
@@ -444,7 +443,7 @@ class myTobii(object):
         if self.settings.ANIMATE_CALIBRATION:
 
             # Define your calibration target
-            target = helpers.MyDot2(self.win, units='deg',
+            target = helpers.MyDot2(self.win, units='pix',
                                      outer_diameter=self.settings.graphics.TARGET_SIZE,
                                      inner_diameter=self.settings.graphics.TARGET_SIZE_INNER)
             self.animator = helpers.AnimatedCalibrationDisplay(self.win, target, 'animate_point')
@@ -582,11 +581,11 @@ class myTobii(object):
         rx = d['right_gaze_point_on_display_area_x'][0]
         ry = d['right_gaze_point_on_display_area_y'][0]
 
-        self.et_sample_l.pos = helpers.tobii2deg(np.array([[lx, ly]]),
-                                                 self.win_temp.monitor)
+        self.et_sample_l.pos = helpers.tobii2pix(np.array([[lx, ly]]),
+                                                 self.win_temp)
         self.et_sample_l.draw()
-        self.et_sample_r.pos = helpers.tobii2deg(np.array([[rx, ry]]),
-                                                 self.win_temp.monitor)
+        self.et_sample_r.pos = helpers.tobii2pix(np.array([[rx, ry]]),
+                                                 self.win_temp)
         self.et_sample_r.draw()
 
    #%%
@@ -915,7 +914,7 @@ class myTobii(object):
 
 
         # Accept of redo the calibration?
-        if res['status'] == 0:
+        if res['status'] == 0 and len(res['calibration_result']['points']) > 0:
             action = 'val'
             cal_data = self._generate_calibration_image(res)
         else:
@@ -952,8 +951,8 @@ class myTobii(object):
             x_dot = p['position_on_display_area_x']
             y_dot = p['position_on_display_area_y']
             self.cal_dot.fillColor = 'white'
-            xy_dot = helpers.tobii2deg(np.array([[x_dot, y_dot]]),
-                                       self.win.monitor)
+            xy_dot = helpers.tobii2pix(np.array([[x_dot, y_dot]]),
+                                       self.win)
             self.cal_dot.set_pos(xy_dot) # Tobii and psychopy have different coord systems
             self.cal_dot.draw()
 
@@ -961,8 +960,8 @@ class myTobii(object):
                 # Save gaze data for left eye to list
                 x = p['samples_left_position_on_display_area_x']
                 y = p['samples_left_position_on_display_area_y']
-                xy_sample = helpers.tobii2deg(np.array([x, y]),
-                                              self.win.monitor) # Tobii and psychopy have different coord systems
+                xy_sample = helpers.tobii2pix(np.array([x, y]),
+                                              self.win) # Tobii and psychopy have different coord systems
                 for xy in xy_sample.T:
                     xys_left.append([xy[0], xy[1]])
                     cal_data.append([x_dot, y_dot, xy[0], xy[1], 'left'])
@@ -971,20 +970,20 @@ class myTobii(object):
                  # Save gaze data for right eye to list
                  x = p['samples_right_position_on_display_area_x']
                  y = p['samples_right_position_on_display_area_y']
-                 xy_sample = helpers.tobii2deg(np.array([x, y]),
-                                               self.win.monitor) # Tobii and psychopy have different coord systems
+                 xy_sample = helpers.tobii2pix(np.array([x, y]),
+                                               self.win) # Tobii and psychopy have different coord systems
                  for xy in xy_sample.T:
                      xys_right.append([xy[0], xy[1]])
                      cal_data.append([x_dot, y_dot, xy[0], xy[1], 'right'])
 
         samples = visual.ElementArrayStim(self.win,
-                                          sizes=0.1,
-                                          fieldSize=(5, 5),
+                                          sizes=self.settings.graphics.ET_SAMPLE_RADIUS,
+                                          fieldSize=(100, 100),
                                           nElements=np.max([len(xys_left),
                                                             len(xys_right)]),
                                           elementTex=None,
                                           elementMask='circle',
-                                          units='deg')
+                                          units='pix')
 
         # Draw calibration gaze data samples for left eye and right eyes
         if self.eye == 'both' or self.eye == 'left':
@@ -1175,8 +1174,8 @@ class myTobii(object):
 
         # Convert data from Tobii coord system to PsychoPy coordinates
         gaze_pos = np.array(xy_pos)
-        gaze_pos[:, 1:3] = helpers.tobii2deg(gaze_pos[:, 1:3], self.win.monitor)
-        gaze_pos[:, 3:5] = helpers.tobii2deg(gaze_pos[:, 3:5], self.win.monitor)
+        gaze_pos[:, 1:3] = helpers.tobii2pix(gaze_pos[:, 1:3], self.win)
+        gaze_pos[:, 3:5] = helpers.tobii2pix(gaze_pos[:, 3:5], self.win)
 
         # Compute data quality per validation point
         deviation_l, rms_l, sd_l, data_loss_l = self._compute_data_quality(validation_data, target_pos[:, :2], 'left')
@@ -1237,10 +1236,10 @@ class myTobii(object):
 
         # Used to draw many dots
         samples = visual.ElementArrayStim(self.win,
-                                          sizes=0.1,
-                                          fieldSize = (5, 5),  #self.settings.SAMPLE_DOT_SIZE,
+                                          sizes=self.settings.graphics.ET_SAMPLE_RADIUS,
+                                          fieldSize = (100, 100),  #self.settings.SAMPLE_DOT_SIZE,
                                           nElements = gaze_positions.shape[0],
-                                          elementTex=None, elementMask='circle', units='deg')
+                                          elementTex=None, elementMask='circle', units='pix')
 
         # Show all dots...
         for p in dot_positions:
