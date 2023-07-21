@@ -36,7 +36,7 @@ The toolbox consists of two main parts:
 ### The `Titta.Connect` and `Tobii.MyTobii` classes
 The Titta module (which utilizes the Tobii module) is the main workhorse of this toolbox, providing a wrapper around the Tobii Pro SDK, and a convenient graphical user interface (rendered through PsychoPy) for participant setup, calibration and validation. Only the `Titta.calibrate()` participant setup and calibration interface requires PsychoPy.
 
-These modules connecto to Tobii via `TittaPy`. Although `TittaPy` is located at the [Matlab version of Titta](https://github.com/dcnieho/Titta), documentation for it is included here since it is powering the `Titta` and `Tobii` modules here.
+These modules connect to Tobii via `TittaPy`. Although `TittaPy` is located at the [Matlab version of Titta](https://github.com/dcnieho/Titta), documentation for it is included here since it is powering the `Titta` and `Tobii` modules here.
 ### The `TalkToProLab` class
 The `TalkToProLab` class provides an implementation of [Tobii Pro Lab](https://www.tobiipro.com/product-listing/tobii-pro-lab/)'s External Presenter interface, allowing experiments to be created and run from Python with PsychoPy or other presentation methods, while recording, project management, recording playback/visualization and analysis can be performed in Tobii Pro Lab.
 
