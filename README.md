@@ -15,7 +15,7 @@ To minimize the risk of missing samples, the current repository uses TittaPy (`p
 
 
 ## To get started
-`pip install titta` (Currently does not work. Still waiting for Titta to be registered at PyPi. Pip install wheel [see Releases] or clone repository instead.)
+`pip install titta` 
 
 or
 
