@@ -48,7 +48,7 @@ et_name = 'Tobii Pro Spectrum'
 # Change any of the default dettings?e
 settings = Titta.get_defaults(et_name)
 settings.FILENAME = 'testfile'
-settings.N_CAL_TARGETS = 3
+settings.N_CAL_TARGETS = 5
 settings.DEBUG = False
 
 # Use settings.__dict__ to see all available settings
