@@ -960,7 +960,7 @@ class myTobii(object):
                 # Save gaze data for left eye to list
                 x = p['samples_left_position_on_display_area_x']
                 y = p['samples_left_position_on_display_area_y']
-                xy_sample = helpers.tobii2pix(np.array([x, y]),
+                xy_sample = helpers.tobii2pix(np.column_stack((x, y)),
                                               self.win) # Tobii and psychopy have different coord systems
                 for xy in xy_sample.T:
                     xys_left.append([xy[0], xy[1]])
@@ -970,7 +970,7 @@ class myTobii(object):
                  # Save gaze data for right eye to list
                  x = p['samples_right_position_on_display_area_x']
                  y = p['samples_right_position_on_display_area_y']
-                 xy_sample = helpers.tobii2pix(np.array([x, y]),
+                 xy_sample = helpers.tobii2pix(np.column_stack((x, y)),
                                                self.win) # Tobii and psychopy have different coord systems
                  for xy in xy_sample.T:
                      xys_right.append([xy[0], xy[1]])
