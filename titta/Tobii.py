@@ -962,7 +962,7 @@ class myTobii(object):
                 y = p['samples_left_position_on_display_area_y']
                 xy_sample = helpers.tobii2pix(np.column_stack((x, y)),
                                               self.win) # Tobii and psychopy have different coord systems
-                for xy in xy_sample.T:
+                for xy in xy_sample:
                     xys_left.append([xy[0], xy[1]])
                     cal_data.append([x_dot, y_dot, xy[0], xy[1], 'left'])
 
@@ -972,7 +972,7 @@ class myTobii(object):
                  y = p['samples_right_position_on_display_area_y']
                  xy_sample = helpers.tobii2pix(np.column_stack((x, y)),
                                                self.win) # Tobii and psychopy have different coord systems
-                 for xy in xy_sample.T:
+                 for xy in xy_sample:
                      xys_right.append([xy[0], xy[1]])
                      cal_data.append([x_dot, y_dot, xy[0], xy[1], 'right'])
 
