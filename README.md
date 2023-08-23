@@ -3,7 +3,7 @@ specifically offering integration with [PsychoPy](https://www.psychopy.org/). A 
 that integrates with PsychToolbox is also available from
 https://github.com/dcnieho/Titta. For a similar toolbox for SMI eye trackers, please see www.github.com/marcus-nystrom/SMITE.
 
-Titta is an alternative to using the eye tracking functionality already available in PsychoPy (through ioHub), but instead of a general interface to many eye trackers, it is specifically designed to offer full access to the Tobii Pro SDK, has an intuitive calibration interface, and includes scripts for analysis of eye-tracking data.
+Titta is an alternative to using the eye tracking functionality already available in PsychoPy (through ioHub). Instead of the general interface ioHub provides to many eye trackers, Titta is specifically designed to offer full access to the functionality of Tobii eye trackers, has an intuitive participant setup and calibration interface, and includes scripts for analysis of eye-tracking data.
 
 Cite as:
 [Niehorster, D.C., Andersson, R. & Nystrom, M. (2020). Titta: A toolbox for creating PsychToolbox and Psychopy experiments with Tobii eye trackers. Behavior Research Methods. doi: 10.3758/s13428-020-01358-8](https://doi.org/10.3758/s13428-020-01358-8)
