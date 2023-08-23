@@ -31,7 +31,7 @@ Then run `read_me.py` from the 'demos' folder (first change the monitor settings
 1. In PsychoPy, run read_read_me_TalkToProLab.py (first change the monitor settings and the eye tracker name).
 
 Tested on Windows 10 using PsychoPy 2022.1.3 using Python 3.8. Ideally, make sure that the eye tracker is detected and works in 
-the [Tobii Eye Tracker Manager](https://www.tobiipro.com/product-listing/eye-tracker-manager/) before trying to use it with Titta.
+the [Tobii Eye Tracker Manager](https://www.tobii.com/products/software/applications-and-developer-kits/tobii-pro-eye-tracker-manager) before trying to use it with Titta.
 
 ## Contents
 The toolbox consists of two main parts:
