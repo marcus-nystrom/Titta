@@ -11,7 +11,7 @@ Cite as:
 For questions, bug reports or to check for updates, please visit
 https://github.com/marcus-nystrom/Titta. 
 
-To minimize the risk of missing samples, the current repository uses TittaPy (`pip install TittaPy`), a [C++ wrapper](https://github.com/dcnieho/Titta/tree/master/SDK_wrapper/TittaPy) around the Tobii SDK, to pull samples made available from the eye tracker. 
+To minimize the risk of missing samples, the current repository uses [TittaPy](#tittapy-class) (`pip install TittaPy`), a C++ wrapper around the Tobii SDK, to pull samples made available from the eye tracker. 
 
 
 ## To get started
