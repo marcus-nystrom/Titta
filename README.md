@@ -15,11 +15,11 @@ To minimize the risk of missing samples, the current repository uses TittaPy (`p
 
 
 ## To get started
-`pip install titta` 
+If you know what you are doing, install Titta using: `pip install titta` or `python -m pip install titta`.
 
-or
-
-`python -m pip install titta`
+If you use a standalone PsychoPy installation, do the following steps:
+1. Go to `C:\Program Files\PsychoPy` (or wherever you installed PsychoPy) and open a command prompt in the same folder as where you find `python.exe` (should be the main PsychoPy install folder). So the command prompt you have should start with something like `C:\Program Files\PsychoPy>´
+1. Here you can then pip-install titta, by issuing a command like `python -m pip install titta --upgrade` (without the quotes).
 
 Then run `read_me.py` from the 'demos' folder (first change the monitor settings and the eye tracker name in `read_me.py`).
 
