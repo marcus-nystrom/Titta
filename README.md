@@ -18,10 +18,10 @@ To minimize the risk of missing samples, the current repository uses TittaPy (`p
 If you know what you are doing, install Titta using: `pip install titta` or `python -m pip install titta`.
 
 If you use a standalone PsychoPy installation, do the following steps:
-1. Go to `C:\Program Files\PsychoPy` (or wherever you installed PsychoPy) and open a command prompt in the same folder as where you find `python.exe` (should be the main PsychoPy install folder). So the command prompt you have should start with something like `C:\Program Files\PsychoPy>´
-1. Here you can then pip-install titta, by issuing a command like `python -m pip install titta --upgrade` (without the quotes).
+1. Go to `C:\Program Files\PsychoPy` (or wherever you installed PsychoPy) and open a command prompt in the same folder as where you find `python.exe` (should be the main PsychoPy install folder). So the command prompt you have should start with something like `C:\Program Files\PsychoPy>`
+1. Here you can then pip-install titta, by issuing a command like `python -m pip install titta --upgrade`.
 
-Then run `read_me.py` from the 'demos' folder (first change the monitor settings and the eye tracker name in `read_me.py`).
+Then run `read_me.py` from the 'demos' folder (first change the monitor settings and the eye tracker name in `read_me.py`). Reading through `read_me.py` should provide a good starting point for most users of Titta.
 
 
 ### To get started with the Tobii Pro Lab integration
@@ -74,7 +74,7 @@ Titta.getDefaults('tracker model name');` Supported eye trackers and their corre
 
 ## API
 ### `Titta` module
-#### Module-level methods
+#### Module-level functions
 The below method can be called on the Titta module directly.
 
 |Call|Inputs|Outputs|Description|
@@ -82,14 +82,7 @@ The below method can be called on the Titta module directly.
 |`get_defaults()`|<ol><li>`et_name`: one of the supported eye tracker model names, [see above](#usage)</li></ol>|<ol><li>`settings`: object with all supported settings for a specific model of eyeTracker</li></ol>|Gets all supported settings with defaulted values for the indicated eyeTracker, can be modified and used for constructing an instance of Titta. See the [supported options](#supported-options) section below.|
 
 #### Construction
-An instance of Titta.Connect is constructed by calling `Titta.Connect()` with either the name of a specific supported eye tracker model (in which case default settings for this model will be used) or with a settings struct retrieved from `Titta.get_defaults()`, possibly with changed settings (passing the settings object unchanged is equivalent to using the eye tracker model name as input argument).
-
-#### Methods
-The following method calls are available on a `Titta.Connect` instance:
-
-|Call|Inputs|Outputs|Description|
-| --- | --- | --- | --- |
-|`init()`|<ol><li>`in_arg`: (optional) string indicating eye tracker name or 'settings' from `get_defaults`. If no input argument is given, then it defaults to intializing in dummy mode.||Connect to the Tobii eye tracker and initialize it according to the requested settings|
+An instance of Titta for interaction with the eye tracker (a `Titta.MyTobii` instance) is constructed by calling the module-level constructor `Titta.Connect()` with either the name of a specific supported eye tracker model (in which case default settings for this model will be used) or with a settings struct retrieved from `Titta.get_defaults()`, possibly with changed settings (passing the settings object unchanged is equivalent to using the eye tracker model name as input argument).
 
 #### Supported options
 The `get_defaults()` method call returns the appropriate set of options for the indicated eye tracker.
@@ -99,12 +92,17 @@ The `get_defaults()` method call returns the appropriate set of options for the 
 |`settings.SAMPLING_RATE`|Sampling frequency|
 
 ### `Tobii` module
+#### Properties
+The following methods are available for an instance of `Tobii.MyTobii` (as created by calling `Titta.Connect`).
+|Property|Description|
+| --- | --- |
+|`buffer`|Initialized by call to `init()`. Returns handle to a [TittaPy instance](#tittapy-class) for interaction with the eye tracker's data streams. This handle can furthermore be used for directly interacting with the eye tracker through the Tobii Pro SDK, but note that this is at your own risk. Titta should have minimal assumptions about eye-tracker state, but I cannot guarantee that direct interaction with the eye tracker does not interfere with later use of Titta in the same session.|
 #### Methods
-The following methods are available for an instance of `Tobii.MyTobii` (and, by extension, `Titta.Connect`).
+The following methods are available for an instance of `Tobii.MyTobii` (as created by calling `Titta.Connect`).
 
 |Call|Inputs|Outputs|Description|
 | --- | --- | --- | --- |
-|`init()`|<ol><li>`settings`: (optional) 'settings' from `get_defaults`.||Connect to the Tobii eye tracker and initialize it according to the requested settings|
+|`init()`|||Connect to the Tobii eye tracker and initialize it according to the requested settings (provided optionally when calling `Titta.Connect()`).|
 |`calibrate()`|<ol><li>`win`: PsychoPy window object</li><li>`win_operator`: (optional) PsychoPy window object for the operator's screen</li><li>`eye`: (optional) 'left', 'right' or 'both'. Default: 'both'.</li><li>`calibration_number`: (optional) used to indicate if we need to wait for another calibration i.e. if 'first', then will not exit until 'second' calibration has finished. Default: 'second'</ol>||Do participant setup, calibration and validation.|
 |`start_recording()`|<ol><li>`gaze`: (optional) Default: false.</li><li>`time_sync`: (optional) Default: false.</li><li>`eye_image`: (optional) Default: false.</li><li>`notifications`: (optional) Default: false.</li><li>`external_signal`: (optional) Default: false.</li><li>`positioning`: (optional) Default: false.</li></ol>||Begin recording the specified kind of data. If none of the input parameters are set to true, then this method does nothing.|
 |`stop_recording()`|<ol><li>`gaze`: (optional) Default: false.</li><li>`time_sync`: (optional) Default: false.</li><li>`eye_image`: (optional) Default: false.</li><li>`notifications`: (optional) Default: false.</li><li>`external_signal`: (optional) Default: false.</li><li>`positioning`: (optional) Default: false.</li></ol>||Stop recording the specified kind of data. If none of the input parameters are set to true, then this method does nothing.|
@@ -112,85 +110,13 @@ The following methods are available for an instance of `Tobii.MyTobii` (and, by 
 |`save_data()`|<ol><li>`filename`: (optional) filename (including path) where HDF5 container will be stored</li><li>`append_version`: (optional) boolean indicating whether version numbers (`_1`, `_2`, etc) will automatically get appended to the filename if the destination file already exists. Default: True</li></ol>||Save data to HDF5 container at specified location|
 ||||
 |`calibration_history()`||<ol><li>`all_validation_results`: a list, where each list entry contains the accuracy values in degrees from 0. left eye x, 1. left eye y, 2. right eye x, and 3. right eye y.  The last entry [4] tells whether the calibration was used (1) or not used (0).</li></ol>|Get the calibration history thus far.|
-|`system_info()`||A dictionary containing all the information included in [`TittaPy`'s properties](#properties), plus `python_version`, `psychopy_version`, `TittaPy_version`, and `titta_version`.|Get information about the system and connected eye tracker.|
+|`system_info()`||<ol><li>A dictionary containing all the information included in [`TittaPy`'s properties](#properties), plus `python_version`, `psychopy_version`, `TittaPy_version`, and `titta_version`.|Get information about the system and connected eye tracker.|
 |`get_system_time_stamp()`||<ol><li> An int64 scalar denoting Tobii system time in microseconds.</li></ol>|Get the current system time through the Tobii Pro SDK.|
 |`set_sample_rate()`|<ol><li>`Fs`: the desired frequency value</li></ol>||Set the sampling rate of the connected eye tracker (if it is a supported frequency).|
 |`get_sample_rate()`||<ol><li>`frequency`: the current frequency value</li></ol>|Get the sampling rate of the connected eye tracker.|
 
 ### `TittaPy` class
-
-These methods can be accessed via `Tobii.MyTobii`, which itself can be accessed via `Titta.Connect`.
-
-#### Module-level methods
-|Call|Inputs|Outputs|Description|
-| --- | --- | --- | --- |
-|`get_SDK_version`||<ol><li> `SDK_version`: a string indicating the version.</li></ol>|Get the version of the Tobii Pro SDK dynamic library that is used by `TittaPy`.|
-|`get_system_timestamp`||<ol><li>`system_timestamp`: an int64 scalar denoting Tobii system time in microseconds.</li></ol>|Get the current system time through the Tobii Pro SDK.|
-|`find_all_eye_trackers()`||<ol><li>`eye_tracker_list`: An array of structs with information about the connected eye trackers.</li></ol>|Gets the eye trackers that are connected to the system, as listed by the Tobii Pro SDK.|
-|`start_logging()`|<ol><li>`initial_buffer_size`: (optional) value indicating for how many event memory should be allocated</li></ol>|<ol><li>`success`: a boolean indicating whether logging was started successfully</li></ol>|Start listening to the eye tracker's log stream, store any events to buffer.|
-|`get_log()`|<ol><li>`clear_log`: (optional) boolean indicating whether the log buffer should be cleared</li></ol>|<ol><li>`data`: struct containing all events in the log buffer, if available. If not available, an empty struct is returned.</li></ol>|Return and (optionally) remove log events from the buffer.|
-|`stop_logging()`|||Stop listening to the eye tracker's log stream.|
-
-#### Construction and initialization
-An instance of TittaPy is constructed by calling `TittaPy.EyeTracker()`. Before it becomes fully functional, its `init()` method should be called to provide it with the address of an eye tracker to connect to. A list of connected eye trackers is provided by calling the static function `TittaPy.find_all_eye_trackers()`.
-
-#### Methods
-The following method calls are available on a `TittaPy.EyeTracker` instance:
-
-|Call|Inputs|Outputs|Description|
-| --- | --- | --- | --- |
-|`init()`|<ol><li>`address`: address of the eye tracker to connect to</li></ol>||Connect to the TittaPy class instance to the Tobii eye tracker and prepare it for use.|
-|||||
-|`apply_licenses()`|<ol><li>`licenses`: a cell array of licenses (`char` of `uint8` representations of the license file read in binary mode).</li></ol>|<ol><li>`apply_results`: a cell array of strings indicating whether license(s) were successfully applied.</li></ol>|Apply license(s) to the connected eye tracker.|
-|`clear_licenses()`|||Clear all licenses that may have been applied to the connected eye tracker. Refreshes the eye tracker's info, so use `getConnectedEyeTracker()` to check for any updated capabilities.|
-|||||
-|`has_stream()`|<ol><li>`stream`: a string, possible values: `gaze`, `eyeOpenness`, `eyeImage`, `externalSignal`, `timeSync`, `positioning` and `notification`.</li></ol>|<ol><li>`supported`: a boolean indicating whether the connected eye tracker supports providing data of the requested stream type.</li></ol>|Check whether the connected eye tracker supports providing a data stream of a specified type.|
-|`set_include_eye_openness_in_gaze()`|<ol><li>`include`: a boolean, indicating whether eye openness samples should be provided in the recorded gaze stream or not. Default false.</li></ol>|<ol><li>`previousState`: a boolean indicating the previous state of the include setting.</li></ol>|Set whether calls to start or stop the gaze stream should also start or stop the eye openness stream. An error will be raised if set to true, but the connected eye tracker does not provide an eye openness stream. If set to true, calls to start or stop the eyeOpenness stream will also start or stop the gaze stream.|
-|`start()`|<ol><li>`stream`: a string, possible values: `gaze`, `eyeOpenness`, `eyeImage`, `externalSignal`, `timeSync`, `positioning` and `notification`.</li><li>`initial_buffer_size`: (optional) value indicating for how many samples memory should be allocated</li><li>`as_gif`: an (optional) boolean that is ignored unless the stream type is `eyeImage`. It indicates whether eye images should be provided gif-encoded (true) or a raw grayscale pixel data (false).</li></ol>|<ol><li>`success`: a boolean indicating whether streaming to buffer was started for the requested stream type</li></ol>|Start streaming data of a specified type to buffer. The default initial buffer size should cover about 30 minutes of recording gaze data at 600Hz, and longer for the other streams. Growth of the buffer should cause no performance impact at all as it happens on a separate thread. To be certain, you can indicate a buffer size that is sufficient for the number of samples that you expect to record. Note that all buffers are fully in-memory. As such, ensure that the computer has enough memory to satify your needs, or you risk a recording-destroying crash.|
-|`is_recording()`|<ol><li>`stream`: a string, possible values: `gaze`, `eyeOpenness`, `eyeImage`, `externalSignal`, `timeSync`, `positioning` and `notification`.</li></ol>|<ol><li>`status`: a boolean indicating whether data of the indicated type is currently being streamed to buffer</li></ol>|Check if data of a specified type is being streamed to buffer.|
-|`consume_N()`|<ol><li>`stream`: a string, possible values: `gaze`, `eyeOpenness`, `eyeImage`, `externalSignal`, `timeSync`, `positioning` and `notification`.</li><li>`N_samples`: (optional) number of samples to consume from the start of the buffer. Defaults to all.</li><li>`side`: (optional) a string, possible values: `first` and `last`. Indicates from which side of the buffer to consume N samples. Default: `first`.</li></ol>|<ol><li>`data`: struct containing data from the requested buffer, if available. If not available, an empty struct is returned.</li></ol>|Return and remove data of the specified type from the buffer.|
-|`consume_time_range()`|<ol><li>`stream`: a string, possible values: `gaze`, `eyeOpenness`, `eyeImage`, `externalSignal`, `timeSync` and `notification`.</li><li>`time_start`: (optional) timestamp indicating start of interval for which to return data. Defaults to start of buffer.</li><li>`time_end`: (optional) timestamp indicating end of interval for which to return data. Defaults to end of buffer.</li></ol>|<ol><li>`data`: struct containing data from the requested buffer in the indicated time range, if available. If not available, an empty struct is returned.</li></ol>|Return and remove data of the specified type from the buffer.|
-|`peek_N()`|<ol><li>`stream`: a string, possible values: `gaze`, `eyeOpenness`, `eyeImage`, `externalSignal`, `timeSync`, `positioning` and `notification`.</li><li>`N_samples`: (optional) number of samples to peek from the end of the buffer. Defaults to 1.</li><li>`side`: (optional)a string, possible values: `first` and `last`. Indicates from which side of the buffer to peek N samples. Default: `last`.</li></ol>|<ol><li>`data`: struct containing data from the requested buffer, if available. If not available, an empty struct is returned.</li></ol>|Return but do not remove data of the specified type from the buffer.|
-|`peek_time_range()`|<ol><li>`stream`: a string, possible values: `gaze`, `eyeOpenness`, `eyeImage`, `externalSignal`, `timeSync` and `notification`.</li><li>`time_start`: (optional) timestamp indicating start of interval for which to return data. Defaults to start of buffer.</li><li>`time_end`: (optional) timestamp indicating end of interval for which to return data. Defaults to end of buffer.</li></ol>|<ol><li>`data`: struct containing data from the requested buffer in the indicated time range, if available. If not available, an empty struct is returned.</li></ol>|Return but do not remove data of the specified type from the buffer.|
-|`clear()`|<ol><li>`stream`: a string, possible values: `gaze`, `eyeOpenness`, `eyeImage`, `externalSignal`, `timeSync`, `positioning` and `notification`.</li></ol>||Clear the buffer for data of the specified type.|
-|`clear_time_range()`|<ol><li>`stream`: a string, possible values: `gaze`, `eyeOpenness`, `eyeImage`, `externalSignal`, `timeSync` and `notification`.</li><li>`time_start`: (optional) timestamp indicating start of interval for which to clear data. Defaults to start of buffer.</li><li>`time_end`: (optional) timestamp indicating end of interval for which to clear data. Defaults to end of buffer.</li></ol>||Clear data of the specified type within specified time range from the buffer.|
-|`stop()`|<ol><li>`stream`: a string, possible values: `gaze`, `eyeOpenness`, `eyeImage`, `externalSignal`, `timeSync`, `positioning` and `notification`.</li><li>`clear_buffer`: (optional) boolean indicating whether the buffer of the indicated stream type should be cleared</li></ol>|<ol><li>`success`: a boolean indicating whether streaming to buffer was stopped for the requested stream type</li></ol>|Stop streaming data of a specified type to buffer.|
-|||||
-|`enter_calibration_mode()`|<ol><li>`do_monocular`: boolean indicating whether the calibration is monocular or binocular</li></ol>|<ol><li>`has_enqueued_enter`: boolean indicating whether a request to enter calibration mode has been sent to worker thread. Will return false if already in calibration mode through a previous call to this interface (it does not detect if other programs/code have put the eye tracker in calibration mode).</li></ol>|Queue request for the tracker to enter into calibration mode.|
-|`is_in_calibration_mode()`|<ol><li>`issue_error_if_not_`: (optional) throws error if not in calibration mode. Default `false`.</li></ol>|<ol><li>`is_in_calibration_mode`: Boolean indicating whether eye tracker is in calibration mode.</li></ol>|Check whether eye tracker is in calibration mode.|
-|`leave_calibration_mode()`|<ol><li>`force`: (optional) set to true if you want to be completely sure that the tracker is not in calibration mode after this call: this also ensures calibration mode is left if code other than this interface put the eye tracker into calibration mode</li></ol>|<ol><li>`has_enqueued_leave`: boolean indicating whether a request to leave calibration mode has been sent to worker thread. Will return false if force leaving or if not in calibration mode through a previous call to this interface.</li></ol>|Queue request for the tracker to leave the calibration mode.|
-|`calibration_collect_data()`|<ol><li>`coordinates`: the coordinates of the point that the participant is asked to fixate, 2-element array with values in the range [0,1]</li><li>`eye`: (optional) the eye for which to collect calibration data. Possible values: `left` and `right`</li></ol>||Queue request for the tracker to collect gaze data for a single calibration point.|
-|`calibration_discard_data()`|<ol><li>`coordinates`: the coordinates of the point for which calibration data should be discarded, 2-element array with values in the range [0,1]</li><li>`eye`: (optional) the eye for which collected calibration data should be discarded. Possible values: `left` and `right`</li></ol>||Queue request for the tracker to discard any already collected gaze data for a single calibration point.|
-|`calibration_compute_and_apply()`|||Queue request for the tracker to compute the calibration function and start using it.|
-|`calibration_get_data()`|||Request retrieval of the computed calibration as an (uninterpretable) binary stream.|
-|`calibration_apply_data()`|<ol><li>`cal_data`: a binary stream as gotten through `calibrationGetData()`</li></ol>||Apply the provided calibration data.|
-|`calibration_get_status()`||<ol><li>`status`: a string, possible values: `NotYetEntered`, `AwaitingCalPoint`, `CollectingData`, `DiscardingData`, `Computing`, `GettingCalibrationData`, `ApplyingCalibrationData` and `Left`</li></ol>|Get the current state of TittaPy's calibration mechanism.|
-|`calibration_retrieve_result()`||<ol><li>`result`: a struct containing a submitted work item and the associated result, if any compelted work items are available</li></ol>|Get information about tasks completed by TittaPy's calibration mechanism.|
-
-#### Properties
-The following **read-only** properties are available for a `TittaPy.EyeTracker` instance:
-
-|Property|Description|
-| --- | --- |
-|`info`|Get connected eye tracker's basic stats.|
-|`serial_number`|Get connected eye tracker's serial number.|
-|`model`|Get connected eye tracker's model name.|
-|`firmware_version`|Get connected eye tracker's firmware version.|
-|`runtime_version`|Get connected eye tracker's runtime version.|
-|`address`|Get connected eye tracker's address.|
-|`capabilities`|Get connected eye tracker's exposed capabilities.|
-|`supported_frequencies`|Get connected eye tracker's supported sampling frequencies.|
-|`supported_modes`|Get connected eye tracker's supported tracking modes.|
-|`track_box`|Get connected eye tracker's track box.|
-|`display_area`|Get connected eye tracker's display area.|
-
-The following **settable** properties are available for a `TittaPy.EyeTracker` instance:
-
-|Property|Description|
-| --- | --- |
-|`device_name`|Get or set connected eye tracker's device name.|
-|`frequency`|Get or set connected eye tracker's sampling frequency.|
-|`tracking_mode`|Get or set connected eye tracker's tracking mode.|
+The TittaPy class can be used for interaction with the eye tracker's data streams. It is accessed via `Tobii.MyTobii`'s `buffer` property.  For instance, if `tracker` is your `Tobii.MyTobii` instance, then you can retrieve the recorded samples using `tracker.buffer.consume_N()`. The TittaPy methods and properties are documented in the [TittaPy repository](https://github.com/dcnieho/Titta#titta-tittamex-tittapy-classes).
 
 
 ### `TalkToProLab` class
