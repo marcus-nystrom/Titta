@@ -33,7 +33,7 @@ for f in files:
     print(f)
 
     # Load info about tracker
-    fh = open(str(f)[:-3] + '.json')
+    fh = open(str(f)[:-3] + '_info.json')
     info.append(json.load(fh))
 
     pid = str(f).split(os.sep)[-1][:-3]
