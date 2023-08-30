@@ -83,6 +83,11 @@ for trial in trials:
     pid = str(trial).split(os.sep)[-2]
 
     df_trial = pd.read_csv(trial, sep='\t')
+
+    if len(df_trial) == 0:
+        print('Warning: trial with no data')
+        continue
+
     trial_name = '.'.join(str(trial).split(os.sep)[-1].split('.')[:2])
 
     # Check that no samples are missing (based on the expected number of samples)

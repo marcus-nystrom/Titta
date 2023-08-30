@@ -41,12 +41,18 @@ def Titta(fname, res=[1920,1080]):
     raw_df = pd.read_csv(fname, sep='\t')
     df = pd.DataFrame()
 
+
+
     # Extract required data
     df['time'] = raw_df['system_time_stamp']
     df['L_X']  = raw_df['left_gaze_point_on_display_area_x']  * res[0]
     df['L_Y']  = raw_df['left_gaze_point_on_display_area_y']  * res[1]
     df['R_X']  = raw_df['right_gaze_point_on_display_area_x'] * res[0]
     df['R_Y']  = raw_df['right_gaze_point_on_display_area_y'] * res[1]
+
+    if len(df) == 0:
+        print('Warning: trial with no data')
+        return df
 
     # prep
     df['time'] = df['time'] - df.iloc[0,df.columns.get_loc('time')]
