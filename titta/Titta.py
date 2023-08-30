@@ -81,8 +81,10 @@ class Settings(object):
 
         self.DEBUG = False
 
+        self.DATA_STORAGE_PATH = ''         # e.g., 'c:\my_exp'
+
         # Default name of et-data file
-        self.FILENAME                    = 'test.tsv'
+        self.FILENAME                    = 'test'
 
         # Tracking parameters
         self.TRACKER_ADDRESS  = ''           # If none is given, find one on the network
@@ -208,14 +210,14 @@ class Graphics(object):
         self.BACK_BUTTON = 'b'
         self.BACK_BUTTON_TEXT = 'basic (b)'
 
-        self.POS_GAZE_BUTTON = (0.8, 0.8)
+        self.POS_GAZE_BUTTON = (0.6, 0.8)
         self.COLOR_GAZE_BUTTON = blue
         self.WIDTH_GAZE_BUTTON = 0.25
         self.HEIGHT_GAZE_BUTTON = 0.08
         self.GAZE_BUTTON = 'g'
         self.GAZE_BUTTON_TEXT = 'show gaze (g)'
 
-        self.POS_CAL_IMAGE_BUTTON = (-0.8, 0.8)
+        self.POS_CAL_IMAGE_BUTTON = (-0.6, 0.8)
         self.COLOR_CAL_IMAGE_BUTTON = (0.2, 0.2, 0.2)
         self.WIDTH_CAL_IMAGE_BUTTON = 0.25
         self.HEIGHT_CAL_IMAGE_BUTTON = 0.08

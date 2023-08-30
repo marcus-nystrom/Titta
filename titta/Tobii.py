@@ -57,6 +57,10 @@ class myTobii(object):
         ''' Apply settings and check capabilities
         '''
 
+        # Assert that path given to store data exists
+        if self.settings.DATA_STORAGE_PATH.strip():
+            assert Path(self.settings.DATA_STORAGE_PATH).is_dir(), "Data path for storage given in Titta.py does not exit"
+
         # Start the eye tracker logger
         TittaPy.start_logging()
 
@@ -549,6 +553,16 @@ class myTobii(object):
         from titta import Tobii_dummy
         self.__class__ = Tobii_dummy.Connect
         self.__class__.__init__(self)
+        
+    #%% 
+    def _add_to_name(self, fname):
+        # Add pid and path to name of calibraiton/validation images and calibration data
+        if self.settings.DATA_STORAGE_PATH.strip():
+            # Add participant name to filename
+            fname = self.settings.FILENAME + '_' + fname
+            fname = self.settings.DATA_STORAGE_PATH + os.sep + fname
+        
+        return fname
 
     #%%
     def calibration_history(self):
@@ -999,6 +1013,7 @@ class myTobii(object):
         # Save validation results as image
         # nCalibrations = len(self.deviations) + 1
         fname = 'calibration_image' + str(self.selected_calibration)+'.png'
+        fname = self._add_to_name(fname)
         self.win.getMovieFrame(buffer='back')
         self.win.saveMovieFrames(fname)
 
@@ -1028,6 +1043,9 @@ class myTobii(object):
             if self.settings.DEBUG:
                 print("Saving calibration to file {} for eye tracker with serial number {}.".format(filename, self.buffer.serial_number))
 
+            # if a path is given by the user, use it!
+            filename = self._add_to_name(filename)
+
             with open(filename + '.p', 'wb') as handle:
                 pickle.dump(calibration_data, handle)
         else:
@@ -1041,6 +1059,9 @@ class myTobii(object):
         Returns:
             -
         '''
+        # if a path is given by the user, use it!
+        filename = self._add_to_name(filename)
+
         # Read the calibration from file.
         with open(filename + '.p', 'rb') as handle:
             calibration_data = pickle.load(handle)
@@ -1260,7 +1281,10 @@ class myTobii(object):
 
         # Save validation results as image
         # nCalibrations = len(self.deviations)
+               
         fname = 'validation_image' + str(self.selected_calibration) + '.png'
+        fname = self._add_to_name(fname)
+            
         self.win.getMovieFrame(buffer='back')
         self.win.saveMovieFrames(fname)
 
@@ -1376,6 +1400,8 @@ class myTobii(object):
 
         # Add image as texture
         fname = 'validation_image' + str(self.selected_calibration)+'.png'
+        fname = self._add_to_name(fname)
+            
         self.accuracy_image.image = fname
         show_validation_image = True    # Default is to show validation results,
                                         # not calibration results
@@ -1526,6 +1552,8 @@ class myTobii(object):
                         fname = 'validation_image' + str(i + 1) + '.png'
                     else:
                         fname = 'calibration_image' + str(i + 1) + '.png'
+                    fname = self._add_to_name(fname)
+                    
                     self.accuracy_image.image = fname
                     self.selected_calibration = int(i + 1)
                     break
@@ -1552,6 +1580,7 @@ class myTobii(object):
                     if any([s for s in range(nCalibrations+1) if s == int(k[0])]):
                         self._load_calibration(k[0])  # Load the selected calibration
                         fname = 'validation_image' + str(k[0]) + '.png'
+                        fname = self._add_to_name(fname)
                         self.accuracy_image.image = fname
                         self.selected_calibration = int(k[0])
 
@@ -1581,10 +1610,14 @@ class myTobii(object):
                     # If validation image show, switch to calibration and vice versa
                     if show_validation_image:
                         fname = 'validation_image' + str(self.selected_calibration)+'.png'
+                        fname = self._add_to_name(fname)
                         self.accuracy_image.image = fname
+                        self.calibration_image_text.text = self.settings.graphics.CAL_IMAGE_BUTTON_TEXT
                     else:
                         fname = 'calibration_image' + str(self.selected_calibration)+'.png'
+                        fname = self._add_to_name(fname)
                         self.accuracy_image.image = fname
+                        self.calibration_image_text.text = 'Show validation (s)'
 
                     cal_image_button_pressed = True
 
@@ -1724,7 +1757,8 @@ class myTobii(object):
         If you want to read the data, see the 'resources' folder
 
         Args:
-            filename - if a filename is given, it overrides the name stored in
+            filename - if a filename is given, it overrides the name stored
+                in self.settings.FILENAME
             append_version : if file exists, it is appended with filename_1 etc.
                 THis is to prevent file from being overwritten
         '''
@@ -1739,13 +1773,22 @@ class myTobii(object):
         # Check if the filename already exists, if so append to name
         i = 1
         filename_ext = ''
-        files = Path.cwd().glob('*.h5')
+
+        # If a path for data storage is given, use that, otherwise save data
+        # in current working directory
+        if self.settings.DATA_STORAGE_PATH.strip():
+            files = Path(self.settings.DATA_STORAGE_PATH).glob('*.h5')
+        else:
+            files = Path.cwd().glob('*.h5')
+
+        #print(Path.cwd())
         while True:
 
             # Go through the files and look for a match
             filename_exists = False
             for f in files:
                 f_temp = str(f).split(os.sep)[-1].split('.')[0]
+                #print(f_temp, fname)
 
                 # if the file exists
                 if fname + filename_ext == f_temp:
@@ -1764,6 +1807,12 @@ class myTobii(object):
 
          # Add the new extension the the filename
         fname = os.sep.join([fname + filename_ext])
+        fname = self._add_to_name(fname)
+
+
+        # If a path for data storage is given, use that,
+#        if self.settings.DATA_STORAGE_PATH.strip():
+#            fname = self.settings.DATA_STORAGE_PATH + os.sep + fname
 
         # Save gaze data to HDF5 container
         temp = self.buffer.consume_N('gaze',sys.maxsize)
