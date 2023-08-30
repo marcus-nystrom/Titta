@@ -91,7 +91,7 @@ for f in files:
         df_trial = extract_trial_data(df_gaze, df_msg, t[0], t[1])
         df_trial.reset_index(inplace=True)
 
-        filename = t[0].split('_')[1] + '.tsv'
+        filename = t[0].split('_', 1)[1] + '.tsv'
         df_trial.to_csv(str(path) + os.sep + filename, sep='\t')
 
         print('Trial ' + filename + " written to folder ", path)
