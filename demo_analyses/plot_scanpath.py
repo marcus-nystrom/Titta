@@ -89,11 +89,10 @@ def make_scanpath(image_name, fixations, imres, scale_with_duration=True):
 imres = (1920, 1080)
 
 # Read files with fixations generated with the I2MC
-df_fixations = pd.read_csv('allfixations.txt', sep='\t')
+df_fixations = pd.read_csv(Path.cwd() / 'output' / 'allfixations.txt', sep='\t')
 
 # Read the images into a psychopy object
-path = Path(__file__).parents[2] / 'demo_experiment'
-image_names = path.rglob('*.jpeg')
+image_names = (Path.cwd() / 'stimuli').rglob('*.jpeg')
 
 win = visual.Window(fullscr=True, screen=1, units='pix', size=imres)
 
