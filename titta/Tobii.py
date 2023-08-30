@@ -1866,7 +1866,7 @@ class myTobii(object):
         df_cal.to_hdf(fname + '.h5', key='calibration_history')
 
         # Save tracker/python version info as json
-        with open(fname + '_info.json', "w") as outfile:
+        with open(fname + '.json', "w") as outfile:
             json.dump(self.system_info(), outfile)
 
         # Save image stream in the same HDF5 container
