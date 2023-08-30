@@ -53,7 +53,7 @@ def extract_trial_data(df_et_data, df_msg, msg_onset, msg_offset):
 # %%
 
 # Read messages and et data all participants (one .pkl-file per participant)
-files = Path.cwd().glob('*.h5')
+files = (Path.cwd() / 'data').glob('*.h5')
 
 for f in files:
 
