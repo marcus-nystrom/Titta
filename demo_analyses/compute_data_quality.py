@@ -64,8 +64,14 @@ df = pd.DataFrame(data_quality, columns=['pid',
                                          'SD_right_eye (deg)',
                                          'Prop_data_loss_left_eye',
                                          'Prop_ data_loss_right_eye'])
-df.to_csv('data_quality_validation.csv')
-print('Data quality values written to data_quality_validation.csv')
+
+
+# Create a new folder (if it does not exist)
+path = Path.cwd() / 'data_quality'
+Path(path).mkdir(parents=True, exist_ok=True)
+
+df.to_csv(path / 'data_quality_validation.csv')
+print("Data quality values written to {path / 'data_quality_validation'}")
 
 
 # %% Compute data loss per participant and trial.
@@ -114,5 +120,7 @@ df_trial = pd.DataFrame(data_loss_trials, columns=['pid', 'trial',
                                                       'n_valid_trial_samples',
                                                       'prop_invalid_samples',
                                                       'prop_missing_data'])
-df_trial.to_csv('data_loss_per_trial.csv')
-print('Data loss values written to data_loss_per_trial.csv')
+
+
+df_trial.to_csv(path / 'data_loss_per_trial.csv')
+print(f"Data loss values written to {path / 'data_loss_per_trial.csv'}")
