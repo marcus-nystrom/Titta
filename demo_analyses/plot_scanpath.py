@@ -81,7 +81,14 @@ def make_scanpath(image_name, fixations, imres, scale_with_duration=True):
     core.wait(1)
 
     win.getMovieFrame()
-    win.saveMovieFrames(str(image_name).split(os.sep)[-1])
+
+    # Make a new dir to save plots if it does not already exists
+    path = Path.cwd() / 'scanpaths' / fixations.participant[0]
+    Path(path).mkdir(parents=True, exist_ok=True)
+
+    # Save the results
+    fname =  path / ('scanpath_' + str(image_name).split(os.sep)[-1])
+    win.saveMovieFrames(fname)
 
 
 # %%
@@ -92,14 +99,23 @@ imres = (1920, 1080)
 df_fixations = pd.read_csv(Path.cwd() / 'output' / 'allfixations.txt', sep='\t')
 
 # Read the images into a psychopy object
-image_names = (Path.cwd() / 'stimuli').rglob('*.jpeg')
+image_names = list((Path.cwd() / 'stimuli').rglob('*.jpeg'))
 
 win = visual.Window(fullscr=True, screen=1, units='pix', size=imres)
 
 img = []
-for image_name in image_names:
-    df_temp = df_fixations[df_fixations.trial == str(image_name).split(os.sep)[-1]].reset_index()
-    make_scanpath(image_name, df_temp, imres)
+participants = df_fixations.participant.unique()
+
+for participant in list(participants):
+    for image_name in image_names:
+        df_temp = df_fixations[(df_fixations.trial == str(image_name).split(os.sep)[-1]) & \
+                               (df_fixations.participant == participant)].reset_index()
+
+        if len(df_temp) == 0:
+            print(f"Warning: no data exist for {participant} and {str(image_name).split(os.sep)[-1]}")
+            continue
+
+        make_scanpath(image_name, df_temp, imres)
 
 
 win.close()
