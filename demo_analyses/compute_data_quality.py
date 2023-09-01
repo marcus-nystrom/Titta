@@ -24,7 +24,7 @@ trial_folder = Path.cwd() / 'trials'
 
 #%% Compute data quality from pickle
 
-files = Path.cwd().glob('*.h5')
+files = (Path.cwd() / 'data').glob('*.h5')
 
 data_quality = []
 info = []
