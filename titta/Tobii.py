@@ -553,15 +553,16 @@ class myTobii(object):
         from titta import Tobii_dummy
         self.__class__ = Tobii_dummy.Connect
         self.__class__.__init__(self)
-        
-    #%% 
-    def _add_to_name(self, fname):
+
+    #%%
+    def _add_to_name(self, fname, append_name=True):
         # Add pid and path to name of calibraiton/validation images and calibration data
         if self.settings.DATA_STORAGE_PATH.strip():
             # Add participant name to filename
-            fname = self.settings.FILENAME + '_' + fname
+            if append_name:
+                fname = self.settings.FILENAME + '_' + fname
             fname = self.settings.DATA_STORAGE_PATH + os.sep + fname
-        
+
         return fname
 
     #%%
@@ -1281,10 +1282,10 @@ class myTobii(object):
 
         # Save validation results as image
         # nCalibrations = len(self.deviations)
-               
+
         fname = 'validation_image' + str(self.selected_calibration) + '.png'
         fname = self._add_to_name(fname)
-            
+
         self.win.getMovieFrame(buffer='back')
         self.win.saveMovieFrames(fname)
 
@@ -1401,7 +1402,7 @@ class myTobii(object):
         # Add image as texture
         fname = 'validation_image' + str(self.selected_calibration)+'.png'
         fname = self._add_to_name(fname)
-            
+
         self.accuracy_image.image = fname
         show_validation_image = True    # Default is to show validation results,
                                         # not calibration results
@@ -1553,7 +1554,7 @@ class myTobii(object):
                     else:
                         fname = 'calibration_image' + str(i + 1) + '.png'
                     fname = self._add_to_name(fname)
-                    
+
                     self.accuracy_image.image = fname
                     self.selected_calibration = int(i + 1)
                     break
@@ -1807,12 +1808,7 @@ class myTobii(object):
 
          # Add the new extension the the filename
         fname = os.sep.join([fname + filename_ext])
-        fname = self._add_to_name(fname)
-
-
-        # If a path for data storage is given, use that,
-#        if self.settings.DATA_STORAGE_PATH.strip():
-#            fname = self.settings.DATA_STORAGE_PATH + os.sep + fname
+        fname = self._add_to_name(fname, append_name=False)
 
         # Save gaze data to HDF5 container
         temp = self.buffer.consume_N('gaze',sys.maxsize)
