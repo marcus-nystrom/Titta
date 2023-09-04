@@ -12,7 +12,6 @@ from titta import Titta
 # Create an instance of titta
 et_name = 'Tobii Pro Spectrum'
 settings = Titta.get_defaults(et_name)
-settings.DATA_STORAGE_PATH = 'c:\Humlab'
 
 # Connect to eye tracker and calibrate
 tracker = Titta.Connect(settings)
