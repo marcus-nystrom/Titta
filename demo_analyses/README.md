@@ -1,4 +1,4 @@
-The files in this folder are resources to help users access data and perform common data processing tasks.
+The files in this folder are resources to help users access data and perform common data processing tasks. It is assumed that recorded data are located in the `data` folder.
 
 To extract trial data, compute data quality, and classify fixation, perform the following steps (in this order):
 * Extract trial data (run `extract_trial_data.py`). This will create a folder 'trials' with data organized by participants and trials.
