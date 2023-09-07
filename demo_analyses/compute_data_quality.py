@@ -63,7 +63,7 @@ df = pd.DataFrame(data_quality, columns=['pid',
                                          'SD_left_eye (deg)',
                                          'SD_right_eye (deg)',
                                          'Prop_data_loss_left_eye',
-                                         'Prop_ data_loss_right_eye'])
+                                         'Prop_data_loss_right_eye'])
 
 
 # Create a new folder (if it does not exist)
