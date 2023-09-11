@@ -83,7 +83,7 @@ def make_scanpath(image_name, fixations, imres, scale_with_duration=True):
     win.getMovieFrame()
 
     # Make a new dir to save plots if it does not already exists
-    path = Path.cwd() / 'scanpaths' / fixations.participant[0]
+    path = Path.cwd() / 'scanpaths' / str(fixations.participant[0])
     Path(path).mkdir(parents=True, exist_ok=True)
 
     # Save the results
