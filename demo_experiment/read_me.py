@@ -125,8 +125,8 @@ for image in images:
     # Get the 10 most recent samples
     # sample = tracker.buffer.peekN('gaze', 10)
 
-    # print(sample['left_gaze_on_display_area_x'])
-    # print(sample['right_gaze_on_display_area_x'])
+    # print(sample['left_gaze_point_on_display_area_x'])
+    # print(sample['right_gaze_point_on_display_area_x'])
 
 win.flip()
 
