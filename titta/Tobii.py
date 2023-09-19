@@ -124,41 +124,6 @@ class myTobii(object):
 
         self.clock = core.Clock()
 
-        # header / column names
-        self.header = ['device_time_stamp',
-                 'system_time_stamp',
-                 'left_gaze_point_on_display_area_x',
-                 'left_gaze_point_on_display_area_y',
-                 'left_gaze_point_in_user_coordinate_system_x',
-                 'left_gaze_point_in_user_coordinate_system_y',
-                 'left_gaze_point_in_user_coordinate_system_z',
-                 'left_gaze_origin_in_trackbox_coordinate_system_x',
-                 'left_gaze_origin_in_trackbox_coordinate_system_y',
-                 'left_gaze_origin_in_trackbox_coordinate_system_z',
-                 'left_gaze_origin_in_user_coordinate_system_x',
-                 'left_gaze_origin_in_user_coordinate_system_y',
-                 'left_gaze_origin_in_user_coordinate_system_z',
-                 'left_pupil_diameter',
-                 'left_pupil_validity',
-                 'left_gaze_origin_validity',
-                 'left_gaze_point_validity',
-                 'left_eyeopenness'
-                 'right_gaze_point_on_display_area_x',
-                 'right_gaze_point_on_display_area_y',
-                 'right_gaze_point_in_user_coordinate_system_x',
-                 'right_gaze_point_in_user_coordinate_system_y',
-                 'right_gaze_point_in_user_coordinate_system_z',
-                 'right_gaze_origin_in_trackbox_coordinate_system_x',
-                 'right_gaze_origin_in_trackbox_coordinate_system_y',
-                 'right_gaze_origin_in_trackbox_coordinate_system_z',
-                 'right_gaze_origin_in_user_coordinate_system_x',
-                 'right_gaze_origin_in_user_coordinate_system_y',
-                 'right_gaze_origin_in_user_coordinate_system_z',
-                 'right_pupil_diameter',
-                 'right_pupil_validity',
-                 'right_gaze_origin_validity',
-                 'right_gaze_point_validity']
-
         # Only the tobii pro spectrum and the tobii pro fusion can record eye images
         # Never record eye images for other models, override defaults
         if not self.buffer.has_stream('eye_image'):
@@ -1327,8 +1292,6 @@ class myTobii(object):
 
         Args:
             validation_data - list with validation data per validation point
-                validation_data[k] - dict with keys (see self.header), contains, e.g.,
-                len(sample['system_time_stamp']
             val_point_positions - list with [x, y] pos of validation point
                                     in ADCS
             eye - 'left' or 'right'
