@@ -126,7 +126,7 @@ class Buffer(Thread):
         for key in self.sample.keys():
             if '_x' in key:
                 self.sample[key].append(xy[0, 0])
-            elif '_y':
+            elif '_y' in key:
                 self.sample[key].append(xy[0, 1])
             else:
                 self.sample[key].append(np.random.rand())
