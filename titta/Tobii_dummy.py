@@ -72,14 +72,19 @@ class Buffer(Thread):
 
     #%%
     def peek_N(self, stream, N):
-        ''' Consume all samples and empty buffer'''
-        return self.sample
+        ''' Return N most recent samples from buffer'''
+
+        temp = {}
+        for key in self.sample:
+            temp[key] = self.sample[key][-1:-(N + 1):-1]
+
+        return temp
 
     #%%
     def consume_N(self, stream, N):
-        ''' Get samples in buffer while emptying the buffer '''
+        ''' Get the most recent N samples in buffer while emptying the buffer '''
 
-        temp = self.sample
+        temp = self.peek_N(stream, N)
         self.sample = {}
         return temp
 
@@ -123,7 +128,7 @@ class Buffer(Thread):
         else:
             raise IOError ('Invalid unit of PsychoPy screen: Titta in dummy mode currently \
                            supports "norm", "pix", and "deg".')
-        for key in self.sample.keys():
+        for key in self.sample:
             if '_x' in key:
                 self.sample[key].append(xy[0, 0])
             elif '_y' in key:
@@ -148,8 +153,6 @@ class Connect(object):
 
         # clock
         self.clock = core.Clock()
-
-        # Dict to store samples
 
     def init(self):
         ''' Connect to eye tracker
