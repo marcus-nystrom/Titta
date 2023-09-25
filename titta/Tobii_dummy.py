@@ -71,12 +71,12 @@ class Buffer(Thread):
         self._start_sample_buffer()
 
     #%%
-    def peekN(self, stream, N):
+    def peek_N(self, stream, N):
         ''' Consume all samples and empty buffer'''
         return self.sample
 
     #%%
-    def consumeN(self, stream, N):
+    def consume_N(self, stream, N):
         ''' Get samples in buffer while emptying the buffer '''
 
         temp = self.sample
