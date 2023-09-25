@@ -123,7 +123,7 @@ for image in images:
     sample = tracker.buffer.peek_N('gaze', 1)
 
     # Get the 10 most recent samples
-    # sample = tracker.buffer.peekN('gaze', 10)
+    # sample = tracker.buffer.peek_N('gaze', 10)
 
     # print(sample['left_gaze_point_on_display_area_x'])
     # print(sample['right_gaze_point_on_display_area_x'])
