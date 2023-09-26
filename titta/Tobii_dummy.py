@@ -52,9 +52,10 @@ class Buffer(Thread):
     """
     Create that simulates a data buffer
     """
-    def __init__(self, win):
+    def __init__(self, win, Fs):
 
         self.win = win
+        self.Fs = Fs
 
         # Mouse object
         self.mouse = event.Mouse(win)
@@ -108,7 +109,11 @@ class Buffer(Thread):
 
             # Add sample to dict
             self._add_sample_to_buffer()
-            time.sleep(0.01)
+
+            # note that the sample rate of the mouse often is much lower than
+            # that of the eye tracker, so use a lower sample rate, say 60 Hz,
+            # by setting 'settings.SAMPLE_RATE = 60'
+            time.sleep(1/self.Fs)
 
     #%%
     def _add_sample_to_buffer(self):
@@ -160,12 +165,11 @@ class Connect(object):
         '''
         print('init')
 
-
     #%% Init calibration
     def calibrate(self, win, eye='both', calibration_number='first'):
         ''' Master function for setup and calibration
         '''
-        self.buffer = Buffer(win)
+        self.buffer = Buffer(win, self.settings.SAMPLE_RATE)
 
         # Window and instruction text for calibration
         instruction_text = visual.TextStim(win,text='',wrapWidth = 1,
