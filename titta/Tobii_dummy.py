@@ -5,12 +5,9 @@ Created on Thu Jun 01 14:11:57 2017
 @author: Marcus
 """
 
+import psychtoolbox as ptb
 from psychopy import visual, core, event
 import time
-import pandas as pd
-import h5py
-import os
-from pathlib import Path
 from titta import helpers_tobii as helpers
 from threading import Thread
 import numpy as np
@@ -82,12 +79,28 @@ class Buffer(Thread):
         return temp
 
     #%%
+    def peek_time_range(self, stream, t0, t1):
+        ''' Get the most recent N samples in buffer while emptying the buffer '''
+
+        # Do the same thing as peek_N for now
+        return self.peek_N(stream, 100)
+
+    #%%
     def consume_N(self, stream, N):
         ''' Get the most recent N samples in buffer while emptying the buffer '''
 
         temp = self.peek_N(stream, N)
-        self.sample = {}
+
+        # Remove data from dict
+        self.sample = {k : [0] for k in self.sample}
         return temp
+
+    #%%
+    def consume_time_range(self, stream, t0, t1):
+        ''' Get the most recent N samples in buffer while emptying the buffer '''
+
+        # Do the same thing as comsume_N for now
+        return self.consume_N(stream, 100)
 
     #%%
     def _start_sample_buffer(self, sample_buffer_length=sys.maxsize):
@@ -141,6 +154,8 @@ class Buffer(Thread):
             else:
                 self.sample[key].append(np.random.rand())
 
+        self.sample['system_time_stamp'].append(ptb.GetSecs())
+
     #%%
     def _stop_sample_buffer(self):
         self.__stop = True
@@ -189,7 +204,7 @@ class Connect(object):
         ''' Get system time stamp
         '''
 
-        print('time_stamp')
+        return ptb.GetSecs()
 
     #%%
     def start_recording(self,   gaze=False,
@@ -204,7 +219,7 @@ class Connect(object):
 
     #%%
     def send_message(self, msg, ts=None):
-        print(msg)
+        print(str(ptb.GetSecs()) + '_' + msg)
 
 
     #%%
