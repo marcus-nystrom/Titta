@@ -125,6 +125,12 @@ for image in images:
     # Get the 10 most recent samples
     # sample = tracker.buffer.peek_N('gaze', 10)
 
+    # Same as peek_N, but clears the buffer
+    # sample = tracker.buffer.consume_N('gaze', 10)
+
+    # Consumes from a time range (t0 -> t1)
+    # sample = tracker.buffer.consume_time_range('gaze', t0, t1)
+
     # print(sample['left_gaze_point_on_display_area_x'])
     # print(sample['right_gaze_point_on_display_area_x'])
 
