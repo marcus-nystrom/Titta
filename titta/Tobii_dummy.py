@@ -112,7 +112,7 @@ class Buffer(Thread):
 
             # note that the sample rate of the mouse often is much lower than
             # that of the eye tracker, so use a lower sample rate, say 60 Hz,
-            # by setting 'settings.SAMPLE_RATE = 60'
+            # by setting 'settings.SAMPLING_RATE = 60'
             time.sleep(1/self.Fs)
 
     #%%
@@ -169,7 +169,7 @@ class Connect(object):
     def calibrate(self, win, eye='both', calibration_number='first'):
         ''' Master function for setup and calibration
         '''
-        self.buffer = Buffer(win, self.settings.SAMPLE_RATE)
+        self.buffer = Buffer(win, self.settings.SAMPLING_RATE)
 
         # Window and instruction text for calibration
         instruction_text = visual.TextStim(win,text='',wrapWidth = 1,
