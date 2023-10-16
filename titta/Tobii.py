@@ -702,6 +702,10 @@ class myTobii(object):
 
         self.mouse.setVisible(0)
 
+        # Always stop image stream (if running) before leaving setup
+        if self.buffer.has_stream('eye_image') and self.buffer.is_recording('eye_image'):
+            self.buffer.stop('eye_image')
+
         # Stop user position guide
         self.buffer.stop('positioning')
 
