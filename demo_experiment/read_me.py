@@ -212,3 +212,40 @@ if not dummy_mode:
     plt.ylabel('Eye openness (mm)')
     plt.legend(['left', 'right'])
     plt.show()
+
+
+'''
+These are all available fields from the gaze stream:
+    (see, https://developer.tobiipro.com/commonconcepts/coordinatesystems.html)
+        'device_time_stamp', 'system_time_stamp',
+       'left_gaze_point_on_display_area_x',
+       'left_gaze_point_on_display_area_y',
+       'left_gaze_point_in_user_coordinates_x',
+       'left_gaze_point_in_user_coordinates_y',
+       'left_gaze_point_in_user_coordinates_z', 'left_gaze_point_valid',
+       'left_gaze_point_available', 'left_pupil_diameter', 'left_pupil_valid',
+       'left_pupil_available', 'left_gaze_origin_in_user_coordinates_x',
+       'left_gaze_origin_in_user_coordinates_y',
+       'left_gaze_origin_in_user_coordinates_z',
+       'left_gaze_origin_in_track_box_coordinates_x',
+       'left_gaze_origin_in_track_box_coordinates_y',
+       'left_gaze_origin_in_track_box_coordinates_z', 'left_gaze_origin_valid',
+       'left_gaze_origin_available', 'left_eye_openness_diameter',
+       'left_eye_openness_valid', 'left_eye_openness_available',
+       'right_gaze_point_on_display_area_x',
+       'right_gaze_point_on_display_area_y',
+       'right_gaze_point_in_user_coordinates_x',
+       'right_gaze_point_in_user_coordinates_y',
+       'right_gaze_point_in_user_coordinates_z', 'right_gaze_point_valid',
+       'right_gaze_point_available', 'right_pupil_diameter',
+       'right_pupil_valid', 'right_pupil_available',
+       'right_gaze_origin_in_user_coordinates_x',
+       'right_gaze_origin_in_user_coordinates_y',
+       'right_gaze_origin_in_user_coordinates_z',
+       'right_gaze_origin_in_track_box_coordinates_x',
+       'right_gaze_origin_in_track_box_coordinates_y',
+       'right_gaze_origin_in_track_box_coordinates_z',
+       'right_gaze_origin_valid', 'right_gaze_origin_available',
+       'right_eye_openness_diameter', 'right_eye_openness_valid',
+       'right_eye_openness_available']
+'''
