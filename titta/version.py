@@ -1,4 +1,4 @@
-__version__ = "2.0.3"
+__version__ = "2.0.4"
 
 __title__ = "titta"
 __description__ = "Titta is a toolbox for using eye trackers from Tobii with Python, specifically offering integration with PsychoPy."
