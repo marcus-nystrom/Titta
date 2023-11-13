@@ -64,7 +64,8 @@ class ProAntiSaccades(object):
         self.duration_peripheral_target = duration_peripheral_target * screen_refresh_rate
             
         #Initialize stimuli used in experiment
-        self.dot_stim = helpers.MyDot2(win)
+        self.dot_stim = helpers.MyDot2(win, units='deg', outer_diameter=1,
+                                       inner_diameter=0.2)
         self.et_sample = visual.GratingStim(win, color='black', tex=None, mask='circle',units='pix',size=2)
         self.line = visual.Line(win, start=(-0.5, -0.5), end=(0.5, 0.5), units='pix')
         self.instruction_text = visual.TextStim(win,text='',wrapWidth = 10,height = 0.5)   
@@ -379,13 +380,8 @@ class ProAntiSaccades(object):
     
         # Start eye tracker
         if self.eye_tracking:
-            if practice:
-                self.tracker.start_recording(gaze_data=True, store_data=False)
-            else:
-                self.tracker.start_recording(gaze_data=True)
+            self.tracker.start_recording(gaze=True)
                 
-                
-            
         # Now show the saccade targets one by one
         for i in range(nTrials):
                         
@@ -455,20 +451,17 @@ class ProAntiSaccades(object):
                         t = self.trialClock.getTime()
                         
                         # Get et sample and convert to pixels
-                        et_sample = self.tracker.get_latest_sample()
+                        sample = self.tracker.buffer.peek_N('gaze', 1)
                         
-                        x_mean = np.nanmean([et_sample['left_gaze_point_on_display_area'][0],
-                                          et_sample['right_gaze_point_on_display_area'][0]])
-                        y_mean = np.nanmean([et_sample['left_gaze_point_on_display_area'][1],
-                                          et_sample['right_gaze_point_on_display_area'][1]])    
+                        x_mean = np.nanmean([sample['left_gaze_point_on_display_area_x'],
+                                          sample['right_gaze_point_on_display_area_x']])
+                        y_mean = np.nanmean([sample['left_gaze_point_on_display_area_y'],
+                                          sample['right_gaze_point_on_display_area_y']])
     
-                        pos = helpers.tobii2pix(np.array([[x_mean, y_mean]]), self.win.monitor)
-                        pos[:, 0] = pos[:, 0] - self.screen_size[0]/2
-                        pos[:, 1] = pos[:, 1] - self.screen_size[0]/4
-                        
+                        pos = helpers.tobii2pix(np.array([[x_mean, y_mean]]), self.win)                       
     
                         xy[iSample,0] = pos[:, 0]
-                        xy[iSample,1] = pos[:, 1] * -1
+                        xy[iSample,1] = pos[:, 1]
 
                         # Draw data sample
                         if iSample > 0:
@@ -505,7 +498,6 @@ class ProAntiSaccades(object):
                     self.instruction_text.draw()
                     self.win.flip()
                     self.tracker.send_message('_'.join(['STOP_TRIAL_PRACTICE', task, str(sa), str(i)]))
-                    # self.tracker.stop_recording(gaze_data=True)
 
                     k = event.waitKeys() # Here you discuss the feedback with the participants
                     self.instruction_text.setColor('white') 
@@ -540,7 +532,7 @@ class ProAntiSaccades(object):
             
         # Stops eye tracker when all trials are completed
         if self.eye_tracking:
-            self.tracker.stop_recording(gaze_data=True)
+            self.tracker.stop_recording(gaze=True)
             
     #%%        
     def take_a_break(self, duration, calibrate=False):
