@@ -18,7 +18,7 @@ from psychopy import core, event, misc, visual, monitors, data, gui
 import pandas as pd
 from titta import Titta, helpers_tobii as helpers
 
-show_dlg = False
+show_dlg = True
 
 #%% Monitor/geometry
 MY_MONITOR                  = 'testMonitor' # needs to exists in PsychoPy monitor center
@@ -230,8 +230,8 @@ class Player():
         data = tracker.buffer.peek_N('gaze', n_buffer_samples)
 
         # Convert from Tobii coordinate system to ssv
-        lx = data['left_gaze_on_display_area_x']
-        rx = data['right_gaze_on_display_area_x']
+        lx = data['left_gaze_point_on_display_diarea_x']
+        rx = data['right_gaze_point_on_display_area_x']
 
         # update position only if contains no nan
         if np.any(np.isnan(np.array(lx) * np.array(rx))):
@@ -252,7 +252,7 @@ class Player():
 
 
         # Update position of player
-        self.image.pos = (pos, self.fixed_y)
+        self.image.pos = (int(pos), self.fixed_y)
 
 #%%
 # Create the player paddle object
