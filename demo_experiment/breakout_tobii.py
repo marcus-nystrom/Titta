@@ -230,7 +230,7 @@ class Player():
         data = tracker.buffer.peek_N('gaze', n_buffer_samples)
 
         # Convert from Tobii coordinate system to ssv
-        lx = data['left_gaze_point_on_display_diarea_x']
+        lx = data['left_gaze_point_on_display_area_x']
         rx = data['right_gaze_point_on_display_area_x']
 
         # update position only if contains no nan
@@ -240,8 +240,8 @@ class Player():
         # print(lx)
         # Use the average position (i.e., lowpass filtered)
         pos = np.nanmean([np.nanmean(rx), np.nanmean(lx)])
-        pos = helpers.tobii2pix(np.array([[pos, pos]]), mon)[:, 0]
-        pos = pos - screen_size[0] / 2
+        pos = helpers.tobii2pix(np.array([[pos, pos]]), win)[:, 0]
+        #pos = pos - screen_size[0] / 2
 
         # Set the left side of the player bar to the mouse/gaze position
         if pos > (screen_size[0] / 2 - self.width/2.0):
