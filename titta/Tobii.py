@@ -598,11 +598,11 @@ class myTobii(object):
             raise Exception('Eye tracker switched on?')
 
         # Initiate parameters of head class (shown on participant screen)
-        et_head = helpers.EThead(self.win)
+        et_head = helpers.EThead(self.win, self.settings.HEAD_BOX_CENTER)
 
         # Initiate parameters of head class (shown on operator screen)
         if self.win_operator:
-            et_head_op = helpers.EThead(self.win_temp)
+            et_head_op = helpers.EThead(self.win_temp, self.settings.HEAD_BOX_CENTER)
 
         show_eye_images = False
         image_button_pressed = False
@@ -653,15 +653,21 @@ class myTobii(object):
             self.instruction_text.draw()
 
             # Get and draw distance information
-            l_pos = sample['left_gaze_origin_in_user_coordinates_z'][0]
-            r_pos = sample['right_gaze_origin_in_user_coordinates_z'][0]
+            l_pos = []
+            r_pos = []
+            for letter in ['x', 'y', 'z']:
+                l_pos.append(sample[f'left_gaze_origin_in_user_coordinates_{letter}'][0])
+                r_pos.append(sample[f'right_gaze_origin_in_user_coordinates_{letter}'][0])
 
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore", category=RuntimeWarning)
                     self.instruction_text_op.pos = (0, 0.9)
-                    self.instruction_text_op.text = ' '.join(['Distance:',
-                                                               str(int(np.nanmean([l_pos, r_pos])/10.0)), 'cm'])
+                    self.instruction_text_op.text = f'Distance: {int(np.nanmean([l_pos[2], r_pos[2]])/10.0)} cm'
+#                     self.instruction_text_op.text = f'Cyclopean eye position (x, y, z):, \
+# {int(np.nanmean([l_pos[0], r_pos[0]])/10.0)}, \
+# {int(np.nanmean([l_pos[1], r_pos[1]])/10.0)}, \
+# {int(np.nanmean([l_pos[2], r_pos[2]])/10.0)} cm'
                     self.instruction_text_op.draw()
             except:
                 pass

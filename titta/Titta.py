@@ -101,6 +101,12 @@ class Settings(object):
         self.RECORD_EYE_IMAGES_DURING_CALIBRATION = False
         self.N_CAL_TARGETS = 5               # Valid: 0, 1, 5, 9, 13
 
+        self.HEAD_BOX_CENTER = []            # 3D location of the headbox center (position of head circle)
+                                             # during calibration in user coordinate system (UCS, in mm)
+                                             # e.g., (x, y, z) = (0, -30, 650)
+                                             # If empty, use the center of the
+                                             # Track Box Coordinate System normalized [0, 1]
+
         # List all possible calibration points (in Tobii's coordinate system)
         # (0.0, 0.0) is the upper left corner and (1.0, 1.0) is the lower right corner.
 

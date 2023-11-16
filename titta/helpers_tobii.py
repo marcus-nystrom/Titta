@@ -250,10 +250,11 @@ class EThead(object):
     head.
     """
 
-    def __init__(self, win):
+    def __init__(self, win, HEAD_BOX_CENTER):
         '''
         Args:
             win - psychopy window handle
+            HEAD_BOX_CENTER - center of headbox, e.g., [x, y, z] = [0, 0, 700]
         '''
 
         self.win = win
@@ -273,6 +274,15 @@ class EThead(object):
 
         # Eye parameters
         self.EYE_SIZE = 0.03
+
+        # Center of headbox (in positioning stream [0, 1])
+        if len(HEAD_BOX_CENTER) == 0:
+            self.center_of_headbox = np.array([0.5, 0.5, 0.5])
+            self.use_positioning_stream = True  # For head positioning
+        else:
+            self.center_of_headbox = HEAD_BOX_CENTER
+            self.use_positioning_stream = False
+            # What is the position of HEAD_BOX_CENTER in positioning stream?
 
 
         # Setup control circles for head position
@@ -314,7 +324,7 @@ class EThead(object):
         self.latest_valid_yaw = 0.
         self.latest_valid_roll = 0.
         self.previous_binocular_sample_valid = True
-        self.latest_valid_binocular_avg = np.array([0.5, 0.5, 0.5])
+        self.latest_valid_binocular_avg = self.center_of_headbox
         self.offset = np.array([0., 0., 0.])
 
 
@@ -323,9 +333,9 @@ class EThead(object):
         Args:
             sample - a dict containing information about the sample
 
-                relevant info in sample is
+                relevant info in sample is [UCS, unit (mm)]
 
-                sample['left_gaze_origin_in_user_coordinate_system']
+                sample['left_gaze_origin_in_user_coordinates_y']
                 sample.right.gaze_origin.in_user_coordinate_system
                 sample.left.gaze_origin.in_trackbox_coordinate_system
                 sample.right.gaze_origin.in_trackbox_coordinate_system
@@ -334,7 +344,7 @@ class EThead(object):
 
             sample_user_pos
 
-                relevant info in sample is
+                relevant info in sample is [UCS, norm [0, 1]]
 
                 sample_user_pos.left.user_position
                 sample_user_pos.left.user_validity.valid.value
@@ -357,6 +367,7 @@ class EThead(object):
             self.eye_r_closed.fillColor = (1, -1, -1)
 
         #%% 1. Compute the average position of the head ellipse
+        # if self.use_positioning_stream:
         xyz_pos_eye_l = (sample_user_pos['left_user_position_x'][0],
                          sample_user_pos['left_user_position_y'][0],
                          sample_user_pos['left_user_position_z'][0])
@@ -364,6 +375,17 @@ class EThead(object):
         xyz_pos_eye_r = (sample_user_pos['right_user_position_x'][0],
                          sample_user_pos['right_user_position_y'][0],
                          sample_user_pos['right_user_position_z'][0])
+    # else: # Use User coordinate system (in mm)
+
+        if not self.use_positioning_stream:
+            xyz_pos_eye_l_ucs = (sample['left_gaze_origin_in_user_coordinates_x'][0],
+                             sample['left_gaze_origin_in_user_coordinates_y'][0],
+                             sample['left_gaze_origin_in_user_coordinates_z'][0])
+
+            xyz_pos_eye_r_ucs = (sample['right_gaze_origin_in_user_coordinates_x'][0],
+                             sample['right_gaze_origin_in_user_coordinates_y'][0],
+                             sample['right_gaze_origin_in_user_coordinates_z'][0])
+
 
         # Valid data from the eyes?
         self.right_eye_valid = np.sum(np.isnan(xyz_pos_eye_r)) == 0 # boolean
@@ -372,7 +394,12 @@ class EThead(object):
         # Compute the average position of the eyes
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
+            # if self.use_positioning_stream:
             avg_pos = np.nanmean([xyz_pos_eye_l, xyz_pos_eye_r], axis=0)
+            # else:
+
+            if not self.use_positioning_stream:
+                avg_pos_ucs = np.nanmean([xyz_pos_eye_l_ucs, xyz_pos_eye_r_ucs], axis=0)
         # print('avg pos  {:f} {:f} {:f}'.format(avg_pos[0], avg_pos[1], avg_pos[2]))
 
         # If one eye is closed, the center of the circle is moved,
@@ -384,15 +411,18 @@ class EThead(object):
                 self.previous_binocular_sample_valid = True
                 self.offset = np.array([0., 0., 0.])
             elif self.left_eye_valid or self.right_eye_valid:
-
                 if self.previous_binocular_sample_valid:
                     self.offset = self.latest_valid_binocular_avg - avg_pos
 
                 self.previous_binocular_sample_valid = False
 
         #(0.5, 0.5, 0.5)  means the eye is in the center of the box
-        self.moving_ellipse.pos = ((avg_pos[0] - 0.5) * -1 - self.offset[0] ,
-                                (avg_pos[1] - 0.5) * -1 - self.offset[1])
+        if self.use_positioning_stream:
+            self.moving_ellipse.pos = ((avg_pos[0] - self.center_of_headbox[0]) * -1 - self.offset[0] ,
+                                       (avg_pos[1] - self.center_of_headbox[1]) * -1 - self.offset[1])
+        else:
+            self.moving_ellipse.pos = ((avg_pos_ucs[0] - self.center_of_headbox[0]) / 300 - self.offset[0] ,
+                                       (avg_pos_ucs[1] - self.center_of_headbox[1]) / 300 - self.offset[1])
 
         # Compute roll and yaw data from 3D information about the eyes
         # in the headbox (if both eyes are valid)
@@ -415,7 +445,13 @@ class EThead(object):
         # Compute the ellipse height and width
         # The width should be zero if yaw = pi/2 rad (90 deg)
         # The width should be equal to the height if yaw = 0
-        ellipse_height = (avg_pos[2] - 0.5)*-1 * 0.2 + self.HEAD_POS_ELLIPSE_MOVING_HEIGHT
+        if self.use_positioning_stream:
+            ellipse_height = (avg_pos[2] - self.center_of_headbox[2]) *-1 * 0.2 + \
+                              self.HEAD_POS_ELLIPSE_MOVING_HEIGHT
+        else:
+            ellipse_height = (avg_pos_ucs[2] - self.center_of_headbox[2]) / 200 *-1 * 0.2 + \
+                              self.HEAD_POS_ELLIPSE_MOVING_HEIGHT
+
 
         # Control min size of head ellipse
         if ellipse_height < self.HEAD_POS_ELLIPSE_MOVING_MIN_HEIGHT:
