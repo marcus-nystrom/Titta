@@ -663,11 +663,14 @@ class myTobii(object):
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore", category=RuntimeWarning)
                     self.instruction_text_op.pos = (0, 0.9)
-                    self.instruction_text_op.text = f'Distance: {int(np.nanmean([l_pos[2], r_pos[2]])/10.0)} cm'
-#                     self.instruction_text_op.text = f'Cyclopean eye position (x, y, z):, \
-# {int(np.nanmean([l_pos[0], r_pos[0]])/10.0)}, \
-# {int(np.nanmean([l_pos[1], r_pos[1]])/10.0)}, \
-# {int(np.nanmean([l_pos[2], r_pos[2]])/10.0)} cm'
+
+                    if len(self.settings.HEAD_BOX_CENTER) == 0:
+                        self.instruction_text_op.text = f'Distance: {int(np.nanmean([l_pos[2], r_pos[2]])/10.0)} cm'
+                    else:
+                        self.instruction_text_op.text = f'Cyclopean eye position (x, y, z):, \
+{int(np.nanmean([l_pos[0], r_pos[0]])/10.0)}, \
+{int(np.nanmean([l_pos[1], r_pos[1]])/10.0)}, \
+{int(np.nanmean([l_pos[2], r_pos[2]])/10.0)} cm'
                     self.instruction_text_op.draw()
             except:
                 pass
@@ -1193,21 +1196,22 @@ class myTobii(object):
         # FIXME: C:\git\Titta\titta\Tobii.py: RuntimeWarning: Mean of empty slice
         data_quality_values = [np.nanmean(deviation_l), np.nanmean(deviation_r),
                                 np.nanmean(rms_l), np.nanmean(rms_r),
-                                np.nanmean(sd_l), np.nanmean(sd_r),
-                                np.nanmean(data_loss_l), np.nanmean(data_loss_r)]
+                                np.nanmean(data_loss_l) * 100, np.nanmean(data_loss_r) * 100,
+                                np.nanmean(sd_l), np.nanmean(sd_r)]
 
         self.deviations.insert(self.selected_calibration - 1,
                                data_quality_values)
 
-        self.send_message('validation data quality Dev_L: {:.2f}, Dev_R: {:.2f} RMS_L: {:.2f}, RMS_R: {:.2f}, SD_L: {:.2f}, SD_R: {:.2f}, LOSS_L: {:.2f}, LOSS_R: {:.2f}' \
-                          .format(data_quality_values[0],
-                                  data_quality_values[1],
-                                  data_quality_values[2],
-                                  data_quality_values[3],
-                                  data_quality_values[4],
-                                  data_quality_values[5],
-                                  data_quality_values[6],
-                                  data_quality_values[7]))
+        self.send_message('validation data quality Dev_L: {:.2f}, Dev_R: {:.2f} RMS_L: {:.2f}, \
+RMS_R: {:.2f}, LOSS_L: {:.1f}, LOSS_R: {:.1f}, SD_L: {:.2f}, SD_R: {:.2f}' \
+.format(data_quality_values[0],
+        data_quality_values[1],
+        data_quality_values[2],
+        data_quality_values[3],
+        data_quality_values[4],
+        data_quality_values[5],
+        data_quality_values[6],
+        data_quality_values[7]))
 
 
         self._generate_validation_image(target_pos[:, 2:], gaze_pos[:, :-2])
@@ -1319,8 +1323,9 @@ class myTobii(object):
             deviation_per_sample = []
             angle_between_samples = []
             gaze_vector_old = 0
+            n_samples = len(point_data['system_time_stamp'])
             n_invalid_samples = 0
-            for i in range(len(point_data['system_time_stamp'])):
+            for i in range(n_samples):
                 gaze_vector = (point_data[f"{eye}_gaze_point_in_user_coordinates_x"][i] -
                                point_data[f"{eye}_gaze_origin_in_user_coordinates_x"][i],
                                point_data[f"{eye}_gaze_point_in_user_coordinates_y"][i] -
@@ -1349,7 +1354,7 @@ class myTobii(object):
             deviation_per_point.append(np.rad2deg(np.nanmedian(deviation_per_sample)))
             rms_per_point.append(np.rad2deg(helpers.rms(angle_between_samples)))
             sd_per_point.append(np.rad2deg(helpers.sd(angle_between_samples)))
-            data_loss_point.append(n_invalid_samples / float(i))
+            data_loss_point.append(n_invalid_samples / float(n_samples))
 
         return deviation_per_point, rms_per_point, sd_per_point, data_loss_point
 
@@ -1414,8 +1419,14 @@ class myTobii(object):
             accuracy_values_j = []
             for j, x in enumerate(x_pos):
                 if j > 0:
+
+                    if j >= len(x_pos) - 2:
+                        number_of_decimals = '{0:.0f}'
+                    else:
+                        number_of_decimals = '{0:.2f}'
+
                     accuracy_values_j.append(visual.TextStim(self.win_temp,
-                                                        text='{0:.2f}'.format(self.deviations[i][j - 1]),
+                                                        text=number_of_decimals.format(self.deviations[i][j - 1]),
                                                         wrapWidth = 1,
                                                         height = self.settings.graphics.TEXT_SIZE,
                                                         units='norm',
