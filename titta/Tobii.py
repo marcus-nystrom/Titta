@@ -1802,11 +1802,10 @@ class myTobii(object):
             temp['change_type'] = [t.name for t in temp['change_type']]
 
             pd.DataFrame.from_dict(temp).to_hdf(fname + '.h5', key='external_signal')
-        if self.buffer.has_stream('notification'): # TODO: can notifications be stored like this? Check format. Same with logs. Remove these fields before storing?
+        if self.buffer.has_stream('notification'):
             '''
             your performance may suffer as PyTables will pickle object types that it cannot
             map directly to c-types [inferred_type->mixed,key->block2_values] [items->Index(['notification_type', 'display_area', 'errors_or_warnings'], dtype='object')]
-            [t.name for t in temp['notification_type']]
             '''
             temp = self.buffer.consume_N('notification',sys.maxsize)
 
@@ -1867,12 +1866,12 @@ class myTobii(object):
             for key in list(l[0].keys()):
                 d[key] = [i[key] for i in l]
 
-        # Convert to prevent warning when saving to Hdf5 (see notifications above)
-        d['level'] = [t.name for t in d['level']]
-        d['source'] = [t.name for t in d['source']]
+            # Convert to prevent warning when saving to Hdf5 (see notifications above)
+            d['level'] = [t.name for t in d['level']]
+            d['source'] = [t.name for t in d['source']]
 
-        # Save log file
-        pd.DataFrame.from_dict(d).to_hdf(fname + '.h5', key='log')
+            # Save log file
+            pd.DataFrame.from_dict(d).to_hdf(fname + '.h5', key='log')
 
         print(f'Took {time.time() - t0} s to save the data')
 
