@@ -32,8 +32,9 @@ Then run `read_me.py` from the 'demos' folder (first change the monitor settings
 
 ### To get started with the Tobii Pro Lab integration
 1. Open read_read_me_TalkToProLab.py in PsychoPy.
-1. Download [Tobii Pro Lab](https://www.tobiipro.com/product-listing/tobii-pro-lab/)
+1. Download [Tobii Pro Lab](https://www.tobiipro.com/product-listing/tobii-pro-lab/).
 1. Open a new External Presenter Project in Pro Lab. The Project name must be the same as the project name in read_read_me_TalkToProLab.py.
+1. Navigate to the 'record'-tab in Pro Lab, and make sure that the External presenter button is red and says 'not connected'.
 1. In PsychoPy, run read_read_me_TalkToProLab.py (first change the monitor settings and the eye tracker name).
 
 Tested on Windows 10 using PsychoPy 2022.1.3 using Python 3.8. Ideally, make sure that the eye tracker is detected and works in 
