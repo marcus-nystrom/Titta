@@ -1,3 +1,9 @@
+[![Downloads](https://static.pepy.tech/badge/titta)](https://pepy.tech/project/titta)
+[![Citation Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.3758%2Fs13428-020-01358-8&color=blue)](https://scholar.google.com/citations?view_op=view_citation&citation_for_view=uRUYoVgAAAAJ:J_g5lzvAfSwC)
+[![PyPI Latest Release](https://img.shields.io/pypi/v/titta.svg)](https://pypi.org/project/titta/)
+[![image](https://img.shields.io/pypi/pyversions/titta.svg)](https://pypi.org/project/titta/)
+[![DOI](https://zenodo.org/badge/DOI/10.3758/s13428-020-01358-8.svg)](https://doi.org/10.3758/s13428-020-01358-8)
+
 Titta is a toolbox for using eye trackers from Tobii Pro AB with Python,
 specifically offering integration with [PsychoPy](https://www.psychopy.org/). A Matlab version
 that integrates with PsychToolbox is also available from
