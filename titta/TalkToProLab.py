@@ -323,7 +323,7 @@ class TalkToProLab(threading.Thread):
         '''
 
         # File extension
-        file_ext = media_name.split('.')[1]
+        file_ext = media_name.split('.')[-1]
 
         # Check that media format is supported
         assert(len([i for i in ['bmp','jpeg', 'png','gif','mp4', 'x-msvideo'] \
