@@ -67,6 +67,11 @@ if dummy_mode:
     tracker.set_dummy_mode()
 tracker.init()
 
+
+# Make and outlet
+info = StreamInfo('MyMarkerStream', 'Markers', 1, 0, 'string', tracker.buffer.device_name)
+outlet = StreamOutlet(info)
+
 # Window set-up (this color will be used for calibration)
 win = visual.Window(monitor=mon, fullscr=FULLSCREEN,
                     screen=1, size=SCREEN_RES, units='deg')
@@ -83,11 +88,7 @@ tracker.calibrate(win)
 
 win.flip()
 
-# %% Open an inlet and send calibration results to master
-info = StreamInfo('MyMarkerStream', 'Markers', 1, 0, 'string', tracker.buffer.device_name)
-
-# next make an outlet
-outlet = StreamOutlet(info)
+# %% Send calibration results to master
 
 if len(tracker.deviations) >= 1:
     dev_L, dev_R = tracker.deviations[0][0], tracker.deviations[0][1]
