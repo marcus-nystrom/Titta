@@ -7,6 +7,7 @@ Created on Mon Jan 29 13:23:56 2024
 
 from pylsl import StreamInfo, StreamOutlet, StreamInlet, resolve_stream
 import time
+from pathlib import Path
 
 def wait_for_message(msg):
 
@@ -30,7 +31,13 @@ def wait_for_message(msg):
 
 
 # %% start experiment scripts on the remote computers
+CLIENT_PATH             = Path(r'C:Share\demo_shared_gaze')
+CLIENTS                 = [21,22,24] # Clients to use in search exp
 
+IP_prefix               = '192.168.1.'
+UDP_IP_SEND             =   IP_prefix+'255'
+UDP_IP_LISTEN           = '0.0.0.0'
+UDP_PORT                = 9090
 #time.sleep(5)
 
 # %% Create outlets and inlets
@@ -92,14 +99,14 @@ print('Calibration done!')
 time.sleep(10)
 
 # %% Start experiment
-print("Send message to start experiment")
+input("Press key to start experiment")
 outlet.push_sample(['start_exp'])
 
 # %% Wait to receive information about search times
 print("Wait to receive search times")
 
-out = wait_for_message('TPSP1')
+search_times = wait_for_message('TPSP1')
 
 
 # Print reaction times and winners
-# print(sorted(search_times, key=lambda st: st[1]) )
+print(sorted(search_times, key=lambda st: st[1]) )

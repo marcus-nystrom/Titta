@@ -5,14 +5,25 @@ import numpy as np
 import matplotlib.pyplot as plt
 from titta import Titta, helpers_tobii as helpers
 import h5py
+import numpy as np
 import TittaLSLPy
 from pylsl import StreamInfo, StreamOutlet, StreamInlet, resolve_stream
 
 # from TittaLSLPy import Sender, Receiver
 
-# %%
+# 26 colors from The Colour Alphabet Project suggested by Paul Green-Armytage
+# designed for use with white background:
+dot_col = (240,163,255),(0,117,220),(153,63,0),(76,0,92),(25,25,25),\
+      (0,92,49),(43,206,72),(255,204,153),(128,128,128),(148,255,181),\
+      (143,124,0),(157,204,0),(194,0,136),(0,51,128),(255,164,5),\
+      (255,168,187),(66,102,0),(255,0,16),(94,241,242),(0,153,143),\
+      (224,255,102),(116,10,255),(153,0,0),(255,255,128),(255,255,0),(255,80,5)
 
-def draw_sample(sample):
+# %%
+def get_color(i):
+    return dot_col[np.mod(i, len(dot_col))]
+
+def draw_sample(sample, dot):
 
     # Convert from tobii coordinate system to pixels and draw dot
     temp = np.array([sample['left_gaze_point_on_display_area_x'][0],
@@ -41,8 +52,11 @@ mon.setWidth(SCREEN_WIDTH)          # Width of screen (cm)
 mon.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
 mon.setSizePix(SCREEN_RES)
 
-im_names = ['im1.jpeg']#, 'im2.jpeg', 'im3.jpeg']
-stimulus_duration = 30
+# info about wally
+WALLY_POS = (955, 74) # Pixel position of Walley in image
+IMNAME_WALLY = 'wally_search.png'
+IMNAME_WALLY_FACE = 'wally_face.jpg'
+MAX_SEARCH_TIME = 20
 
 # %%  ET settings
 et_name = 'Tobii Pro Spectrum'
@@ -55,6 +69,8 @@ settings.FILENAME = 'testfile'
 settings.N_CAL_TARGETS = 5
 settings.DEBUG = False
 
+
+
 # Use settings.__dict__ to see all available settings
 
 # Example of how to change the graphics; here, the color of the 'start calibration' button
@@ -65,31 +81,40 @@ settings.DEBUG = False
 tracker = Titta.Connect(settings)
 if dummy_mode:
     tracker.set_dummy_mode()
+
 tracker.init()
+device_name = tracker.buffer.device_name
+address = tracker.buffer.address
 
 # Create a sender
-sender = TittaLSLPy.Sender(tracker.buffer.address)
+sender = TittaLSLPy.Sender(address)
 local_stream_source_id = sender.get_stream_source_id("gaze")
 sender.start('gaze')
 
 # Make and outlet
-info = StreamInfo('MyClientStream', 'ETmsg', 1, 0, 'string', tracker.buffer.device_name)
+info = StreamInfo('MyClientStream', 'ETmsg', 1, 0, 'string', device_name)
 outlet = StreamOutlet(info)
+
 
 # Window set-up (this color will be used for calibration)
 win = visual.Window(monitor=mon, fullscr=FULLSCREEN,
-                    screen=1, size=SCREEN_RES, units='deg')
-text = visual.TextStim(win, height=1)
-dot = visual.Circle(win, radius=30, units='pix', lineColor='red',
-                    fillColor= None, lineWidth=5)
+                    screen=1, size=SCREEN_RES, units='deg', checkTiming=False)
+text = visual.TextStim(win, height=50, units='pix')
+dot = visual.Circle(win, radius=1, lineColor='red',
+                    fillColor= None, lineWidth=0.3)
+dot_local = visual.Circle(win, radius=0.5, lineColor='red',
+                    fillColor= None, lineWidth=0.3)
 fixation_point = helpers.MyDot2(win)
 
-images = []
-for im_name in im_names:
-    images.append(visual.ImageStim(win, image=im_name, units='norm', size=(2, 2)))
+im_search = visual.ImageStim(win, image=IMNAME_WALLY)
+im_face = visual.ImageStim(win, image=IMNAME_WALLY_FACE)
+wally_pos = WALLY_POS
+
+# images = []
+# for im_name in im_names:
+#     images.append(visual.ImageStim(win, image=im_name, units='norm', size=(2, 2)))
 
 tracker.calibrate(win)
-
 win.flip()
 
 # %% Send calibration results to master
@@ -99,7 +124,7 @@ if len(tracker.deviations) >= 1:
 else:
     dev_L, dev_R = np.nan, np.nan
 print("Send calibration results to master")
-outlet.push_sample([f'{tracker.buffer.device_name}, {dev_L:.2f}, {dev_R:.2f}'])
+outlet.push_sample([f'{device_name}, {dev_L:.2f}, {dev_R:.2f}'])
 
 
 # %% Start sending and receiving et data with LSL
@@ -125,21 +150,26 @@ for stream in remote_streams:
 # print(r.get_info()['source_id'])
 # print(r.get_type())
 
-# %% Wait for command to start exp
+# %% Show wally and wait for command to start exp
 
-text.text = 'Wait for command from Master to start exp (or press space)'
+# This is Wally
+im_face.pos = (0, 7)
+im_face.draw()
+
+text.text = 'Press the spacebar as soon as you have found Wally \n\n Please wait for the experiment to start.'
 text.draw()
 win.flip()
 
 # Create inlets
 streams = resolve_stream('type', 'Markers')
+print(len(streams))
 
 # create new inlet to read from the streams (one per stream)
 inlets = []
 for stream in streams:
     inlets.append(StreamInlet(stream))
 
-# print(len(inlets))
+print(len(inlets))
 start_exp = False
 while not start_exp:
     for inlet in inlets:
@@ -157,12 +187,12 @@ while not start_exp:
         start_exp = True
         break
 
-    core.wait(0.001)
+    # core.wait(0.001)
 
-    # text.draw()
-    # win.flip()
+    text.draw()
+    win.flip()
 
-# %% Record some data. Normally only gaze stream is started
+# %% Run the search
 
 # Present fixation dot and wait for one second
 for i in range(monitor_refresh_rate):
@@ -173,44 +203,44 @@ for i in range(monitor_refresh_rate):
 
 tracker.send_message('fix off')
 
-# Wait exactly 3 * fps frames (3 s)
-np.random.shuffle(images)
-for image in images:
+search_time = np.nan
+im_name = im_search.image
+for i in range(int(MAX_SEARCH_TIME * monitor_refresh_rate)):
 
-    search_time = np.nan
-    im_name = image.image
-    for i in range(int(stimulus_duration * monitor_refresh_rate)):
-        image.draw()
+    # Draw wally
+    im_search.draw()
 
-        # Read and draw local sample
-        sample = tracker.buffer.peek_N('gaze', 1)
-        draw_sample(sample)
+    # Read and draw local sample
+    sample = tracker.buffer.peek_N('gaze', 1)
+    draw_sample(sample, dot_local)
 
-        # Get and plot most recent sample from remotes
-        for receiver in receivers:
-            remote_sample = receiver.peek_N(1)
-            draw_sample(remote_sample)
+    # Get and plot most recent sample from remotes
+    for receiver in receivers:
+        remote_sample = receiver.peek_N(1)
 
-        t = win.flip()
+        # Set color of dot based on ip address (last two digits in ip-address)
+        # dot.lineColor = get_color(ip)
+        draw_sample(remote_sample, dot)
 
-        if i == 0:
-            t0 = core.getTime()
-            tracker.send_message(''.join(['onset_', im_name]))
+    t = win.flip()
 
-        # Check for keypress
-        k = event.getKeys()
-        if 'space' in k:
-            search_time = core.getTime() - t0
-            break
+    if i == 0:
+        t0 = core.getTime()
+        tracker.send_message(''.join(['onset_', im_name]))
+
+    # Check for keypress
+    k = event.getKeys()
+    if 'space' in k:
+        search_time = core.getTime() - t0
+        break
 
     tracker.send_message(''.join(['offset_', im_name]))
 
 # %% Sent info about search time to master
 print("Send search time to master")
-outlet.push_sample([f'{tracker.buffer.device_name}, {search_time}'])
+outlet.push_sample([f'{device_name}, {search_time}'])
 
 # %%
-win.flip()
 
 for receiver in receivers:
     receiver.stop()
@@ -220,6 +250,20 @@ sender.stop('gaze')
 # Stop streams (if available). Normally only gaze stream is stopped
 tracker.stop_recording(gaze=True)
 
-# Close window and save data
+# Highlight the correct location of Wally
+im_search.draw()
+text.color = 'blue'
+#text.height = 1.5
+text.pos = wally_pos
+text.text = 'Here is Wally'
+text.draw()
+text.height = 100
+# text.setPos(wally_pos)
+text.text = 'o'
+text.draw()
+win.flip()
+core.wait(5)
+
+# Close window
 win.close()
 
