@@ -69,7 +69,7 @@ tracker.init()
 
 
 # Make and outlet
-info = StreamInfo('MyMarkerStream', 'Markers', 1, 0, 'string', tracker.buffer.device_name)
+info = StreamInfo('MyClientStream', 'ETmsg', 1, 0, 'string', tracker.buffer.device_name)
 outlet = StreamOutlet(info)
 
 # Window set-up (this color will be used for calibration)
@@ -137,7 +137,7 @@ inlets = []
 for stream in streams:
     inlets.append(StreamInlet(stream))
 
-print(len(inlets))
+# print(len(inlets))
 start_exp = False
 while not start_exp:
     for inlet in inlets:
@@ -145,7 +145,7 @@ while not start_exp:
 
         # Sample is None or contains a string
         if sample:
-            if 'start_exp' in sample:
+            if 'start_exp' in sample[0]:
                 start_exp = True
                 break
 
@@ -155,8 +155,10 @@ while not start_exp:
         start_exp = True
         break
 
-    text.draw()
-    win.flip()
+    core.wait(0.001)
+
+    # text.draw()
+    # win.flip()
 
 # %% Record some data. Normally only gaze stream is started
 
