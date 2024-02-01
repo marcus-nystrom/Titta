@@ -42,7 +42,7 @@ mon.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
 mon.setSizePix(SCREEN_RES)
 
 im_names = ['im1.jpeg']#, 'im2.jpeg', 'im3.jpeg']
-stimulus_duration = 3
+stimulus_duration = 30
 
 # %%  ET settings
 et_name = 'Tobii Pro Spectrum'
@@ -67,6 +67,10 @@ if dummy_mode:
     tracker.set_dummy_mode()
 tracker.init()
 
+# Create a sender
+sender = TittaLSLPy.Sender(tracker.buffer.address)
+local_stream_source_id = sender.get_stream_source_id("gaze")
+sender.start('gaze')
 
 # Make and outlet
 info = StreamInfo('MyClientStream', 'ETmsg', 1, 0, 'string', tracker.buffer.device_name)
@@ -101,9 +105,7 @@ outlet.push_sample([f'{tracker.buffer.device_name}, {dev_L:.2f}, {dev_R:.2f}'])
 # %% Start sending and receiving et data with LSL
 tracker.start_recording(gaze=True)
 
-sender = TittaLSLPy.Sender(tracker.buffer.address)
-local_stream_source_id = sender.get_stream_source_id("gaze")
-sender.start('gaze')
+
 #core.wait(3)
 
 remote_streams = TittaLSLPy.Receiver.get_streams("gaze")  # can filter so only streams of specific type are provided

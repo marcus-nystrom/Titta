@@ -23,8 +23,7 @@ def wait_for_message(msg):
                     print(L)
 
         # Break if all calibration are done
-        if len(out) >= len(inlets) - 1:
-            print('Done!')
+        if len(out) >= len(inlets):
             break
 
         time.sleep(0.001)
@@ -84,12 +83,13 @@ inlets = []
 for stream in streams:
     inlets.append(StreamInlet(stream))
 
-print()
+print(f'Number of inlets: {len(inlets)}')
 
 # %% Wait to receive information about calibration results
 print('Waiting to receive calibration results')
-
 out = wait_for_message('TPSP1')
+print('Calibration done!')
+time.sleep(10)
 
 # %% Start experiment
 print("Send message to start experiment")
