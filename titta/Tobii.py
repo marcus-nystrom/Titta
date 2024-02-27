@@ -1845,8 +1845,23 @@ RMS_R: {:.2f}, LOSS_L: {:.1f}, LOSS_R: {:.1f}, SD_L: {:.2f}, SD_R: {:.2f}' \
         df_cal.to_hdf(fname + '.h5', key='calibration_history')
 
         # Save tracker/python version info as json
+        temp = self.system_info()
         with open(fname + '.json', "w") as outfile:
-            json.dump(self.system_info(), outfile)
+            json.dump(temp, outfile)
+
+        # Also save tracker/python version to .h5-file as attributes
+        with h5py.File(fname + '.h5', 'a') as hf:
+            hf.attrs['serial_number'] = temp['serial_number']
+            hf.attrs['address'] = temp['address']
+            hf.attrs['model'] = temp['model']
+            hf.attrs['name'] = temp['name']
+            hf.attrs['firmware_version'] = temp['firmware_version']
+            hf.attrs['runtime_version'] = temp['runtime_version']
+            hf.attrs['sampling_frequency'] = temp['sampling_frequency']
+            hf.attrs['python_version'] = temp['python_version']
+            hf.attrs['psychopy_version'] = temp['psychopy_version']
+            hf.attrs['TittaPy_version'] = temp['TittaPy_version']
+            hf.attrs['titta_version'] = temp['titta_version']
 
         # Save image stream in the same HDF5 container
         temp = self.buffer.consume_N('eye_image')
