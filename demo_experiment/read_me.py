@@ -161,6 +161,9 @@ if not dummy_mode:
         keys = [key for key in f.keys()]
         print(f'HDF5 keys: {keys}')
 
+        for k in f.attrs.keys():
+            print(f"{k} => {f.attrs[k]}")
+
     # Load streams recorded from the eye tracker to pandas data frames
     df_gaze = pd.read_hdf(filename, 'gaze')
     df_msg = pd.read_hdf(filename, 'msg')
