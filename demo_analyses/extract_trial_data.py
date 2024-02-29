@@ -79,20 +79,14 @@ for f in files:
 
     # Create a folder to put the trials
     path = Path.cwd() / 'trials' / pid
-    try:
-        path.mkdir(parents=True, exist_ok=False)
-    except FileExistsError:
-        print("Folder is already there")
-    else:
-        print("Folder was created")
+    path.mkdir(parents=True, exist_ok=True)
 
     # Extract relevant trial data and save in format required by I2MC
     for t in trial_msg:
         df_trial = extract_trial_data(df_gaze, df_msg, t[0], t[1])
-        df_trial.reset_index(inplace=True)
 
         filename = t[0].split('_', 1)[1] + '.tsv'
-        df_trial.to_csv(str(path) + os.sep + filename, sep='\t')
+        df_trial.to_csv(str(path) + os.sep + filename, sep='\t', index=False)
 
         print('Trial ' + filename + " written to folder ", path)
 
