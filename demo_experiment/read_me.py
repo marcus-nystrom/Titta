@@ -195,10 +195,10 @@ if not dummy_mode:
 
         eye_image_metadata = pd.read_hdf(filename, 'eye_metadata')
 
-    # %%
-    # Plot some data from the gaze stream
-    plt.close('all')
-    plt.plot(np.diff(df_gaze['system_time_stamp']))
+    # %% Plot some data
+
+    # plt.close('all')
+    # plt.plot(np.diff(df_gaze['system_time_stamp']))
 
     plt.figure()
     t = (df_gaze['system_time_stamp'] - df_gaze['system_time_stamp'][0]) / 1000
