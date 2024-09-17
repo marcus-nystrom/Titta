@@ -4,7 +4,7 @@
 To run this demo,
 1) open a new External Presenter in Tobii Pro Lab
 2) navigate to the 'record'-tab in Pro Lab
-3) Make sure the External presenter button is red and says 'not connected' 
+3) Make sure the External presenter button is red and says 'not connected'
 4) run this script
 
 Data can after the recording be viewed in Pro Lab under the Analyze tab.
@@ -14,6 +14,7 @@ Data can after the recording be viewed in Pro Lab under the Analyze tab.
 from psychopy import visual, monitors, core
 from titta import Titta, helpers_tobii as helpers
 from titta.TalkToProLab import TalkToProLab
+import random
 
 #%% Monitor/geometry
 MY_MONITOR                  = 'testMonitor' # needs to exists in PsychoPy monitor center
@@ -40,7 +41,7 @@ project_name = None # None or a project name that is open in Pro Lab.
 
 # Change any of the default settings?
 settings = Titta.get_defaults(et_name)
-settings.FILENAME = '10'
+settings.FILENAME = '11'
 
 # Participant ID and Project name for Lab
 pid = settings.FILENAME
@@ -72,18 +73,20 @@ try:
     img = []
     media_info = []
     for im_name in im_names:
-        img.append(visual.ImageStim(win, image = im_name))
+        img.append(visual.ImageStim(win, image = im_name, name=im_name))
 
         # Upload media (if not already uploaded)
         if not ttl.find_media(im_name):
             media_info.append(ttl.upload_media(im_name, "image"))
+            print(f'Uploaded media {im_name}')
 
     # If the media were uploaded already, just get their names and IDs.
     if len(media_info) == 0:
+        print('Media already exist. Get names and IDs')
         uploaded_media = ttl.list_media()['media_list']
         for im_name in im_names:
 
-            # Make sure they are in the same order as the 'im_names'
+            # Store media information in list
             for m in uploaded_media:
                 if im_name[:-5] == m['media_name']:
                     media_info.append(m)
@@ -117,6 +120,9 @@ try:
                         screen_width=1920,
                         screen_height=1080)
 
+    # Randomize image presentation order
+    random.shuffle(img)
+
     # Show images. Note: there cannot be any gaps between stimuli on the timeline
     dur = 3
     for i, im in enumerate(img):
@@ -135,19 +141,24 @@ try:
         timestamp = ttl.get_time_stamp()
         t_offset = int(timestamp['timestamp'])
 
+        # Get media id for this image
+        for m in media_info:
+            if im.name[:-5] == m['media_name']:
+                media_id = m['media_id']
+                break
 
         if i == len(img) - 1:
 
             # Send a message indicating what stimulus is shown
             ttl.send_stimulus_event(rec['recording_id'],
                                     str(t_onset),
-                                    media_info[i]['media_id'],
+                                    media_id,
                                     end_timestamp = str(t_offset))
         else:
             # Send a message indicating what stimulus is shown
             ttl.send_stimulus_event(rec['recording_id'],
                                     str(t_onset),
-                                    media_info[i]['media_id'])
+                                    media_id)
 
 except Exception as e:
     print(e)
