@@ -10,6 +10,7 @@ ToDo: upload information in chunks of 64 KB
 from websocket import create_connection
 import json
 import os
+import re
 import time
 import numpy as np
 import threading
@@ -718,7 +719,7 @@ class TalkToProLab(threading.Thread):
 
         assert response['status_code'] == 0, response
     #%%
-    def send_custom_event(self):
+    def send_custom_event(self, recording_id, timestamp, event_type, value):
         ''' External presenter API
         request:
         {"operation": "SendCustomEvent",
@@ -727,10 +728,26 @@ class TalkToProLab(threading.Thread):
         "event_type": "ERROR_SEM_OWNER_DIED",
         "value": "105 (0x69)"}
 
+
         response:
         {"operation": "SendCustomEvent",
         "status_code": 0}
         '''
+
+        # Remove newlines/linefeeds and tabs
+        value = re.sub('[\n\r]', '||', value)
+        value =re.sub('\t','    ', value)
+
+        request =  {"operation": "SendCustomEvent",
+            "recording_id": recording_id,
+            "timestamp": timestamp,
+            "event_type":event_type,
+            "value": value}
+
+        response = self.send_message(self.external_presenter_address,
+                                     request)
+
+        assert response['status_code'] == 0, response
     #%%
     def finalize_recording(self, recording_id):
         ''' Finalizes the recording and makes it ready for analysis in the
