@@ -3,14 +3,13 @@
 Created on Mon Sep  5 11:06:43 2022
 
 @author: Marcus
+@contributer: Bob
 """
 
 import pandas as pd
 from pathlib import Path
-import matplotlib.pyplot as plt
 import os
 import cv2
-from psychopy import visual, core
 import time
 start = time.time()
 
@@ -41,59 +40,41 @@ def make_scanpath(image_name, fixations, imres, scale_with_duration=True):
         None.
 
     '''
-    dot = visual.Circle(win, radius=50, lineColor='red', fillColor='red',
-                        opacity=0.5)
-    line = visual.Line(win, start=(-0.5, -0.5), end=(0.5, 0.5),
-                        lineWidth=3, lineColor='red', opacity=0.5)
+    alpha = 0.5
+    dot_radius = 50
+    thickness = 2
 
-    im = visual.ImageStim(win, image=str(image_name), size=(imres[0], imres[1]))
-    im.draw()
-
+    im_rgb = cv2.imread(image_name)
+    image = im_rgb.copy()
     start_pos_old = (None, None)
     for i, row in fixations.iterrows():
-        dot.pos = (row.xpos - imres[0]/2, imres[1]/2 - row.ypos)
 
-
+        dot_pos = (int(row.xpos), int(row.ypos))
 
         if i == 0:
-            dot.fillColor = 'green'
-            dot.lineColor = 'green'
+            dotColor = (0, 255, 0)
         elif i == len(fixations)-1:
-            dot.fillColor = 'red'
-            dot.lineColor = 'red'
-            line.lineColor = 'red'
-
+            dotColor = (0, 0, 255)
+            lineColor = (0, 0, 255)
         else:
-            dot.fillColor = 'blue'
-            dot.lineColor = 'blue'
-            line.lineColor = 'blue'
+            dotColor = (255, 0, 0)
+            lineColor = (255, 0, 0)
 
-
-        line.end = dot.pos
+        line_end = dot_pos
 
         if i > 0:
             if i < 2:
-                line.lineColor = 'green'
+                lineColor = (0, 0, 255)
 
-            line.start = start_pos_old
-            line.draw()
-
-        dot.opacity=0.5
-
+            line_start = start_pos_old
+            image = add_transparancy_cv2(cv2.line(image.copy(), line_start, line_end, lineColor, thickness), image, alpha)
 
         if scale_with_duration:
-            dot.radius = row.dur/10
+            dot_radius = int(row.dur/10)
 
-        dot.draw()
-            # print(row.xpos, row.ypos, dot.radius)
+        image = add_transparancy_cv2(cv2.circle(image.copy(), (dot_pos[0], dot_pos[1]), dot_radius, dotColor, -1), image, alpha)
 
-        start_pos_old = line.end
-
-
-    win.flip()
-    core.wait(1)
-
-    win.getMovieFrame()
+        start_pos_old = line_end
 
     # Make a new dir to save plots if it does not already exists
     path = Path.cwd() / 'scanpaths' / str(fixations.participant[0])
@@ -101,8 +82,7 @@ def make_scanpath(image_name, fixations, imres, scale_with_duration=True):
 
     # Save the results
     fname =  path / ('scanpath_' + str(image_name).split(os.sep)[-1])
-    win.saveMovieFrames(fname)
-
+    cv2.imwrite(str(fname), image)
 
 # %%
 
@@ -113,8 +93,6 @@ df_fixations = pd.read_csv(Path.cwd() / 'output' / 'allfixations.txt', sep='\t')
 
 # Read the images into a psychopy object
 image_names = list((Path.cwd() / 'stimuli').rglob('*.jpeg'))
-
-win = visual.Window(fullscr=True, screen=1, units='pix', size=imres)
 
 img = []
 participants = df_fixations.participant.unique()
@@ -128,8 +106,7 @@ for participant in list(participants):
             print(f"Warning: no data exist for {participant} and {str(image_name).split(os.sep)[-1]}")
             continue
 
-        make_scanpath(image_name, df_temp, imres)
+        make_scanpath(str(image_name), df_temp, imres)
 
 
-win.close()
 print('\n\nPlotting scanpaths took {}s to finish!'.format(time.time()-start))
