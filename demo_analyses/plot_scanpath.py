@@ -9,10 +9,21 @@ import pandas as pd
 from pathlib import Path
 import matplotlib.pyplot as plt
 import os
+import cv2
 from psychopy import visual, core
 import time
 start = time.time()
 
+
+# %%
+
+def add_transparancy_cv2(cv2_func, image, alpha):
+    ## image used in func must be a copy of image! The image from image can be original, original is fastest
+    if alpha == 1:
+        image_new = cv2_func
+    else:
+        image_new = cv2.addWeighted(cv2_func, alpha, image, 1 - alpha, 0)
+    return image_new
 
 # %%
 
