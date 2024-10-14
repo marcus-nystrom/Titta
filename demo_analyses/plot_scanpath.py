@@ -16,12 +16,12 @@ start = time.time()
 
 # %%
 
-def add_transparancy_cv2(cv2_func, image, alpha):
+def add_transparency_cv2(overlay, image, alpha):
     ## image used in func must be a copy of image! The image from image can be original, original is fastest
     if alpha == 1:
-        image_new = cv2_func
+        image_new = overlay
     else:
-        image_new = cv2.addWeighted(cv2_func, alpha, image, 1 - alpha, 0)
+        image_new = cv2.addWeighted(overlay, alpha, image, 1 - alpha, 0)
     return image_new
 
 # %%
@@ -67,12 +67,12 @@ def make_scanpath(image_name, fixations, imres, scale_with_duration=True):
                 lineColor = (0, 0, 255)
 
             line_start = start_pos_old
-            image = add_transparancy_cv2(cv2.line(image.copy(), line_start, line_end, lineColor, thickness), image, alpha)
+            image = add_transparency_cv2(cv2.line(image.copy(), line_start, line_end, lineColor, thickness), image, alpha)
 
         if scale_with_duration:
             dot_radius = int(row.dur/10)
 
-        image = add_transparancy_cv2(cv2.circle(image.copy(), (dot_pos[0], dot_pos[1]), dot_radius, dotColor, -1), image, alpha)
+        image = add_transparency_cv2(cv2.circle(image.copy(), (dot_pos[0], dot_pos[1]), dot_radius, dotColor, -1), image, alpha)
 
         start_pos_old = line_end
 
