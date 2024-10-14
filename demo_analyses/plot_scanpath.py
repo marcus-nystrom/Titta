@@ -10,6 +10,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import os
 from psychopy import visual, core
+import time
+start = time.time()
 
 
 # %%
@@ -119,3 +121,4 @@ for participant in list(participants):
 
 
 win.close()
+print('\n\nPlotting scanpaths took {}s to finish!'.format(time.time()-start))
