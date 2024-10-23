@@ -29,7 +29,8 @@ def draw_sample(sample, dot):
     temp = np.array([sample['left_gaze_point_on_display_area_x'][0],
                      sample['left_gaze_point_on_display_area_y'][0]])
 
-    xy = helpers.tobii2pix(np.expand_dims(temp, axis=0), win)
+    xy = helpers.tobii2deg(np.expand_dims(temp, axis=0), win.monitor)
+    print(xy)
 
 
     dot.pos = (xy[0][0],
@@ -53,7 +54,7 @@ mon.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
 mon.setSizePix(SCREEN_RES)
 
 # info about wally
-WALLY_POS = (955, 74) # Pixel position of Walley in image
+WALLY_POS = (74, 955) # Pixel position of Walley in image
 IMNAME_WALLY = 'wally_search.png'
 IMNAME_WALLY_FACE = 'wally_face.jpg'
 MAX_SEARCH_TIME = 20
@@ -96,7 +97,7 @@ info = StreamInfo('MyClientStream', 'ETmsg', 1, 0, 'string', device_name)
 outlet = StreamOutlet(info)
 
 
-# Window set-up (this color will be used for calibration)
+# Window set-up
 win = visual.Window(monitor=mon, fullscr=FULLSCREEN,
                     screen=1, size=SCREEN_RES, units='deg', checkTiming=False)
 text = visual.TextStim(win, height=50, units='pix')
@@ -108,7 +109,6 @@ fixation_point = helpers.MyDot2(win)
 
 im_search = visual.ImageStim(win, image=IMNAME_WALLY)
 im_face = visual.ImageStim(win, image=IMNAME_WALLY_FACE)
-wally_pos = WALLY_POS
 
 # images = []
 # for im_name in im_names:
@@ -160,16 +160,16 @@ text.text = 'Press the spacebar as soon as you have found Wally \n\n Please wait
 text.draw()
 win.flip()
 
-# Create inlets
+core.wait(3)
+
+# Create inlets for all opened outlets with name 'Markers'
 streams = resolve_stream('type', 'Markers')
-print(len(streams))
 
 # create new inlet to read from the streams (one per stream)
 inlets = []
 for stream in streams:
     inlets.append(StreamInlet(stream))
 
-print(len(inlets))
 start_exp = False
 while not start_exp:
     for inlet in inlets:
@@ -187,10 +187,10 @@ while not start_exp:
         start_exp = True
         break
 
-    # core.wait(0.001)
+    core.wait(0.001)
 
-    text.draw()
-    win.flip()
+    # text.draw()
+    # win.flip()
 
 # %% Run the search
 
@@ -214,7 +214,7 @@ for i in range(int(MAX_SEARCH_TIME * monitor_refresh_rate)):
     sample = tracker.buffer.peek_N('gaze', 1)
     draw_sample(sample, dot_local)
 
-    # Get and plot most recent sample from remotes
+    # Get and draw most recent sample from remotes
     for receiver in receivers:
         remote_sample = receiver.peek_N(1)
 
@@ -236,8 +236,11 @@ for i in range(int(MAX_SEARCH_TIME * monitor_refresh_rate)):
 
     tracker.send_message(''.join(['offset_', im_name]))
 
+win.flip()
+
 # %% Sent info about search time to master
 print("Send search time to master")
+print(f'{device_name}, {search_time}')
 outlet.push_sample([f'{device_name}, {search_time}'])
 
 # %%
@@ -254,7 +257,7 @@ tracker.stop_recording(gaze=True)
 im_search.draw()
 text.color = 'blue'
 #text.height = 1.5
-text.pos = wally_pos
+text.pos = WALLY_POS
 text.text = 'Here is Wally'
 text.draw()
 text.height = 100
