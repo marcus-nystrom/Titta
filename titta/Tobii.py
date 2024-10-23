@@ -319,7 +319,8 @@ class myTobii(object):
                                 eye_image=False,
                                 notifications=False,
                                 external_signal=False,
-                                positioning=False):
+                                positioning=False,
+                                block_until_data_available=False):
         ''' Starts recording streams
         See bug re. positioning stream (ordering of starting and stopping streams)
         https://github.com/dcnieho/Titta/blob/master/tests/positioningStreamBug.m
@@ -337,6 +338,37 @@ class myTobii(object):
             self.buffer.start('external_signal')
         if positioning and self.buffer.has_stream('positioning'):
             self.buffer.start('positioning')
+
+        '''
+        # Block until new data are available. This happens either when
+        the most recent timestamp go from en empty list to a value, e.g.,
+            1) [], [], [], [],... ->   1230333548588
+
+            or to a new value, e.g.,
+
+            # 1230333548588, 1230333548588, 1230333548588...-> 1230333715267
+        '''
+        if block_until_data_available:
+            sample = self.tracker.buffer.peek_N('gaze', 1)
+            ts = sample['system_time_stamp']
+            if len(ts) > 0:
+                ts_available = True
+                ts_old = ts
+            else:
+                ts_available = False
+
+            while True:
+                sample = self.tracker.buffer.peek_N('gaze', 1)
+                ts = sample['system_time_stamp']
+
+                if ts_available:
+                    if ts > ts_old:
+                        break
+                    else:
+                        ts_old = ts
+                else:
+                    if len(ts) > 0:
+                        break
 
 
     #%%
