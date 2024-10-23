@@ -68,7 +68,11 @@ win = visual.Window(monitor=mon, fullscr=FULLSCREEN,
                     screen=1, size=SCREEN_RES, units='deg')
 if dual_screen_setup:
     win_op = visual.Window(monitor = mon_op, fullscr = FULLSCREEN_OP,
-                    screen=0, size=SCREEN_RES_OP, units = 'norm')
+                    screen=0, size=SCREEN_RES_OP, units = 'norm', waitBlanking=False)
+    '''
+    Note that waitBlanking is set to False, because the screens are flipped serially and the screens are not exactly in sync.
+    Setting waitBlanking to True can make drawing on the operator screen slow and choppy.
+    '''
 
 fixation_point = helpers.MyDot2(win)
 
