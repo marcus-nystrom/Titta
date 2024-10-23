@@ -49,7 +49,7 @@ def make_scanpath(image_name, fixations, imres, scale_with_duration=True):
     start_pos_old = (None, None)
     for i, row in fixations.iterrows():
 
-        dot_pos = (int(row.xpos), int(row.ypos))
+        dot_pos = (round(row.xpos), round(row.ypos))
 
         if i == 0:
             dotColor = (0, 255, 0)
@@ -70,7 +70,7 @@ def make_scanpath(image_name, fixations, imres, scale_with_duration=True):
             image = add_transparency_cv2(cv2.line(image.copy(), line_start, line_end, lineColor, thickness), image, alpha)
 
         if scale_with_duration:
-            dot_radius = int(row.dur/10)
+            dot_radius = round(row.dur/10)
 
         image = add_transparency_cv2(cv2.circle(image.copy(), (dot_pos[0], dot_pos[1]), dot_radius, dotColor, -1), image, alpha)
 
