@@ -54,7 +54,7 @@ mon.setDistance(VIEWING_DIST)       # Distance eye / monitor (cm)
 mon.setSizePix(SCREEN_RES)
 
 # info about wally
-WALLY_POS = (74, 955) # Pixel position of Walley in image
+WALLY_POS = (1920/2-955, 1080/2-74) # Pixel position of Walley in image
 IMNAME_WALLY = 'wally_search.png'
 IMNAME_WALLY_FACE = 'wally_face.jpg'
 MAX_SEARCH_TIME = 20
@@ -101,10 +101,14 @@ outlet = StreamOutlet(info)
 win = visual.Window(monitor=mon, fullscr=FULLSCREEN,
                     screen=1, size=SCREEN_RES, units='deg', checkTiming=False)
 text = visual.TextStim(win, height=50, units='pix')
-dot = visual.Circle(win, radius=1, lineColor='red',
-                    fillColor= None, lineWidth=0.3)
-dot_local = visual.Circle(win, radius=0.5, lineColor='red',
-                    fillColor= None, lineWidth=0.3)
+dot_wally = visual.Circle(win, radius=60, lineColor='green',
+                    fillColor= None, lineWidth=10, units='pix',
+                    pos = WALLY_POS)
+
+dot = visual.Circle(win, radius=2, lineColor='red',
+                    fillColor= None, lineWidth=5)
+dot_local = visual.Circle(win, radius=1, lineColor='red',
+                    fillColor= None, lineWidth=5)
 fixation_point = helpers.MyDot2(win)
 
 im_search = visual.ImageStim(win, image=IMNAME_WALLY)
@@ -255,15 +259,15 @@ tracker.stop_recording(gaze=True)
 
 # Highlight the correct location of Wally
 im_search.draw()
-text.color = 'blue'
-#text.height = 1.5
-text.pos = WALLY_POS
+text.color = 'green'
+text.pos = (WALLY_POS[0], WALLY_POS[1] - 70)
 text.text = 'Here is Wally'
 text.draw()
-text.height = 100
+dot_wally.draw()
+#text.height = 100
 # text.setPos(wally_pos)
-text.text = 'o'
-text.draw()
+#text.text = 'o'
+#text.draw()
 win.flip()
 core.wait(5)
 
