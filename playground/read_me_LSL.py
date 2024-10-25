@@ -8,6 +8,11 @@ import h5py
 import numpy as np
 import TittaLSLPy
 from pylsl import StreamInfo, StreamOutlet, StreamInlet, resolve_stream
+import os
+
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+os.chdir(dname)
 
 # from TittaLSLPy import Sender, Receiver
 
@@ -30,7 +35,7 @@ def draw_sample(sample, dot):
                      sample['left_gaze_point_on_display_area_y'][0]])
 
     xy = helpers.tobii2deg(np.expand_dims(temp, axis=0), win.monitor)
-    print(xy)
+    #print(xy)
 
 
     dot.pos = (xy[0][0],
@@ -95,6 +100,10 @@ sender.start('gaze')
 # Make and outlet
 info = StreamInfo('MyClientStream', 'ETmsg', 1, 0, 'string', device_name)
 outlet = StreamOutlet(info)
+
+# Get hostname of computer
+hostname = info.hostname() # Name of computer (e.g., STATION15)
+hostname_id = int(hostname[7:])
 
 
 # Window set-up
@@ -222,8 +231,8 @@ for i in range(int(MAX_SEARCH_TIME * monitor_refresh_rate)):
     for receiver in receivers:
         remote_sample = receiver.peek_N(1)
 
-        # Set color of dot based on ip address (last two digits in ip-address)
-        # dot.lineColor = get_color(ip)
+        # Set color of dot based on station number
+        dot.lineColor = get_color(hostname_id)
         draw_sample(remote_sample, dot)
 
     t = win.flip()
