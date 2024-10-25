@@ -16,12 +16,14 @@ def wait_for_message(msg):
     out = []
     while True:
         for inlet in inlets:
-            sample, timestamp = inlet.pull_sample(timeout=0.0)
+            sample, timestamp = inlet[0].pull_sample(timeout=0.0)
 
             # Sample is None or contains a string
             if sample:
                 if msg in sample[0]:
                     L = sample[0].split(',')
+                    # Add hostname to output
+                    L.append(inlet[1])
                     out.append(L)
                     print(L)
 
@@ -33,7 +35,6 @@ def wait_for_message(msg):
 
     return out
 # %% Create outlets and inlets
-n_clients = 1
 info = StreamInfo('MyMaster', 'Markers', 1, 0, 'string', 'myid')
 
 # next make an outlet
@@ -44,20 +45,23 @@ outlet = StreamOutlet(info)
 
 # Resolve all streams on the network (created by StreamOutlet)
 # Client streams have been assigned the type ETmsg
-
 streams = []
-while len(streams) < n_clients:
+while True:
     streams = resolve_stream('type', 'ETmsg')
-    print(f'{len(streams)} clients connected')
-
+    s = input(f'{len(streams)} clients connected. Press enter to start OR k to keep looking for clients): ')
+    if len(s) == 0:
+        break
+        
+ 
 # create new inlet to read from the streams (one per stream)
 # The number of streams correspond to the number or created outlets on the netrowk
 # Exclude the local stream just include since it has type 'Markers'
 inlets = []
 for stream in streams:
-    inlets.append(StreamInlet(stream))
+    inlets.append([StreamInlet(stream), stream.hostname()])
+    # inlets.append(StreamInlet(stream))
 
-print(f'Number of inlets: {len(inlets)}')
+#print(f'Number of inlets: {len(inlets)}')
 
 # %% Wait to receive information about calibration results
 print('Waiting to receive calibration results')
@@ -73,7 +77,7 @@ outlet.push_sample(['start_exp'])
 print("Wait to receive search times")
 
 search_times = wait_for_message('TPSP1')
-print(f'Search times (received at master) {search_times}')
+#print(f'Search times (received at master) {search_times}')
 
 
 # Print reaction times and winners
