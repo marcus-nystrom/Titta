@@ -95,6 +95,10 @@ else:
         tracker.calibrate(win)
 
 # %% Record some data. Normally only gaze stream is started
+# Note that the recording is not actually started until about 150 ms after
+# start_recording() is called. This delay is internal to the Tobii SDK.
+# If you do not want start_recording() to return until data become available, set the argument
+# block_until_data_available=True (default is False)
 tracker.start_recording(gaze=True,
                         time_sync=True,
                         eye_image=False,
