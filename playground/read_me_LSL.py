@@ -9,6 +9,7 @@ import numpy as np
 import TittaLSLPy
 from pylsl import StreamInfo, StreamOutlet, StreamInlet, resolve_stream
 import os
+import socket
 
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
@@ -102,8 +103,8 @@ info = StreamInfo('MyClientStream', 'ETmsg', 1, 0, 'string', device_name)
 outlet = StreamOutlet(info)
 
 # Get hostname of computer
-hostname = info.hostname() # Name of computer (e.g., STATION15)
-hostname_id = int(hostname[7:])
+hostname = socket.gethostname() # Name of computer (e.g., STATION15)
+hostname_id = int(''.join([n for n in hostname if n.isdigit()]))
 
 
 # Window set-up
