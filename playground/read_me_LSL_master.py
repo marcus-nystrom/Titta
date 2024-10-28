@@ -11,19 +11,20 @@ from pylsl import StreamInfo, StreamOutlet, StreamInlet, resolve_stream
 import time
 from pathlib import Path
 
+# %%
 def wait_for_message(msg):
 
     out = []
     while True:
         for inlet in inlets:
-            sample, timestamp = inlet[0].pull_sample(timeout=0.0)
+            sample, timestamp = inlet.pull_sample(timeout=0.0)
 
             # Sample is None or contains a string
             if sample:
                 if msg in sample[0]:
                     L = sample[0].split(',')
                     # Add hostname to output
-                    L.append(inlet[1])
+                    # L.append(inlet[1])
                     out.append(L)
                     print(L)
 
@@ -34,6 +35,7 @@ def wait_for_message(msg):
         time.sleep(0.001)
 
     return out
+
 # %% Create outlets and inlets
 info = StreamInfo('MyMaster', 'Markers', 1, 0, 'string', 'myid')
 
@@ -48,26 +50,30 @@ outlet = StreamOutlet(info)
 streams = []
 while True:
     streams = resolve_stream('type', 'ETmsg')
-    s = input(f'{len(streams)} clients connected. Press enter to start OR k to keep looking for clients): ')
+    s = input(f'{len(streams)} clients connected. (Press enter to start OR k to keep looking for clients): ')
     if len(s) == 0:
         break
-        
- 
+
+
 # create new inlet to read from the streams (one per stream)
 # The number of streams correspond to the number or created outlets on the netrowk
 # Exclude the local stream just include since it has type 'Markers'
 inlets = []
 for stream in streams:
-    inlets.append([StreamInlet(stream), stream.hostname()])
-    # inlets.append(StreamInlet(stream))
+    # inlets.append([StreamInlet(stream), stream.hostname()])
+    inlets.append(StreamInlet(stream))
 
 #print(f'Number of inlets: {len(inlets)}')
+
+# %% Send message to start calibration
+input("Press key to start calibration")
+outlet.push_sample(['start_calibration'])
 
 # %% Wait to receive information about calibration results
 print('Waiting to receive calibration results')
 out = wait_for_message('TPSP1')
 print('Calibration done!')
-time.sleep(5)
+time.sleep(2)
 
 # %% Start experiment
 input("Press key to start experiment")

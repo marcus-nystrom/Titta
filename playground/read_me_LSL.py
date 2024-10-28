@@ -11,11 +11,10 @@ from pylsl import StreamInfo, StreamOutlet, StreamInlet, resolve_stream
 import os
 import socket
 
+# Set path to location where scrip-file is
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 os.chdir(dname)
-
-# from TittaLSLPy import Sender, Receiver
 
 # 26 colors from The Colour Alphabet Project suggested by Paul Green-Armytage
 # designed for use with white background:
@@ -27,16 +26,32 @@ dot_col = (240,163,255),(0,117,220),(153,63,0),(76,0,92),(25,25,25),\
 
 # %%
 def get_color(i):
+    '''
+    Args:
+        i (int)
+
+    Returns:
+        tuple: triplet with RGB color
+
+    '''
     return dot_col[np.mod(i, len(dot_col))]
 
+#%%
 def draw_sample(sample, dot):
+    '''
+    Args:
+        sample (dictionary of numpy arrays): Contains eye tracking data
+        dot (psychopy object)
+
+    Returns:
+        None.
+
+    '''
 
     # Convert from tobii coordinate system to pixels and draw dot
     temp = np.array([sample['left_gaze_point_on_display_area_x'][0],
                      sample['left_gaze_point_on_display_area_y'][0]])
-
     xy = helpers.tobii2deg(np.expand_dims(temp, axis=0), win.monitor)
-    #print(xy)
 
 
     dot.pos = (xy[0][0],
@@ -44,8 +59,26 @@ def draw_sample(sample, dot):
     dot.draw()
 
 # %%
-dummy_mode = False
+def wait_for_message(msg):
+    '''
+    Args:
+        msg (str): message to wait for
 
+    Returns:
+        None.
+
+    '''
+    # Wait for command from the master to start
+    while True:
+        for inlet in inlets:
+            sample, timestamp = inlet.pull_sample(timeout=0.0)
+
+            # Sample is None or contains a string
+            if sample:
+                if msg in sample[0]:
+                    break
+
+        core.wait(0.001)
 # %%  Monitor/geometry
 MY_MONITOR = 'testMonitor'  # needs to exists in PsychoPy monitor center
 FULLSCREEN = True
@@ -69,20 +102,13 @@ MAX_SEARCH_TIME = 20
 et_name = 'Tobii Pro Spectrum'
 # et_name = 'IS4_Large_Peripheral'
 # et_name = 'Tobii Pro Nano'
+dummy_mode = False # Run without eye tracker
+draw_own_gaze = True # Draw gaze marker for own client
 
 # Change any of the default dettings?e
 settings = Titta.get_defaults(et_name)
 settings.FILENAME = 'testfile'
 settings.N_CAL_TARGETS = 5
-settings.DEBUG = False
-
-
-
-# Use settings.__dict__ to see all available settings
-
-# Example of how to change the graphics; here, the color of the 'start calibration' button
-# settings.graphics.COLOR_CAL_BUTTON = 'green'
-# settings.graphics.TEXT_COLOR = 'green'
 
 # %% Connect to eye tracker and calibrate
 tracker = Titta.Connect(settings)
@@ -93,19 +119,18 @@ tracker.init()
 device_name = tracker.buffer.device_name
 address = tracker.buffer.address
 
-# Create a sender
+# Create a TittaLSLPy sender that subscribes to the gaze data stream
 sender = TittaLSLPy.Sender(address)
 local_stream_source_id = sender.get_stream_source_id("gaze")
 sender.start('gaze')
-
-# Make and outlet
-info = StreamInfo('MyClientStream', 'ETmsg', 1, 0, 'string', device_name)
-outlet = StreamOutlet(info)
 
 # Get hostname of computer
 hostname = socket.gethostname() # Name of computer (e.g., STATION15)
 hostname_id = int(''.join([n for n in hostname if n.isdigit()]))
 
+# Make an LSL outlet to send messages
+info = StreamInfo('MyClientStream', 'ETmsg', 1, 0, 'string', device_name)
+outlet = StreamOutlet(info)
 
 # Window set-up
 win = visual.Window(monitor=mon, fullscr=FULLSCREEN,
@@ -124,31 +149,33 @@ fixation_point = helpers.MyDot2(win)
 im_search = visual.ImageStim(win, image=IMNAME_WALLY)
 im_face = visual.ImageStim(win, image=IMNAME_WALLY_FACE)
 
-# images = []
-# for im_name in im_names:
-#     images.append(visual.ImageStim(win, image=im_name, units='norm', size=(2, 2)))
+text.text = 'Please wait.'
+text.draw()
+win.flip()
+wait_for_message('start_calibration')
 
+# Calibrate the eye tracker
 tracker.calibrate(win)
+text.text = 'Please wait.'
+text.draw()
 win.flip()
 
 # %% Send calibration results to master
-
 if len(tracker.deviations) >= 1:
     dev_L, dev_R = tracker.deviations[0][0], tracker.deviations[0][1]
 else:
     dev_L, dev_R = np.nan, np.nan
-print("Send calibration results to master")
-outlet.push_sample([f'{device_name}, {dev_L:.2f}, {dev_R:.2f}'])
-
+outlet.push_sample([f'{hostname}, {dev_L:.2f}, {dev_R:.2f}'])
+print("Sent calibration results to master")
 
 # %% Start sending and receiving et data with LSL
+wait_for_message('start_exp')
+
+# Start the eye tracker
 tracker.start_recording(gaze=True)
 
-
-#core.wait(3)
-
+# Start receiving et data with LSL (find started remote streams)
 remote_streams = TittaLSLPy.Receiver.get_streams("gaze")  # can filter so only streams of specific type are provided
-
 receivers = []
 for stream in remote_streams:
 
@@ -158,11 +185,7 @@ for stream in remote_streams:
 
     r = TittaLSLPy.Receiver(stream["source_id"])
     r.start()
-    receivers.append(r)
-
-
-# print(r.get_info()['source_id'])
-# print(r.get_type())
+    receivers.append([r, stream['hostname']])
 
 # %% Show wally and wait for command to start exp
 
@@ -176,7 +199,9 @@ win.flip()
 
 core.wait(3)
 
-# Create inlets for all opened outlets with name 'Markers'
+# Create inlets for all opened LSL outlets with name 'Markers',
+# i.e., the one created by the master. This way, messages sent by the
+# master can be received by the clients
 streams = resolve_stream('type', 'Markers')
 
 # create new inlet to read from the streams (one per stream)
@@ -184,27 +209,6 @@ inlets = []
 for stream in streams:
     inlets.append(StreamInlet(stream))
 
-start_exp = False
-while not start_exp:
-    for inlet in inlets:
-        sample, timestamp = inlet.pull_sample(timeout=0.0)
-
-        # Sample is None or contains a string
-        if sample:
-            if 'start_exp' in sample[0]:
-                start_exp = True
-                break
-
-    k = event.getKeys()
-    # print(k)
-    if 'space' in k:
-        start_exp = True
-        break
-
-    core.wait(0.001)
-
-    # text.draw()
-    # win.flip()
 
 # %% Run the search
 
@@ -217,7 +221,8 @@ for i in range(monitor_refresh_rate):
 
 tracker.send_message('fix off')
 
-search_time = np.nan
+# Search until keypress or timeout
+search_time = MAX_SEARCH_TIME
 im_name = im_search.image
 for i in range(int(MAX_SEARCH_TIME * monitor_refresh_rate)):
 
@@ -225,16 +230,25 @@ for i in range(int(MAX_SEARCH_TIME * monitor_refresh_rate)):
     im_search.draw()
 
     # Read and draw local sample
-    sample = tracker.buffer.peek_N('gaze', 1)
-    draw_sample(sample, dot_local)
+    if draw_own_gaze:
+        sample = tracker.buffer.peek_N('gaze', 1)
+        draw_sample(sample, dot_local)
 
-    # Get and draw most recent sample from remotes
+    # Get and draw most recent sample from other clients
     for receiver in receivers:
-        remote_sample = receiver.peek_N(1)
+        remote_sample = receiver[0].peek_N(1)
+        hostname_remote = receiver[1]
 
         # Set color of dot based on station number
         dot.lineColor = get_color(hostname_id)
         draw_sample(remote_sample, dot)
+
+        # Save sample as message
+        x = sample['left_gaze_point_on_display_area_x'][0]
+        y = sample['left_gaze_point_on_display_area_y'][0]
+        t_remote = sample['remote_system_time_stamp'][0]
+        t_local = sample['local_system_time_stamp'][0]
+        tracker.send_message(f'remotesample_{hostname_remote}_{t_remote}_{t_local}_{x}_{y}')
 
     t = win.flip()
 
@@ -248,19 +262,18 @@ for i in range(int(MAX_SEARCH_TIME * monitor_refresh_rate)):
         search_time = core.getTime() - t0
         break
 
-    tracker.send_message(''.join(['offset_', im_name]))
+tracker.send_message(''.join(['offset_', im_name, '_', str(search_time)]))
 
 win.flip()
 
 # %% Sent info about search time to master
-print("Send search time to master")
-print(f'{device_name}, {search_time}')
-outlet.push_sample([f'{device_name}, {search_time}'])
+outlet.push_sample([f'{device_name}, {search_time}, {hostname}'])
+print("Sent search times to master")
 
-# %%
+# %% Show the position of wally and clean up a bit
 
 for receiver in receivers:
-    receiver.stop()
+    receiver[0].stop()
 
 sender.stop('gaze')
 
@@ -274,10 +287,7 @@ text.pos = (WALLY_POS[0], WALLY_POS[1] - 70)
 text.text = 'Here is Wally'
 text.draw()
 dot_wally.draw()
-#text.height = 100
-# text.setPos(wally_pos)
-#text.text = 'o'
-#text.draw()
+
 win.flip()
 core.wait(5)
 
