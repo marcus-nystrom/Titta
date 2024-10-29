@@ -69,16 +69,24 @@ def wait_for_message(msg):
 
     '''
     # Wait for command from the master to start
-    while True:
+    message_received = False
+    while not message_received:
         for inlet in inlets:
             sample, timestamp = inlet.pull_sample(timeout=0.0)
 
             # Sample is None or contains a string
             if sample:
                 if msg in sample[0]:
+                    message_received = True
                     break
 
+        k = event.getKeys()
+        if k:
+            if 'space' in k:
+                break
+                
         core.wait(0.001)
+        
 # %%  Monitor/geometry
 MY_MONITOR = 'testMonitor'  # needs to exists in PsychoPy monitor center
 FULLSCREEN = True
@@ -149,15 +157,9 @@ fixation_point = helpers.MyDot2(win)
 im_search = visual.ImageStim(win, image=IMNAME_WALLY)
 im_face = visual.ImageStim(win, image=IMNAME_WALLY_FACE)
 
-text.text = 'Please wait.'
-text.draw()
-win.flip()
-wait_for_message('start_calibration')
-
 # Calibrate the eye tracker
 tracker.calibrate(win)
-text.text = 'Please wait.'
-text.draw()
+print('calibration done')
 win.flip()
 
 # %% Send calibration results to master
@@ -165,11 +167,14 @@ if len(tracker.deviations) >= 1:
     dev_L, dev_R = tracker.deviations[0][0], tracker.deviations[0][1]
 else:
     dev_L, dev_R = np.nan, np.nan
-outlet.push_sample([f'{hostname}, {dev_L:.2f}, {dev_R:.2f}'])
+print([f'{device_name}, {dev_L:.2f}, {dev_R:.2f}'])
+outlet.push_sample([f'{device_name}, {dev_L:.2f}, {dev_R:.2f}'])
 print("Sent calibration results to master")
 
-# %% Start sending and receiving et data with LSL
-wait_for_message('start_exp')
+# Create inlets for all opened LSL outlets with name 'Markers',
+# i.e., the one created by the master. This way, messages sent by the
+# master can be received by the clients
+streams = resolve_stream('type', 'Markers')
 
 # Start the eye tracker
 tracker.start_recording(gaze=True)
@@ -197,18 +202,14 @@ text.text = 'Press the spacebar as soon as you have found Wally \n\n Please wait
 text.draw()
 win.flip()
 
-core.wait(3)
-
-# Create inlets for all opened LSL outlets with name 'Markers',
-# i.e., the one created by the master. This way, messages sent by the
-# master can be received by the clients
-streams = resolve_stream('type', 'Markers')
-
 # create new inlet to read from the streams (one per stream)
 inlets = []
 for stream in streams:
     inlets.append(StreamInlet(stream))
 
+# %% Start sending and receiving et data with LSL
+print('waiting for start command')
+wait_for_message('start_exp')
 
 # %% Run the search
 
@@ -279,6 +280,7 @@ sender.stop('gaze')
 
 # Stop streams (if available). Normally only gaze stream is stopped
 tracker.stop_recording(gaze=True)
+tracker.save_data()
 
 # Highlight the correct location of Wally
 im_search.draw()
