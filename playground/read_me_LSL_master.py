@@ -63,11 +63,6 @@ for stream in streams:
     # inlets.append([StreamInlet(stream), stream.hostname()])
     inlets.append(StreamInlet(stream))
 
-#print(f'Number of inlets: {len(inlets)}')
-
-# %% Send message to start calibration
-input("Press key to start calibration")
-outlet.push_sample(['start_calibration'])
 
 # %% Wait to receive information about calibration results
 print('Waiting to receive calibration results')
