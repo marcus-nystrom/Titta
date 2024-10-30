@@ -40,14 +40,7 @@ def make_scanpath(image_name, fixations, imres, scale_with_duration=True):
 
     '''
 
-    win = visual.Window(fullscr=True, screen=1, units='pix', size=imres)
-
-    dot = visual.Circle(win, radius=50, lineColor='red', fillColor='red',
-                        opacity=0.5)
-    line = visual.Line(win, start=(-0.5, -0.5), end=(0.5, 0.5),
-                        lineWidth=3, lineColor='red', opacity=0.5)
-
-    im = visual.ImageStim(win, image=str(image_name), size=(imres[0], imres[1]))
+    im = visual.ImageStim(win, image=image_name, size=(imres[0], imres[1]))
     im.draw()
 
     start_pos_old = (None, None)
@@ -90,9 +83,8 @@ def make_scanpath(image_name, fixations, imres, scale_with_duration=True):
 
         start_pos_old = line.end
 
-
     win.flip()
-    core.wait(1)
+    #core.wait(1)
 
     win.getMovieFrame()
 
@@ -103,7 +95,6 @@ def make_scanpath(image_name, fixations, imres, scale_with_duration=True):
     # Save the results
     fname =  path / ('scanpath_' + str(image_name).split(os.sep)[-1])
     win.saveMovieFrames(fname)
-    win.close()
 
 # %%
 
@@ -157,7 +148,7 @@ def make_scanpath_cv2(image_name, fixations, imres, scale_with_duration=True):
 
         if i > 0:
             if i < 2:
-                lineColor = (0, 0, 255)
+                lineColor = (0, 255, 0)
 
             line_start = start_pos_old
             image = add_transparency_cv2(cv2.line(image.copy(), line_start, line_end, lineColor, thickness), image, alpha)
@@ -190,6 +181,15 @@ image_names = list((Path.cwd() / 'stimuli').rglob('*.jpeg'))
 img = []
 participants = df_fixations.participant.unique()
 
+if not use_cv2:
+    win = visual.Window(fullscr=True, screen=1, units='pix', size=imres)
+
+    dot = visual.Circle(win, radius=50, lineColor='red', fillColor='red',
+                        opacity=0.5)
+    line = visual.Line(win, start=(-0.5, -0.5), end=(0.5, 0.5),
+                        lineWidth=3, lineColor='red', opacity=0.5)
+
+
 for participant in list(participants):
     for image_name in image_names:
         df_temp = df_fixations[(df_fixations.trial == str(image_name).split(os.sep)[-1]) & \
@@ -204,5 +204,6 @@ for participant in list(participants):
         else:
             make_scanpath(image_name, df_temp, imres)
 
-
+if not use_cv2:
+    win.close()
 print('\n\nPlotting scanpaths took {}s to finish!'.format(time.time()-start))
