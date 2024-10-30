@@ -245,10 +245,10 @@ for i in range(int(MAX_SEARCH_TIME * monitor_refresh_rate)):
         draw_sample(remote_sample, dot)
 
         # Save sample as message
-        x = sample['left_gaze_point_on_display_area_x'][0]
-        y = sample['left_gaze_point_on_display_area_y'][0]
-        t_remote = sample['remote_system_time_stamp'][0]
-        t_local = sample['local_system_time_stamp'][0]
+        x = remote_sample['left_gaze_point_on_display_area_x'][0]
+        y = remote_sample['left_gaze_point_on_display_area_y'][0]
+        t_remote = remote_sample['remote_system_time_stamp'][0]
+        t_local = remote_sample['local_system_time_stamp'][0]
         tracker.send_message(f'remotesample_{hostname_remote}_{t_remote}_{t_local}_{x}_{y}')
 
     t = win.flip()
