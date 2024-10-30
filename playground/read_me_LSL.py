@@ -1,11 +1,7 @@
 # Import relevant modules
-import pandas as pd
 from psychopy import visual, monitors, core, event
 import numpy as np
-import matplotlib.pyplot as plt
 from titta import Titta, helpers_tobii as helpers
-import h5py
-import numpy as np
 import TittaLSLPy
 from pylsl import StreamInfo, StreamOutlet, StreamInlet, resolve_stream
 import os
@@ -84,9 +80,9 @@ def wait_for_message(msg):
         if k:
             if 'space' in k:
                 break
-                
+
         core.wait(0.001)
-        
+
 # %%  Monitor/geometry
 MY_MONITOR = 'testMonitor'  # needs to exists in PsychoPy monitor center
 FULLSCREEN = True
@@ -247,7 +243,11 @@ for i in range(int(MAX_SEARCH_TIME * monitor_refresh_rate)):
         # Save sample as message
         x = remote_sample['left_gaze_point_on_display_area_x'][0]
         y = remote_sample['left_gaze_point_on_display_area_y'][0]
+
+        # System time stamp of the sample on remote machine
         t_remote = remote_sample['remote_system_time_stamp'][0]
+
+        # System time stamp on local machine when remote sample was received
         t_local = remote_sample['local_system_time_stamp'][0]
         tracker.send_message(f'remotesample_{hostname_remote}_{t_remote}_{t_local}_{x}_{y}')
 
