@@ -1,6 +1,6 @@
 # Import relevant modules
 import pandas as pd
-from psychopy import visual, monitors
+from psychopy import visual, monitors, core
 import numpy as np
 import matplotlib.pyplot as plt
 from titta import Titta, helpers_tobii as helpers
@@ -80,7 +80,7 @@ images = []
 for im_name in im_names:
     images.append(visual.ImageStim(win, image=im_name, units='norm', size=(2, 2)))
 
-#  Calibratse
+#  Calibrate
 if bimonocular_calibration:
     if dual_screen_setup:
         tracker.calibrate(win, win_operator=win_op, eye='left', calibration_number = 'first')
@@ -95,16 +95,19 @@ else:
         tracker.calibrate(win)
 
 # %% Record some data. Normally only gaze stream is started
-# Note that the recording is not actually started until about 150 ms after
-# start_recording() is called. This delay is internal to the Tobii SDK.
+# Note that the recording is started a while after
+# start_recording() is called (about 150 ms on the Spectrum).
 # If you do not want start_recording() to return until data become available, set the argument
-# block_until_data_available=True (default is False)
+# block_until_data_available=True (default is False, currently only implemented for the 'gaze' stream)
+# Best practise: start the eye tracker, wait a while, and them start your experiment.
 tracker.start_recording(gaze=True,
                         time_sync=True,
                         eye_image=False,
                         notifications=True,
                         external_signal=True,
                         positioning=True)
+
+core.wait(0.5)
 
 # Present fixation dot and wait for one second
 for i in range(monitor_refresh_rate):
