@@ -104,22 +104,18 @@ def create_gaze_video(data, fix, image_file_path, video_file_path, width, height
         nfix = len(fix['dur'])
         fixlist = np.full((nfix), False)
         image = im_rgb.copy()
-        xposL = np.round(data['L_X'][sample])
-        yposL = np.round(data['L_Y'][sample])
-        xposR = np.round(data['R_X'][sample])
-        yposR = np.round(data['R_Y'][sample])
+        L_X = np.round(data['L_X'][sample])
+        L_Y = np.round(data['L_Y'][sample])
+        R_X = np.round(data['R_X'][sample])
+        R_Y = np.round(data['R_Y'][sample])
         t = int(np.round(data['time'][sample]))
 
-        if not np.isnan(xposL) and not np.isnan(yposL):
-            L_X = round(xposL)
-            L_Y = round(yposL)
-            image = add_transparency_cv2(cv2.circle(image.copy(), (L_X, L_Y), radius, (0, 0, 255), -1), image, alpha)
-        if not np.isnan(xposR) and not np.isnan(yposR):
-            R_X = round(xposR)
-            R_Y = round(yposR)
-            image = add_transparency_cv2(cv2.circle(image.copy(), (R_X, R_Y), radius, (255, 0, 0), -1), image, alpha)
-        for fixnr in range(nfix):
+        if not np.isnan(L_X) and not np.isnan(L_Y):
+            image = add_transparency_cv2(cv2.circle(image.copy(), (int(L_X), int(L_Y)), radius, (0, 0, 255), -1), image, alpha)
+        if not np.isnan(R_X) and not np.isnan(R_Y):
+            image = add_transparency_cv2(cv2.circle(image.copy(), (int(R_X), int(R_Y)), radius, (255, 0, 0), -1), image, alpha)
 
+        for fixnr in range(nfix):
             if t >= fix['startT'][fixnr] and t <= fix['endT'][fixnr]:
                 fixlist[fixnr] = True
                 image = add_transparency_cv2(cv2.circle(image.copy(), (round(fix['xpos'][fixnr]), round(fix['ypos'][fixnr])), round(radius_fix+teller/fix_slowness), (0, 255, 0), -1), image, alpha)
