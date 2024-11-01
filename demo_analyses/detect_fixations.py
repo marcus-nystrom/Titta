@@ -64,7 +64,78 @@ except ImportError:
     raise ImportError('I2MC not found. pip install I2MC')
 import matplotlib.pyplot as plt
 import time
+try:
+    import cv2
+except ImportError:
+    print("Could not import OpenCV for video processing, creation of gaze videos is disabled")
+    use_cv2 = False
+else:
+    from cv2 import VideoWriter, VideoWriter_fourcc
+    use_cv2 = True
+
 start = time.time()
+
+
+# =============================================================================
+# NECESSARY FUNCTIONS
+# =============================================================================
+
+# %%
+def add_transparency_cv2(overlay, image, alpha):
+    ## image used in func must be a copy of image! The image from image can be original, original is fastest
+    if alpha == 1:
+        image_new = overlay
+    else:
+        image_new = cv2.addWeighted(overlay, alpha, image, 1 - alpha, 0)
+    return image_new
+
+def create_gaze_video(data, fix, image_file_path, video_file_path, width, height, FPS):
+    radius = 30
+    radius_fix = 8
+    fix_slowness = 25
+    alpha = 0.7
+    fourcc = VideoWriter_fourcc(*'avc1')
+
+    video = VideoWriter(video_file_path, fourcc, float(FPS), (width, height))
+    im_rgb = cv2.imread(image_file_path)
+    teller = 0
+
+    for sample in data.index:
+        nfix = len(fix['dur'])
+        fixlist = np.full((nfix), False)
+        image = im_rgb.copy()
+        xposL = np.round(data['L_X'][sample])
+        yposL = np.round(data['L_Y'][sample])
+        xposR = np.round(data['R_X'][sample])
+        yposR = np.round(data['R_Y'][sample])
+        t = int(np.round(data['time'][sample]))
+
+        if not np.isnan(xposL) and not np.isnan(yposL):
+            L_X = round(xposL)
+            L_Y = round(yposL)
+            image = add_transparency_cv2(cv2.circle(image.copy(), (L_X, L_Y), radius, (0, 0, 255), -1), image, alpha)
+        if not np.isnan(xposR) and not np.isnan(yposR):
+            R_X = round(xposR)
+            R_Y = round(yposR)
+            image = add_transparency_cv2(cv2.circle(image.copy(), (R_X, R_Y), radius, (255, 0, 0), -1), image, alpha)
+        for fixnr in range(nfix):
+
+            if t >= fix['startT'][fixnr] and t <= fix['endT'][fixnr]:
+                fixlist[fixnr] = True
+                image = add_transparency_cv2(cv2.circle(image.copy(), (round(fix['xpos'][fixnr]), round(fix['ypos'][fixnr])), round(radius_fix+teller/fix_slowness), (0, 255, 0), -1), image, alpha)
+            else:
+                fixlist[fixnr] = False
+
+        if do_fix_size and True in fixlist:
+            teller += 1
+        else:
+            teller = 0
+
+        video.write(image)
+    print('    Saving video to: ' + video_file_path)
+    video.release()
+
+# %%
 
 # =============================================================================
 # NECESSARY VARIABLES
@@ -92,10 +163,14 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 folders  = {}
 folders['data']   = os.path.join(dir_path,'trials')   # folder in which data is stored (each folder in folders.data is considered 1 subject)
 folders['output'] = os.path.join(dir_path,'output')         # folder for output (will use structure in folders.data for saving output)
+folders['video_gaze'] = os.path.join(dir_path,'video_gaze')         # folder for output (will use structure in folders.data for saving output)
+folders['stimuli'] = os.path.join(dir_path,'stimuli')         # folder for output (will use structure in folders.data for saving output)
 
 # Options of example script
 log_level    = 1    # 0: no output, 1: output from this script only, 2: provide some output on command line regarding I2MC internal progress
 do_plot_data = True # if set to True, plot of fixation detection for each trial will be saved as png-file in output folder.
+do_plot_video = True # if set to True, plot videos of raw gaze with fixations
+do_fix_size = True  # if set to True, blow up the fixation dot for the duration of the fixation
 # the figures works best for short trials (up to around 20 seconds)
 
 # =============================================================================
@@ -141,6 +216,10 @@ if opt['freq'] < 120:
 if not os.path.isdir(folders['output']):
    os.mkdir(folders['output'])
 
+# Check if output directory exists, if not create it
+if not os.path.isdir(folders['video_gaze']):
+   os.mkdir(folders['video_gaze'])
+
 # Get all participant folders
 fold = list(os.walk(folders['data']))
 all_folders = [f[0] for f in fold[1:]]
@@ -172,6 +251,12 @@ for folder_idx, folder in enumerate(all_folders):
         outFold = os.path.join(folders['output'], (folder.split(os.sep)[-1]))
         if not os.path.isdir(outFold):
            os.mkdir(outFold)
+
+    # make output folder
+    if do_plot_video:
+        outVideoFold = os.path.join(folders['video_gaze'], (folder.split(os.sep)[-1]))
+        if not os.path.isdir(outVideoFold):
+           os.mkdir(outVideoFold)
 
     if number_of_files[folder_idx] == 0:
         if log_level>0:
@@ -227,5 +312,9 @@ for folder_idx, folder in enumerate(all_folders):
             fix_df = pd.DataFrame(fix)
             fix_df.to_csv(fix_file, mode='a', header=not os.path.exists(fix_file),
                           na_rep='nan', sep='\t', index=False, float_format='%.3f')
+            if do_plot_video and use_cv2:
+                image_file_path = os.path.join(folders['stimuli'], os.path.splitext(file)[0])
+                video_file_path = os.path.join(outVideoFold, os.path.splitext(file)[0]+'.mp4')
+                create_gaze_video(data, fix, image_file_path, video_file_path, round(opt['xres']), round(opt['yres']), round(opt['freq']))
 
 print('\n\nI2MC took {}s to finish!'.format(time.time()-start))
