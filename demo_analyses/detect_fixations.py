@@ -90,6 +90,7 @@ def add_transparency_cv2(overlay, image, alpha):
     return image_new
 
 def create_gaze_video(data, fix, image_file_path, video_file_path, width, height, FPS):
+    counter = 0
     radius = round(30 * height/1080)
     radius_fix = round(8 * height/1080)
     fix_slowness = round(25 * height/1080)
@@ -98,12 +99,12 @@ def create_gaze_video(data, fix, image_file_path, video_file_path, width, height
 
     video = VideoWriter(video_file_path, fourcc, float(FPS), (width, height))
     im_rgb = cv2.imread(image_file_path)
-    teller = 0
 
     for sample in data.index:
         nfix = len(fix['dur'])
         fixlist = np.full((nfix), False)
         image = im_rgb.copy()
+
         L_X = np.round(data['L_X'][sample])
         L_Y = np.round(data['L_Y'][sample])
         R_X = np.round(data['R_X'][sample])
@@ -118,14 +119,14 @@ def create_gaze_video(data, fix, image_file_path, video_file_path, width, height
         for fixnr in range(nfix):
             if t >= fix['startT'][fixnr] and t <= fix['endT'][fixnr]:
                 fixlist[fixnr] = True
-                image = add_transparency_cv2(cv2.circle(image.copy(), (round(fix['xpos'][fixnr]), round(fix['ypos'][fixnr])), round(radius_fix+teller/fix_slowness), (0, 255, 0), -1), image, alpha)
+                image = add_transparency_cv2(cv2.circle(image.copy(), (round(fix['xpos'][fixnr]), round(fix['ypos'][fixnr])), round(radius_fix+counter/fix_slowness), (0, 255, 0), -1), image, alpha)
             else:
                 fixlist[fixnr] = False
 
         if do_fix_size and True in fixlist:
-            teller += 1
+            counter += 1
         else:
-            teller = 0
+            counter = 0
 
         video.write(image)
     print('    Saving video to: ' + video_file_path)
