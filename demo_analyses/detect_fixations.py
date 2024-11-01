@@ -90,9 +90,9 @@ def add_transparency_cv2(overlay, image, alpha):
     return image_new
 
 def create_gaze_video(data, fix, image_file_path, video_file_path, width, height, FPS):
-    radius = 30
-    radius_fix = 8
-    fix_slowness = 25
+    radius = round(30 * height/1080)
+    radius_fix = round(8 * height/1080)
+    fix_slowness = round(25 * height/1080)
     alpha = 0.7
     fourcc = VideoWriter_fourcc(*'avc1')
 
