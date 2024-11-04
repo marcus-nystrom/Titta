@@ -50,9 +50,13 @@ outlet = StreamOutlet(info)
 streams = []
 while True:
     streams = resolve_stream('type', 'ETmsg')
+    for stream in streams:
+        print(stream.hostname())
     s = input(f'{len(streams)} clients connected. (Press enter to start OR k to keep looking for clients): ')
     if len(s) == 0:
         break
+        
+    #time.sleep(0.1)
 
 
 # create new inlet to read from the streams (one per stream)
