@@ -78,7 +78,7 @@ def wait_for_message(msg):
 
         k = event.getKeys()
         if k:
-            if 'space' in k:
+            if k == 'p':
                 break
 
         core.wait(0.001)
