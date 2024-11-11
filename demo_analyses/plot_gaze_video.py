@@ -55,7 +55,7 @@ def create_gaze_video(data, fix, image_file_path, video_file_path, width, height
     radius_fix = round(8 * height/1080)
     fix_slowness = round(25 * height/1080)
     alpha = 0.7
-    fourcc = VideoWriter_fourcc(*'avc1')
+    fourcc = VideoWriter_fourcc(*'mp4v')
 
     video = VideoWriter(video_file_path, fourcc, float(FPS), (width, height))
     im_rgb = cv2.imread(image_file_path)
