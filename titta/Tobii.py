@@ -114,7 +114,11 @@ class myTobii(object):
 
         # Always include eye openness data in gaze stream
         if TittaPy.capability.has_eye_openness_data in self.buffer.capabilities:
-            self.buffer.set_include_eye_openness_in_gaze(True)
+
+            # Workaround since Tobii Pro Fusion reports to support eye openness
+            # signals at 250 Hz when it if fact does not
+            if not (self.settings.eye_tracker_name == 'Tobii Pro Fusion' and self.settings.SAMPLING_RATE == 250):
+                self.buffer.set_include_eye_openness_in_gaze(True)
 
         # Store timestamped messages in a list
         self.msg_container = []
