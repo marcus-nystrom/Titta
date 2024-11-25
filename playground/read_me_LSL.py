@@ -120,7 +120,7 @@ filter_gaze = True
 settings = Titta.get_defaults(et_name)
 tracker = Titta.Connect(settings)
 tracker.init()
-et_name = tracker.buffer.device_name
+et_name = tracker.buffer.serial_number
 et_address = tracker.buffer.address
 
 # Get hostname of computer
@@ -128,7 +128,7 @@ hostname = socket.gethostname() # Name of computer (e.g., STATION15)
 
 # Find master and open a communication channel with it so that
 # commands from the master can be received
-streams = pylsl.resolve_stream('type', 'Wally_master')
+streams = pylsl.resolve_byprop('type', 'Wally_master')
 if len(streams)>1:
     raise RuntimeError('More than one Wally_master found on the network, can\'t continue')
 from_master = pylsl.StreamInlet(streams[0])
@@ -219,7 +219,7 @@ last_ts.update({r:0 for r in receivers})
 # Show wally and wait for command to start exp
 im_face.pos = (0, 7)
 im_face.draw()
-text.text = 'Press the spacebar as soon as you have found Wally \n\n Please wait for the experiment to start.'
+text.text = 'Press the spacebar as soon as you have found Wally\n\nPlease wait for the experiment to start.'
 text.draw()
 win.flip()
 
