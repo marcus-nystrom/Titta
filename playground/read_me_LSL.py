@@ -257,7 +257,9 @@ for i in range(int(MAX_SEARCH_TIME * monitor_refresh_rate)):
             break
         if msg[0].startswith('disconnect_stream'):
             host_to_disconnect = msg[0][len('disconnect_stream')+1:]
-            receivers.pop(host_to_disconnect, None)
+            if host_to_disconnect in receivers:
+                receivers[host_to_disconnect].stop(True)
+                receivers.pop(host_to_disconnect)
 
     # Get and draw most recent sample from other clients
     for r in receivers:
@@ -284,13 +286,14 @@ for i in range(int(MAX_SEARCH_TIME * monitor_refresh_rate)):
     t = win.flip()
 
     if i == 0:
-        t0 = core.getTime()
+        t0 = t
         tracker.send_message(f'onset_{im_name}')
 
     # Check for keypress
     k = event.getKeys()
-    if 'space' in k:
-        search_time = core.getTime() - t0
+    dur = core.getTime()-t0
+    if 'space' in k and dur>1:
+        search_time = dur
         break
 
 tracker.send_message(f'offset_{im_name}_{search_time}')
