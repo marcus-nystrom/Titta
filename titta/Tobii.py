@@ -1713,7 +1713,11 @@ RMS_R: {:.2f}, LOSS_L: {:.1f}, LOSS_R: {:.1f}, SD_L: {:.2f}, SD_R: {:.2f}' \
         if self.buffer.has_stream('eye_image'):
 
             # Grab the two most recent eye images from the buffer
-            eye_images = self.buffer.peek_N('eye_image', 2, 'end')
+            if self.settings.eye_tracker_name == 'Tobii Pro Fusion':
+                eye_images = self.buffer.peek_N('eye_image', 4, 'end')
+            else:
+                eye_images = self.buffer.peek_N('eye_image', 2, 'end')
+                
 
             for i in range(len(eye_images['image'])):
 
@@ -1721,7 +1725,7 @@ RMS_R: {:.2f}, LOSS_L: {:.1f}, LOSS_R: {:.1f}, SD_L: {:.2f}, SD_R: {:.2f}' \
                 im_arr = eye_images['image'][i]
 
                 # Convert to have values between -1 adn 1
-                im_arr = np.fliplr(np.flipud((im_arr / float(im_arr.max()) * 2.0) - 1))
+                im_arr = np.fliplr(np.flipud((im_arr / float(255) * 2.0) - 1))
 
                 # Always display image from camera_id == 0 on left side
                 if eye_images['camera_id'][i] == 0:
