@@ -190,7 +190,6 @@ sender.start('gaze')
 
 # Start receiving et data with LSL (find started remote streams)
 receivers: typing.Dict[str,TittaLSLPy.Receiver] = {}
-t0 = time.monotonic()
 while True:
     remote_streams = TittaLSLPy.Receiver.get_streams("gaze")
     for stream in remote_streams:
