@@ -109,4 +109,4 @@ search_times = wait_for_message('search_time', clients, exit_key='x', is_json=Tr
 
 # Print reaction times and winners
 print('search times:')
-print('\n'.join([f'{h}: {t}{"s" if t and math.isfinite(t) else ""}' for h,t in sorted(search_times.items(), key=lambda item: item[1] or math.inf)]))
+print('\n'.join([f'{h}: {t:.2f}{"s" if t and math.isfinite(t) else ""}' for h,t in sorted(search_times.items(), key=lambda item: item[1] or math.inf)]))
