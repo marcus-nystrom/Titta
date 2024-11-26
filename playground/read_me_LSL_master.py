@@ -96,6 +96,9 @@ for c in clients:
     msg = f'connect_to,{c},'+json.dumps(to_connect)
     to_clients.push_sample([msg])
 
+# wait for all clients to be ready
+wait_for_message('ready_to_go', clients, verbose=True)
+
 # Start experiment
 print("Press 'g' to start experiment")
 keyboard.wait('g')

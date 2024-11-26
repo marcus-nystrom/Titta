@@ -215,12 +215,15 @@ if filter_gaze:
 last_ts = {'local': 0}
 last_ts.update({r:0 for r in receivers})
 
-# Show wally and wait for command to start exp
+# Show wally
 im_face.pos = (0, 7)
 im_face.draw()
 text.text = 'Press the spacebar as soon as you have found Wally\n\nPlease wait for the experiment to start.'
 text.draw()
 win.flip()
+
+# indicate we're ready to start
+to_master.push_sample(['ready_to_go'])
 
 # Wait for start command
 wait_for_message('start_exp', from_master)
