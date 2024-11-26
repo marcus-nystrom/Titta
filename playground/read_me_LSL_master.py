@@ -60,8 +60,7 @@ info = pylsl.StreamInfo('Wally_finder', 'Wally_master', 1, pylsl.IRREGULAR_RATE,
 to_clients = pylsl.StreamOutlet(info,1)
 
 # Find all clients
-print('Connecting to clients...')
-print('Press q to start with the connected clients')
+print('Connecting to clients... Press q to start with the connected clients')
 clients: typing.Dict[str,pylsl.StreamInlet] = {}
 while True:
     found_streams = pylsl.resolve_byprop('type', 'Wally_client', minimum=0, timeout=.1)
@@ -75,7 +74,6 @@ while True:
     if keyboard.is_pressed("q"):
         break
     time.sleep(0.1)
-
 print(f'running with clients: {sorted(clients.keys())}')
 
 # ensure we're properly connected to each client
@@ -88,7 +86,6 @@ remote_eye_trackers = wait_for_message('eye_tracker', clients)
 print(remote_eye_trackers)
 
 # Wait to receive information about calibration results
-print('Waiting to receive calibration results')
 cal_results = wait_for_message('calibration_done', clients, exit_key='c', verbose=True)
 print(cal_results)
 
