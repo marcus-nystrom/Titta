@@ -238,6 +238,7 @@ tracker.send_message('fix off')
 # Search until keypress or timeout
 search_time = np.inf
 im_name = im_search.image
+to_skip = {r:False for r in receivers}
 for i in range(int(MAX_SEARCH_TIME * monitor_refresh_rate)):
     # Draw wally
     im_search.draw()
@@ -259,10 +260,13 @@ for i in range(int(MAX_SEARCH_TIME * monitor_refresh_rate)):
             host_to_disconnect = msg[0][len('disconnect_stream')+1:]
             if host_to_disconnect in receivers:
                 receivers[host_to_disconnect].stop(True)
-                receivers.pop(host_to_disconnect)
+                to_skip[host_to_disconnect] = True
 
     # Get and draw most recent sample from other clients
-    for r in receivers:
+    for idx,r in enumerate(receivers):
+        if to_skip[r]:
+            continue
+
         remote_samples = receivers[r].peek_time_range(last_ts[r])
         if len(remote_samples['local_system_time_stamp'])>0:
             last_ts[r] = remote_samples['local_system_time_stamp'][-1]
@@ -270,9 +274,8 @@ for i in range(int(MAX_SEARCH_TIME * monitor_refresh_rate)):
         if np.isnan(x) or np.isnan(y):
             continue
         
-        # Set color of dot based on station number
-        remote_hostname_id = hostname_id = int(''.join([n for n in r if n.isdigit()]))
-        remote_gaze.lineColor = get_color(remote_hostname_id)
+        # Set color of dot based on receiver number
+        remote_gaze.lineColor = get_color(idx)
         
         draw_sample(remote_gaze, x, y)
 
