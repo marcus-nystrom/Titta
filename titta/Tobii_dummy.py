@@ -212,7 +212,8 @@ class Connect(object):
                                 eye_image=False,
                                 notifications=False,
                                 external_signal=False,
-                                positioning=False):
+                                positioning=False,
+                                block_until_data_available=False):
         print('start_recording')
 
 
