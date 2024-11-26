@@ -20,6 +20,8 @@ def warm_up_bidirectional_comms(outlet, inlet):
         sample, _ = inlet.pull_sample()
 
 def wait_for_message(prefix, inlets: typing.Dict[str,pylsl.StreamInlet], exit_key=None, is_json=False, verbose=False, callback=None):
+    extra = f'. Press "{exit_key}" to continue' if exit_key else ''
+    print(f'waiting for "{prefix}" messages{extra}')
     inlets_to_go = inlets.copy()
     out = {i: None for i in inlets_to_go}
     while True:
@@ -87,8 +89,12 @@ print(remote_eye_trackers)
 
 # Wait to receive information about calibration results
 print('Waiting to receive calibration results')
-cal_results = wait_for_message('calibration_done', clients, verbose=True)
+cal_results = wait_for_message('calibration_done', clients, exit_key='c', verbose=True)
 print(cal_results)
+
+# remove clients who dropped out (didn't return a calibration result)
+clients = {c:clients[c] for c in clients if cal_results[c] is not None}
+print(f'running with clients: {sorted(clients.keys())}')
 
 # Tell clients which other clients they should connect to
 for c in clients:
