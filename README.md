@@ -27,7 +27,7 @@ If you use a standalone PsychoPy installation, do the following steps:
 1. Go to `C:\Program Files\PsychoPy` (or wherever you installed PsychoPy) and open a command prompt in the same folder as where you find `python.exe` (should be the main PsychoPy install folder). So the command prompt you have should start with something like `C:\Program Files\PsychoPy>`
 1. Here you can then pip-install titta, by issuing a command like `python -m pip install titta --upgrade`.
 
-Then run `read_me.py` from the 'demos' folder (first change the monitor settings and the eye tracker name in `read_me.py`). Reading through `read_me.py` should provide a good starting point for most users of Titta.
+Then run `read_me.py` from the ['demos'](https://github.com/marcus-nystrom/Titta/tree/master/demos) folder, that you should download separately from installing the toolbox. If needed, first change the monitor settings and the eye tracker name in `read_me.py` before running the script. Reading through `read_me.py` should provide a good starting point for most users of Titta.
 
 
 ### To get started with the Tobii Pro Lab integration
