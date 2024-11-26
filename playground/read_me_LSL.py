@@ -94,7 +94,7 @@ def wait_for_message(prefix, inlets: typing.List[pylsl.StreamInlet], exit_key=No
 
 # Monitor/geometry
 MY_MONITOR = 'testMonitor'  # needs to exists in PsychoPy monitor center
-FULLSCREEN = False
+FULLSCREEN = True
 SCREEN_RES = [1920, 1080]
 SCREEN_WIDTH = 52.7  # cm
 VIEWING_DIST = 63  # distance from eye to center of screen (cm)
