@@ -1,3 +1,23 @@
+# this demo code is part of Titta, a toolbox providing convenient access to
+# eye tracking functionality using Tobii eye trackers
+#
+# Titta can be found at https://github.com/marcus-nystrom/Titta. Check there for
+# the latest version.
+# When using Titta, please cite the following paper:
+#
+# Niehorster, D.C., Andersson, R. & Nystrom, M., (2020). Titta: A toolbox
+# for creating Psychtoolbox and Psychopy experiments with Tobii eye
+# trackers. Behavior Research Methods.
+# doi: https://doi.org/10.3758/s13428-020-01358-8
+#
+# To run this experiment, refer to the README here:
+# https://github.com/marcus-nystrom/Titta/blob/master/playground/README_LSL.md
+#
+# Note that a MATLAB version of this demo is available here:
+# https://github.com/dcnieho/Titta/tree/master/LSL_streamer/demo_experiments
+# These MATLAB versions are interoperable with the Python version. You can freely
+# mix Python and MATLAB clients and masters.
+ 
 import pylsl
 import typing
 import time
