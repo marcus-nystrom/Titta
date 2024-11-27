@@ -39,7 +39,7 @@ def wait_for_message(prefix, inlets: typing.Dict[str,pylsl.StreamInlet], exit_ke
                     out[i] = the_msg[1:].split(',')
                 if verbose:
                     if inlets_to_go:
-                        print(f'still waiting for "{prefix}": {[i for i in inlets_to_go]}')
+                        print(f'still waiting for "{prefix}" for: {[i for i in inlets_to_go]}')
                     else:
                         print(f'received "{prefix}" message from all clients')
                 if callback:
@@ -112,4 +112,8 @@ search_times = wait_for_message('search_time', clients, exit_key='x', is_json=Tr
 
 # Print reaction times and winners
 print('search times:')
-print('\n'.join([f'{h}: {t:.2f}{"s" if t and math.isfinite(t) else ""}' for h,t in sorted(search_times.items(), key=lambda item: item[1] or math.inf)]))
+search_times = dict(sorted(search_times.items(), key=lambda item: item[1] or math.inf))
+for s in search_times:
+    t = search_times[s]
+    dur = f'{t:.2f}' if t else t
+    print(f'{s}: {dur}{"s" if t and math.isfinite(t) else ""}')
