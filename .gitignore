@@ -34,6 +34,13 @@
 *.mp4
 *.bin
 
+# demo data files    #
+######################
+/demo-experiments/*.h5
+/demo-experiments/*.json
+/playground/*.h5
+/playground/*.json
+
 # Logs and databases #
 ######################
 *.sql
