@@ -1,3 +1,23 @@
+# this demo code is part of Titta, a toolbox providing convenient access to
+# eye tracking functionality using Tobii eye trackers
+#
+# Titta can be found at https://github.com/marcus-nystrom/Titta. Check there for
+# the latest version.
+# When using Titta, please cite the following paper:
+#
+# Niehorster, D.C., Andersson, R. & Nystrom, M., (2020). Titta: A toolbox
+# for creating Psychtoolbox and Psychopy experiments with Tobii eye
+# trackers. Behavior Research Methods.
+# doi: https://doi.org/10.3758/s13428-020-01358-8
+#
+# To run this experiment, refer to the README here:
+# https://github.com/marcus-nystrom/Titta/blob/master/playground/README_LSL.md
+#
+# Note that a MATLAB version of this demo is available here:
+# https://github.com/dcnieho/Titta/tree/master/LSL_streamer/demo_experiments
+# These MATLAB versions are interoperable with the Python version. You can freely
+# mix Python and MATLAB clients and masters.
+ 
 import pylsl
 import typing
 import time
@@ -39,7 +59,7 @@ def wait_for_message(prefix, inlets: typing.Dict[str,pylsl.StreamInlet], exit_ke
                     out[i] = the_msg[1:].split(',')
                 if verbose:
                     if inlets_to_go:
-                        print(f'still waiting for "{prefix}": {[i for i in inlets_to_go]}')
+                        print(f'still waiting for "{prefix}" for: {[i for i in inlets_to_go]}')
                     else:
                         print(f'received "{prefix}" message from all clients')
                 if callback:
@@ -112,4 +132,8 @@ search_times = wait_for_message('search_time', clients, exit_key='x', is_json=Tr
 
 # Print reaction times and winners
 print('search times:')
-print('\n'.join([f'{h}: {t:.2f}{"s" if t and math.isfinite(t) else ""}' for h,t in sorted(search_times.items(), key=lambda item: item[1] or math.inf)]))
+search_times = dict(sorted(search_times.items(), key=lambda item: item[1] or math.inf))
+for s in search_times:
+    t = search_times[s]
+    dur = f'{t:.2f}' if t else t
+    print(f'{s}: {dur}{"s" if t and math.isfinite(t) else ""}')
