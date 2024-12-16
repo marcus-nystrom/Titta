@@ -205,7 +205,7 @@ tracker.start_recording(gaze=True)
 
 # Create a TittaLSLPy sender that makes this eye tracker's gaze data stream available on the network
 sender = TittaLSLPy.Sender(et_address)
-sender.start('gaze')
+sender.create('gaze')
 
 # Start receiving et data with LSL (find started remote streams)
 receivers: typing.Dict[str,TittaLSLPy.Receiver] = {}
@@ -330,7 +330,7 @@ to_master.push_sample([f'search_time,{json.dumps(search_time)}'])
 # Show the position of wally and clean up a bit
 for r in receivers:
     receivers[r].stop()
-sender.stop('gaze')
+sender.destroy('gaze')
 
 # Stop streams (if available). Normally only gaze stream is stopped
 tracker.stop_recording(gaze=True)
