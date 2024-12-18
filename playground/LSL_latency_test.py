@@ -3,8 +3,10 @@ import TittaPy
 import TittaLSLPy
 import time
 import pebble
+import socket
 
-nSamp = 5000
+dur   = 63  # we want 60s of data, attempt to record a little extra so we get at least that even if clients are not fully synced
+nSamp = int((dur*1.1)*600)
 
 sender = None
 def startup():
@@ -28,7 +30,8 @@ def startup():
     own_id = sender.get_stream_source_id('gaze')
     print(f'local: {own_id}')
 
-    search_time = 5
+    search_time = 10
+    startif_found = 2
 
     source_ids = []
     t0 = time.monotonic()
@@ -37,6 +40,8 @@ def startup():
         for r in remote_streams:
             if r["source_id"] not in source_ids:
                 source_ids.append(r["source_id"])
+        if len(source_ids)>=startif_found:
+            break
 
     if False:
         return [s for s in source_ids if s!=own_id], et['address']
@@ -47,52 +52,55 @@ def startup():
 def measure_local(et_address):
     et = TittaPy.EyeTracker(et_address)
     et.start('gaze')
+    hostname = socket.gethostname()
 
     # warm up system_timestamp
     for _ in range(10):
         TittaPy.get_system_timestamp()
 
     # set up data collection
-    dat = np.zeros((nSamp,4),dtype='int64')
+    dat = np.full((nSamp,4), -9999, dtype='int64')
 
     i=0
-    while i<nSamp:
+    t0 = TittaPy.get_system_timestamp()
+    while True:
         samp = et.consume_N('gaze')
+        t = TittaPy.get_system_timestamp()
         if samp['device_time_stamp'].size>0:
-            dat[i,0] = TittaPy.get_system_timestamp()
-            dat[i,1] = samp['system_time_stamp'][0]
-            dat[i,2] = samp['device_time_stamp'][0]
-            dat[i,3] = samp['device_time_stamp'].size
-            i = i+1
+            dat[i,:] = (t, samp['system_time_stamp'][0], samp['device_time_stamp'][0], samp['device_time_stamp'].size)
+            i+=1
+        if (t-t0)/1000000.>=dur or i>=nSamp:
+            break
     
-    dat.tofile(f'local.tsv',sep='\t')
-
+    np.savetxt(f'{hostname}_local_{et.serial_number[-12:]}.tsv',dat[:i,:],delimiter='\t',header='receive_ts\tsystem_ts\tdevice_ts\tn_sample',comments='')
     print(f'local: {(dat[:,0]-dat[:,1]).mean()}')
 
 
 def measure_remote(source_id):
     print(f'running with {source_id}')
     receiver = TittaLSLPy.Receiver(source_id)
+    hostname = socket.gethostname()
+    remote_hostname = receiver.get_info()['hostname']
     receiver.start()
 
     # warm up system_timestamp
     for _ in range(10):
         TittaPy.get_system_timestamp()
 
-    dat = np.zeros((nSamp,5),dtype='int64')
+    dat = np.full((nSamp,5), -9999, dtype='int64')
+
     i=0
-    while i<nSamp:
+    t0 = TittaPy.get_system_timestamp()
+    while True:
         samp = receiver.consume_N()
+        t = TittaPy.get_system_timestamp()
         if samp['device_time_stamp'].size>0:
-            dat[i,0] = TittaPy.get_system_timestamp()
-            dat[i,1] = samp['local_system_time_stamp'][0]
-            dat[i,2] = samp['remote_system_time_stamp'][0]
-            dat[i,3] = samp['device_time_stamp'][0]
-            dat[i,4] = samp['device_time_stamp'].size
-            i = i+1
+            dat[i,:] = (t, samp['local_system_time_stamp'][0], samp['remote_system_time_stamp'][0], samp['device_time_stamp'][0], samp['device_time_stamp'].size)
+            i+=1
+        if (t-t0)/1000000.>=dur or i>=nSamp:
+            break
 
-    dat.tofile(f'{source_id[-12:]}.tsv',sep='\t')
-
+    np.savetxt(f'{hostname}_{remote_hostname}_{source_id[-12:]}.tsv',dat[:i,:],delimiter='\t',header='receive_ts\tlocal_system_ts\tremote_system_ts\tdevice_ts\tn_sample',comments='')
     print(f'{source_id}: {(dat[:,0]-dat[:,1]).mean()}')
 
 
