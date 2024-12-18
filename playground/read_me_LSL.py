@@ -1,3 +1,23 @@
+# this demo code is part of Titta, a toolbox providing convenient access to
+# eye tracking functionality using Tobii eye trackers
+#
+# Titta can be found at https://github.com/marcus-nystrom/Titta. Check there for
+# the latest version.
+# When using Titta, please cite the following paper:
+#
+# Niehorster, D.C., Andersson, R. & Nystrom, M., (2020). Titta: A toolbox
+# for creating Psychtoolbox and Psychopy experiments with Tobii eye
+# trackers. Behavior Research Methods.
+# doi: https://doi.org/10.3758/s13428-020-01358-8
+#
+# To run this experiment, refer to the README here:
+# https://github.com/marcus-nystrom/Titta/blob/master/playground/README_LSL.md
+#
+# Note that a MATLAB version of this demo is available here:
+# https://github.com/dcnieho/Titta/tree/master/LSL_streamer/demo_experiments
+# These MATLAB versions are interoperable with the Python version. You can freely
+# mix Python and MATLAB clients and masters.
+
 from psychopy import visual, monitors, core, event
 import numpy as np
 from titta import Titta, helpers_tobii as helpers
@@ -7,7 +27,6 @@ import os
 import socket
 import typing
 import json
-import time
 import OlssonFilter 
 
 # Set path to location where scrip-file is
@@ -186,7 +205,7 @@ tracker.start_recording(gaze=True)
 
 # Create a TittaLSLPy sender that makes this eye tracker's gaze data stream available on the network
 sender = TittaLSLPy.Sender(et_address)
-sender.start('gaze')
+sender.create('gaze')
 
 # Start receiving et data with LSL (find started remote streams)
 receivers: typing.Dict[str,TittaLSLPy.Receiver] = {}
@@ -311,7 +330,7 @@ to_master.push_sample([f'search_time,{json.dumps(search_time)}'])
 # Show the position of wally and clean up a bit
 for r in receivers:
     receivers[r].stop()
-sender.stop('gaze')
+sender.destroy('gaze')
 
 # Stop streams (if available). Normally only gaze stream is stopped
 tracker.stop_recording(gaze=True)
