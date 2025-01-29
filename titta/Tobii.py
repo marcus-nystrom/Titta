@@ -1717,7 +1717,7 @@ RMS_R: {:.2f}, LOSS_L: {:.1f}, LOSS_R: {:.1f}, SD_L: {:.2f}, SD_R: {:.2f}' \
                 eye_images = self.buffer.peek_N('eye_image', 4, 'end')
             else:
                 eye_images = self.buffer.peek_N('eye_image', 2, 'end')
-                
+
 
             for i in range(len(eye_images['image'])):
 
@@ -1864,10 +1864,10 @@ RMS_R: {:.2f}, LOSS_L: {:.1f}, LOSS_R: {:.1f}, SD_L: {:.2f}, SD_R: {:.2f}' \
                                                                   'offset_right_eye (deg)',
                                                                   'RMS_S2S_left_eye (deg)',
                                                                   'RMS_S2S_right_eye (deg)',
-                                                                  'SD_left_eye (deg)',
-                                                                  'SD_right_eye (deg)',
                                                                   'Prop_data_loss_left_eye',
                                                                   'Prop_data_loss_right_eye',
+                                                                  'SD_left_eye (deg)',
+                                                                  'SD_right_eye (deg)',
                                                                   'Calibration used'])
         df_cal.to_hdf(fname + '.h5', key='calibration_history')
 
