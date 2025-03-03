@@ -9,23 +9,24 @@ Created on Mon Sep  4 09:36:50 2023
 from psychopy import visual, core
 from titta import Titta
 
-# Create an instance of titta
+# Get default settings for a supported eye tracker, change settings here if wanted (see other demos)
 et_name = 'Tobii Pro Spectrum'
 settings = Titta.get_defaults(et_name)
 
-# Connect to eye tracker and calibrate
+# Create an instance of Titta, connect to eye tracker and set settings
 tracker = Titta.Connect(settings)
 tracker.init()
 
-# Window set-up (this color will be used for calibration)
+# Open window (this window will be used for calibration) and calibrate eye tracker
 win = visual.Window(size=(1920, 1080))
 tracker.calibrate(win)
 
 # Start recording
 tracker.start_recording(gaze=True)
 
-# Show your stimuli
+# Show your stimuli and log what was shown with eye tracker timestamp
 win.flip()
+tracker.send_message('shown stimulus 1')
 core.wait(1)
 
 # Stop recording

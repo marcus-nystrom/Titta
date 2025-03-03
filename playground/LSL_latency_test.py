@@ -23,6 +23,7 @@ def startup():
             raise RuntimeError('No eye tracker found')
 
     et = TittaPy.EyeTracker(et['address'])
+    et.frequency = 600
 
     # Create a TittaLSLPy sender that makes this eye tracker's gaze data stream available on the network
     sender = TittaLSLPy.Sender(et.address)
