@@ -159,7 +159,10 @@ tracker.stop_recording(gaze=True,
 win.close()
 if dual_screen_setup:
     win_op.close()
-tracker.save_data()
+
+# Set append_version = True to prevent that an already existing file
+# with the same name as settings.FILENAME gets overwritten
+tracker.save_data(append_version=False)
 
 # %% Read the gaze stream from the HDF5 container
 if not dummy_mode:
