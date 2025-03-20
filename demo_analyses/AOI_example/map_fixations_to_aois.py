@@ -55,47 +55,49 @@ trial_old = 'dummy_trial_name'
 for i, row in df_fixations.iterrows():
 
     trial = row.trial
-    if trial != trial_old:
-        trial_fixation_no = 1
-        trial_old = trial
+    if trial in image_aois:
 
-    participant = row.participant
+        if trial != trial_old:
+            trial_fixation_no = 1
+            trial_old = trial
 
-    if many_aois:
-        aoi_names = image_aois[trial]
+        participant = row.participant
 
-        aois = {}
-        for key in aoi_names:
-            temp_im =plt.imread(aoi_names[key])
+        if many_aois:
+            aoi_names = image_aois[trial]
 
-            # If an RGB image, use only R-band.
-            if len(temp_im.shape) > 2:
-                temp_im = temp_im[:, :, 0]
+            aois = {}
+            for key in aoi_names:
+                temp_im =plt.imread(aoi_names[key])
 
-            aois[key] = temp_im
-    else:
-        # Find AOIs for this trial
-        aois = image_aois[trial]
+                # If an RGB image, use only R-band.
+                if len(temp_im.shape) > 2:
+                    temp_im = temp_im[:, :, 0]
 
-    # Position and duration of fixation
-    x, y = row.xpos, row.ypos
-    dur = row.dur
+                aois[key] = temp_im
+        else:
+            # Find AOIs for this trial
+            aois = image_aois[trial]
 
-    # fixation hits an AOI?
-    hit = False
-    for key in aois:
-        try:
-            if aois[key][int(y), int(x)] == aois[key].max():
-                aoi_hits.append([row.participant, row.trial, trial_fixation_no, x, y, dur, key])
-                hit = True
-        except:
-            print('Gaze coordinates outside of screen. Counted as WS')
+        # Position and duration of fixation
+        x, y = row.xpos, row.ypos
+        dur = row.dur
 
-    # if not hit
-    if not hit:
-        aoi_hits.append([participant, trial, trial_fixation_no, x, y, dur, 'WS']) # WS (white space) for miss
+        # fixation hits an AOI?
+        hit = False
+        for key in aois:
+            try:
+                if aois[key][int(y), int(x)] == aois[key].max():
+                    aoi_hits.append([row.participant, row.trial, trial_fixation_no, x, y, dur, key])
+                    hit = True
+            except:
+                print('Gaze coordinates outside of screen. Counted as WS')
 
-    trial_fixation_no += 1
+        # if not hit
+        if not hit:
+            aoi_hits.append([participant, trial, trial_fixation_no, x, y, dur, 'WS']) # WS (white space) for miss
+
+        trial_fixation_no += 1
 
 # Save AOI data as csv
 df = pd.DataFrame(aoi_hits, columns=['participant', 'trial', 'fixation_number',
