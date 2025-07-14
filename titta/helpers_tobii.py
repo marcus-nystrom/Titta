@@ -126,6 +126,17 @@ def pix2tobii(pos, mon):
 
     #.. finally shift to tobii coordinate system
     return norm2tobii(pos)
+
+# %%
+
+class CalDot:
+    def __init__(self, dot_class, *args, **kwargs):
+        self.dot = dot_class(*args, **kwargs)
+
+    def __getattr__(self, name):
+        # Delegate attribute access to the wrapped dot instance
+        return getattr(self.dot, name)
+
 #%%
 class MyDot2:
     '''
@@ -216,6 +227,67 @@ class MyDot2:
         self.line_horizontal.fillColor = 'red'
         self.line_vertical.fillColor = 'red'
         self.line_horizontal.lineColor = 'red'
+
+
+
+#%%
+class MyDot3:
+    '''
+    Black circle
+    '''
+    def __init__(self, win, outer_diameter=50, inner_diameter=10,
+                 outer_color = 'black', inner_color = 'gray',units = 'pix'):
+        '''
+        Class to generate a stimulus dot with
+        units are derived from the window
+        '''
+
+        # Set propertis of dot
+        outer_dot = visual.Circle(win,fillColor = outer_color, radius = round(outer_diameter/2),
+                                  units = units)
+        inner_dot = visual.Circle(win,fillColor = inner_color, radius = round(inner_diameter/2),
+                                  units = units)
+
+
+        self.outer_dot = outer_dot
+        self.inner_dot = inner_dot
+
+    def set_size(self, size):
+        ''' Sets the size of the stimulus as scaled by 'size'
+        That is, if size == 1, the size is not altered.
+        '''
+        self.outer_dot.radius = size / 2
+
+    def set_pos(self, pos):
+        '''
+        sets position of dot
+        pos = [x,y]
+        '''
+        self.outer_dot.pos = pos
+        self.inner_dot.pos = pos
+
+    def get_pos(self):
+        '''
+        get position of dot
+        '''
+        pos = self.outer_dot.pos
+
+        return pos
+
+    def get_size(self):
+        '''
+        get size of dot
+        '''
+
+        return self.outer_dot.radius * 2
+
+
+    def draw(self):
+        '''
+        draws the dot
+        '''
+        self.outer_dot.draw()
+        self.inner_dot.draw()
 
 #%%
 def ellipse(xy = (0, 0), width=1, height=1, angle=0, n_points=50):
