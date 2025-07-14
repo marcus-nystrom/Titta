@@ -110,6 +110,10 @@ class Settings(object):
         # List all possible calibration points (in Tobii's coordinate system)
         # (0.0, 0.0) is the upper left corner and (1.0, 1.0) is the lower right corner.
 
+        # Name of class for calibration target
+        # Class must be defined in helpers_tobii.py and have the structure of MyDot2
+        self.CAL_TARGET = 'MyDot2'
+
         # Define the 13 point array (reading order)
         self.CAL_TARGETS = np.array([[0.1, 0.1], [0.5, 0.1], [.9,.1],
                            [.3,.3], [.7,.3],
