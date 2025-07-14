@@ -191,9 +191,15 @@ class myTobii(object):
 
 
         # Setup stimuli for drawing calibration / validation targets
-        self.cal_dot = helpers.MyDot2(self.win, units='pix',
-                                     outer_diameter=self.settings.graphics.TARGET_SIZE,
-                                     inner_diameter=self.settings.graphics.TARGET_SIZE_INNER)
+        # self.cal_dot = helpers.MyDot2(self.win, units='pix',
+        #                              outer_diameter=self.settings.graphics.TARGET_SIZE,
+        #                              inner_diameter=self.settings.graphics.TARGET_SIZE_INNER)
+
+        self.cal_dot = helpers.CalDot(eval(f'helpers.{self.settings.CAL_TARGET}'),
+                                           self.win, units='pix',
+                                           outer_diameter=self.settings.graphics.TARGET_SIZE,
+                                           inner_diameter=self.settings.graphics.TARGET_SIZE_INNER)
+
 
         # Click buttons
         self.calibrate_button = visual.Rect(self.win_temp, width= self.settings.graphics.WIDTH_CAL_BUTTON,
@@ -435,9 +441,9 @@ class myTobii(object):
         if self.settings.ANIMATE_CALIBRATION:
 
             # Define your calibration target
-            target = helpers.MyDot2(self.win, units='pix',
-                                     outer_diameter=self.settings.graphics.TARGET_SIZE,
-                                     inner_diameter=self.settings.graphics.TARGET_SIZE_INNER)
+            target = self.cal_dot #helpers.MyDot2(self.win, units='pix',
+                                     # outer_diameter=self.settings.graphics.TARGET_SIZE,
+                                     # inner_diameter=self.settings.graphics.TARGET_SIZE_INNER)
             self.animator = helpers.AnimatedCalibrationDisplay(self.win, target, 'animate_point')
 
         # Main control loop
