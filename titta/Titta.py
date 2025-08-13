@@ -11,15 +11,21 @@ def get_defaults(et_name):
 
     settings = Settings(et_name)
 
-    if et_name == 'IS4_Large_Peripheral':
-        settings.SAMPLING_RATE = 90
-    elif et_name == 'Tobii Pro Spectrum':
-        settings.SAMPLING_RATE = 600
-        settings.TRACKING_MODE = 'human'
+    settings.TittaPySDKVersion = 1  # set version of Tobii SDK that should be used for eye tracker. For all except the newest eye trackers v1 should be used, so use that as the default
+    if et_name == 'Tobii Pro Spectrum':
+        settings.SAMPLING_RATE      = 600
+        settings.TRACKING_MODE      = 'human'
+        settings.TittaPySDKVersion  = 2
+    elif et_name == 'Tobii Pro Fusion':
+        settings.SAMPLING_RATE      = 120
+        settings.TittaPySDKVersion  = 2
     elif et_name == 'Tobii Pro Nano':
-        settings.SAMPLING_RATE = 60
+        settings.SAMPLING_RATE      = 60
+        settings.TittaPySDKVersion  = 2
     elif et_name == 'Tobii Pro Spark':
-        settings.SAMPLING_RATE = 60
+        settings.SAMPLING_RATE      = 60
+        settings.TittaPySDKVersion  = 2
+
     elif et_name == 'Tobii TX300':
         settings.SAMPLING_RATE = 300
     elif et_name == 'Tobii T60 XL':
@@ -40,8 +46,9 @@ def get_defaults(et_name):
         settings.SAMPLING_RATE = 60
     elif et_name == 'Tobii T120':
         settings.SAMPLING_RATE = 120
-    elif et_name == 'Tobii Pro Fusion':
-        settings.SAMPLING_RATE = 120
+
+    elif et_name == 'IS4_Large_Peripheral':
+        settings.SAMPLING_RATE = 90
     else:
         raise Exception('eye tracker type not supported')
 

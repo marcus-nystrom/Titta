@@ -16,7 +16,8 @@ import os
 import numpy as np
 import h5py
 import time
-import TittaPy
+import importlib
+import TittaPy_v2 as TittaPy
 import titta
 from titta import helpers_tobii as helpers
 
@@ -50,6 +51,13 @@ class myTobii(object):
 
         # Remove empty spaces (if any are given)
         self.settings.TRACKER_ADDRESS = self.settings.TRACKER_ADDRESS.replace(" ", "")
+
+        # ensure right SDK version is loaded
+        global TittaPy
+        SDKVersion = int(TittaPy.__name__[-1])
+        if self.settings.TittaPySDKVersion != SDKVersion:
+            # set global TittaPy to correct version
+            TittaPy = importlib.import_module('TittaPy_v'+str(self.settings.TittaPySDKVersion))
 
 
     #%%
@@ -1686,6 +1694,7 @@ RMS_R: {:.2f}, LOSS_L: {:.1f}, LOSS_R: {:.1f}, SD_L: {:.2f}, SD_R: {:.2f}' \
                                            str(sys.version_info[2])])
         info['psychopy_version'] = psychopy.__version__
         info['TittaPy_version'] = TittaPy.__version__
+        info['Tobii_SDK_version'] = TittaPy.get_SDK_version()
         info['titta_version'] = titta.__version__
         # info['git_revision'] = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
 
