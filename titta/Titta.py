@@ -108,9 +108,10 @@ class Settings(object):
                                              # If empty, use the center of the
                                              # Track Box Coordinate System normalized [0, 1]
 
-        # Name of class for calibration target
-        # Class must be defined in helpers_tobii.py and have the structure of MyDot2
-        self.CAL_TARGET = 'MyDot2'
+        # Class for calibration target
+        # If not provided, helpers_tobii.MyDot2 is used. Can be set to helpers_tobii.MyDot3
+        # or any custom class derived from helpers_tobii.TargetBase
+        self.CAL_TARGET = None
 
         # List all possible calibration/validation points (in Tobii's coordinate system)
         # (0.0, 0.0) is the upper left corner and (1.0, 1.0) is the lower right corner.

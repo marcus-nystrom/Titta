@@ -608,7 +608,9 @@ class AnimatedCalibrationDisplay(object):
     """ A class for drawing animated targets"""
     def __init__(self, win, target):
         self.win = win
-        self.target = target # psychopy.visual object (should be in 'pix' units)
+        if not isinstance(target,TargetBase):
+            raise ValueError('Provided target should be an instance of a class derived from helpers_tobii.TargetBase')
+        self.target = target
         self.target_size = target.get_size()
         self.screen_refresh_rate = float(win.getActualFrameRate() or 60)
 

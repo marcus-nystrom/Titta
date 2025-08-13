@@ -191,14 +191,15 @@ class myTobii(object):
 
 
         # Setup stimuli for drawing calibration / validation targets
-        # self.cal_dot = helpers.MyDot2(self.win, units='pix',
-        #                              outer_diameter=self.settings.graphics.TARGET_SIZE,
-        #                              inner_diameter=self.settings.graphics.TARGET_SIZE_INNER)
-
-        self.cal_dot = helpers.CalDot(eval(f'helpers.{self.settings.CAL_TARGET}'),
-                                           self.win, units='pix',
-                                           outer_diameter=self.settings.graphics.TARGET_SIZE,
-                                           inner_diameter=self.settings.graphics.TARGET_SIZE_INNER)
+        if self.settings.CAL_TARGET is None:
+            self.cal_dot = helpers.MyDot2(units='pix',
+                                          outer_diameter=self.settings.graphics.TARGET_SIZE,
+                                          inner_diameter=self.settings.graphics.TARGET_SIZE_INNER)
+        else:
+            if not isinstance(self.settings.CAL_TARGET, helpers.TargetBase):
+                raise ValueError('Provided target should be an instance of a class derived from helpers_tobii.TargetBase')
+            self.cal_dot = self.settings.CAL_TARGET
+        self.cal_dot.create_for_win(self.win)
 
 
         # Click buttons
@@ -281,9 +282,9 @@ class myTobii(object):
                                                 pos=self.settings.graphics.POS_CAL_IMAGE_BUTTON)
 
         # Dots for the setup screen
-        self.setup_dot = helpers.MyDot2(self.win, units='height',
+        self.setup_dot = helpers.MyDot2(units='height',
                                      outer_diameter=self.settings.graphics.SETUP_DOT_OUTER_DIAMETER,
-                                     inner_diameter=self.settings.graphics.SETUP_DOT_INNER_DIAMETER)
+                                     inner_diameter=self.settings.graphics.SETUP_DOT_INNER_DIAMETER, win=self.win)
 
 
         # Dot for showing et data
@@ -299,7 +300,7 @@ class myTobii(object):
                                              fillColor = 'blue', units='norm')
             self.current_point = helpers.MyDot2(self.win_temp, units='norm',
                                          outer_diameter=0.05,
-                                         inner_diameter=0.02)
+                                         inner_diameter=0.02, win=self.win_temp)
 
         # Show images (eye image, validation resutls)
         self.eye_image_stim_l = visual.ImageStim(self.win_temp, units='norm',
@@ -439,12 +440,7 @@ class myTobii(object):
 
         # Animated calibration?
         if self.settings.ANIMATE_CALIBRATION:
-
-            # Define your calibration target
-            target = self.cal_dot #helpers.MyDot2(self.win, units='pix',
-                                     # outer_diameter=self.settings.graphics.TARGET_SIZE,
-                                     # inner_diameter=self.settings.graphics.TARGET_SIZE_INNER)
-            self.animator = helpers.AnimatedCalibrationDisplay(self.win, target)
+            self.animator = helpers.AnimatedCalibrationDisplay(self.win, self.cal_dot)
 
         # Main control loop
         action = 'setup'
