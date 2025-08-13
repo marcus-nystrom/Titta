@@ -606,12 +606,13 @@ class EThead(object):
 #%%
 class AnimatedCalibrationDisplay(object):
     """ A class for drawing animated targets"""
-    def __init__(self, win, target):
+    def __init__(self, win, target, move_duration):
         self.win = win
         if not isinstance(target,TargetBase):
             raise ValueError('Provided target should be an instance of a class derived from helpers_tobii.TargetBase')
         self.target = target
         self.target_size = target.get_size()
+        self.move_duration = move_duration
         self.screen_refresh_rate = float(win.getActualFrameRate() or 60)
 
     def animate_point(self, point_number, position, tick):
@@ -634,7 +635,7 @@ class AnimatedCalibrationDisplay(object):
         self.target.set_size(2 * self.target_size)
 
         # How many ticks should the movement be (one screen unit in one second)?
-        n_steps = int(self.screen_refresh_rate / 2)
+        n_steps = int(self.screen_refresh_rate * self.move_duration)
         step_pos_x = np.linspace(old_position[0], new_position[0], n_steps)
         step_pos_y = np.linspace(old_position[1], new_position[1], n_steps)
 

@@ -93,12 +93,13 @@ class Settings(object):
         self.TRACKING_MODE = 'Default'
 
         # Parameters for calibration
-        self.PACING_INTERVAL = 1.0           # How long to present the dot until samples are collected
+        self.PACING_INTERVAL = 1.0           # How long to present the target at calibration/validation location until samples are collected
         self.AUTO_PACE = 2                   # accept all points with space bar (0), semi autoaccept
                                              # (1, accept only first point with space bar, default), or
                                              # autoaccept (2)
 
         self.ANIMATE_CALIBRATION = True      # Static or animated calibration dots
+        self.MOVE_TARGET_DURATION = 0.5      # Duration for calibration/validation target to move from one position to the next
         self.RECORD_EYE_IMAGES_DURING_CALIBRATION = False
         self.N_CAL_TARGETS = 5               # Valid: 0, 1, 5, 9, 13
 

@@ -440,7 +440,7 @@ class myTobii(object):
 
         # Animated calibration?
         if self.settings.ANIMATE_CALIBRATION:
-            self.animator = helpers.AnimatedCalibrationDisplay(self.win, self.cal_dot)
+            self.animator = helpers.AnimatedCalibrationDisplay(self.win, self.cal_dot, self.settings.MOVE_TARGET_DURATION)
 
         # Main control loop
         action = 'setup'
