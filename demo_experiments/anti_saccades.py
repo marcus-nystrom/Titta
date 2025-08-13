@@ -661,7 +661,7 @@ mon.setSizePix(SCREEN_RES)
 win = visual.Window(monitor = mon, screen = 1,
                     size = SCREEN_RES,
                     units = 'deg', fullscr = FULLSCREEN,
-                    allowGUI = False)
+                    allowGUI = False, multiSample=True, numSamples=4)
 
 # Change any of the default dettings?e
 settings = Titta.get_defaults(et_name)

@@ -62,7 +62,7 @@ participant_info = ttl.add_participant(pid)
 try:
     # Window set-up (this color will be used for calibration)
     win = visual.Window(monitor = mon, fullscr = FULLSCREEN,
-                        screen=1, size=SCREEN_RES, units = 'deg')
+                        screen=1, size=SCREEN_RES, units = 'deg', multiSample=True, numSamples=4)
 
     image = visual.ImageStim(win, image='im1.jpeg', units='norm', size = (2, 2))
     text = visual.TextStim(win, text='', height=1)

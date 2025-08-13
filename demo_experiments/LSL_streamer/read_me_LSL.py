@@ -166,7 +166,7 @@ to_master.push_sample([msg])
 
 # Window set-up
 win = visual.Window(monitor=mon, fullscr=FULLSCREEN,
-                    screen=1, size=SCREEN_RES, units='deg', checkTiming=False)
+                    screen=1, size=SCREEN_RES, units='deg', multiSample=True, numSamples=4, checkTiming=False)
 text = visual.TextStim(win, height=50, units='pix')
 dot_wally = visual.Circle(win, radius=60, lineColor='red',
                           fillColor= None, lineWidth=10, units='pix',
