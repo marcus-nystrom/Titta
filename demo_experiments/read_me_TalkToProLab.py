@@ -64,7 +64,6 @@ try:
     win = visual.Window(monitor = mon, fullscr = FULLSCREEN,
                         screen=1, size=SCREEN_RES, units = 'deg')
 
-    fixation_point = helpers.MyDot2(win)
     image = visual.ImageStim(win, image='im1.jpeg', units='norm', size = (2, 2))
     text = visual.TextStim(win, text='', height=1)
     # Create psychopy image objects and upload media to Lab
