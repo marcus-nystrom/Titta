@@ -40,6 +40,7 @@
 /demo-experiments/*.json
 /playground/*.h5
 /playground/*.json
+testfile_*
 
 # Logs and databases #
 ######################
