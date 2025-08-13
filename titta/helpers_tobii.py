@@ -521,7 +521,7 @@ class EThead(object):
         ellipse_points_head = ellipse(xy = (0, 0),
                                       width= self.head_width,
                                       height=ellipse_height,
-                                      angle=roll)
+                                      angle=roll, n_points=100)
 
         # update position and shape of head ellipse
         self.moving_ellipse.vertices = ellipse_points_head
