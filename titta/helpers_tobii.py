@@ -98,8 +98,6 @@ def tobii2pix(pos, win):
     and screen coordinate in the upper left corner
     Args:   pos: N x 2 array with calibratio position in [0, 1]
             screen_height: height of screen in cm
-
-
     '''
 
     pos_temp = copy.deepcopy(pos)     # Center
@@ -228,7 +226,6 @@ class MyDot2:
         self.line_horizontal.lineColor = inner_color
 
 
-
 #%%
 class MyDot3:
     '''
@@ -241,7 +238,7 @@ class MyDot3:
         units are derived from the window
         '''
 
-        # Set propertis of dot
+        # Set properties of dot
         outer_dot = visual.Circle(win,fillColor = outer_color, radius = round(outer_diameter/2),
                                   units = units)
         inner_dot = visual.Circle(win,fillColor = inner_color, radius = round(inner_diameter/2),
@@ -314,6 +311,7 @@ def ellipse(xy = (0, 0), width=1, height=1, angle=0, n_points=50):
     points = np.vstack((X, Y)).T
 
     return points
+
 #%%
 class EThead(object):
     """ A class to handle head animation in Titta
@@ -355,7 +353,6 @@ class EThead(object):
             self.use_positioning_stream = False
             # What is the position of HEAD_BOX_CENTER in positioning stream?
 
-
         # Setup control circles for head position
         self.static_circ = visual.Circle(win, radius = HEAD_POS_CIRCLE_FIXED_RADIUS,
                                          lineColor = HEAD_POS_CIRCLE_FIXED_COLOR,
@@ -367,7 +364,6 @@ class EThead(object):
                                          lineWidth=4, units='height',
                                          size=None,
                                          fillColor=yellow, opacity=0.5)
-
 
         # Ellipses for eyes
         self.eye_l = visual.ShapeStim(win,  lineColor = 'white', fillColor='white',
@@ -446,7 +442,7 @@ class EThead(object):
         xyz_pos_eye_r = (sample_user_pos['right_user_position_x'][0],
                          sample_user_pos['right_user_position_y'][0],
                          sample_user_pos['right_user_position_z'][0])
-    # else: # Use User coordinate system (in mm)
+        # else: # Use User coordinate system (in mm)
 
         if not self.use_positioning_stream:
             xyz_pos_eye_l_ucs = (sample['left_gaze_origin_in_user_coordinates_x'][0],
@@ -471,7 +467,6 @@ class EThead(object):
 
             if not self.use_positioning_stream:
                 avg_pos_ucs = np.nanmean([xyz_pos_eye_l_ucs, xyz_pos_eye_r_ucs], axis=0)
-        # print('avg pos  {:f} {:f} {:f}'.format(avg_pos[0], avg_pos[1], avg_pos[2]))
 
         # If one eye is closed, the center of the circle is moved,
         # Try to prevent this by compensating by an offset
@@ -511,8 +506,6 @@ class EThead(object):
             yaw = self.latest_valid_yaw
         self.latest_valid_roll_deg = roll * 180 / np.pi * -1
 
-#        print('test', latest_valid_binocular_avg, roll, yaw)
-
         # Compute the ellipse height and width
         # The width should be zero if yaw = pi/2 rad (90 deg)
         # The width should be equal to the height if yaw = 0
@@ -530,9 +523,6 @@ class EThead(object):
 
         self.head_width = ellipse_height - \
                           np.abs(yaw) / np.pi * (ellipse_height)
-
-#        print(self.moving_ellipse.pos, self.moving_ellipse.height,
-#              self.head_width, roll, yaw)
 
         # Get head ellipse points to draw
         ellipse_points_head = ellipse(xy = (0, 0),
@@ -554,14 +544,11 @@ class EThead(object):
         self.eye_r.vertices = ellipse_points_head / (5.0 + yaw)
 
         #%% Compute the position and size of the pupils
-#        print(self.eye_l.pos)
         self.pupil_l.pos = self.eye_l.pos
         self.pupil_l.vertices = self.eye_l.vertices * (sample['left_pupil_diameter'][0] - 1)*2 / 16
 
         self.pupil_r.pos = self.eye_r.pos
         self.pupil_r.vertices = self.eye_r.vertices * (sample['right_pupil_diameter'][0] - 1)*2 / 16
-
-#        print(self.eye_l.pos, self.eye_r.pos)
 
         return self.latest_valid_binocular_avg, self.previous_binocular_sample_valid, self.latest_valid_roll, self.latest_valid_yaw, self.offset
 
@@ -579,7 +566,6 @@ class EThead(object):
         # Draw head, eyes, and pupils
         self.moving_ellipse.draw()
 
-#        print(self.eye, self.moving_ellipse.pos, self.eye_r.pos, self.pupil_r.vertices)
         if 'both' in self.eye or 'right' in self.eye:
             if self.right_eye_valid:
                 self.eye_r.draw()
@@ -701,6 +687,3 @@ def rms(x):
 #%%
 def sd(x):
     return np.nanstd(x)
-
-#%%
-
