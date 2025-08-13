@@ -546,7 +546,7 @@ class myTobii(object):
 
     #%%
     def _add_to_name(self, fname, append_name=True):
-        # Add pid and path to name of calibraiton/validation images and calibration data
+        # Add pid and path to name of calibration/validation images and calibration data
         if self.settings.DATA_STORAGE_PATH.strip():
             # Add participant name to filename
             if append_name:
