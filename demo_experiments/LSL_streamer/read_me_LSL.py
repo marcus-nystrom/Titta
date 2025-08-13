@@ -21,7 +21,7 @@
 from psychopy import visual, monitors, core, event
 import numpy as np
 from titta import Titta, helpers_tobii as helpers
-import TittaLSLPy
+import TittaLSLPy_v2 as TittaLSLPy      # NB: import TittaLSLPy_v1 if the eye tracker you use is not supported by the version 2 of the Tobii Pro SDK
 import pylsl
 import os
 import socket
