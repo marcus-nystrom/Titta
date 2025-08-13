@@ -444,7 +444,7 @@ class myTobii(object):
             target = self.cal_dot #helpers.MyDot2(self.win, units='pix',
                                      # outer_diameter=self.settings.graphics.TARGET_SIZE,
                                      # inner_diameter=self.settings.graphics.TARGET_SIZE_INNER)
-            self.animator = helpers.AnimatedCalibrationDisplay(self.win, target, 'animate_point')
+            self.animator = helpers.AnimatedCalibrationDisplay(self.win, target)
 
         # Main control loop
         action = 'setup'
@@ -863,7 +863,7 @@ class myTobii(object):
                         tick = 0
                         t0 = self.clock.getTime()
                 else:
-                    self.animator.animate_target(0, (pos[0], pos[1]), tick)
+                    self.animator.animate_point(0, (pos[0], pos[1]), tick)
             else:
                 self.cal_dot.set_pos(pos)
                 self.cal_dot.draw()
@@ -1129,7 +1129,7 @@ class myTobii(object):
                         tick = 0
                         self.clock.reset()
                 else:
-                    self.animator.animate_target(0, (pos[0], pos[1]), tick)
+                    self.animator.animate_point(0, (pos[0], pos[1]), tick)
             else:
                 animation_state == 'static'
                 self.cal_dot.set_pos(pos)

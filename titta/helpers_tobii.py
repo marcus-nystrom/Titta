@@ -605,23 +605,11 @@ class EThead(object):
 #%%
 class AnimatedCalibrationDisplay(object):
     """ A class for drawing animated targets"""
-    def __init__(self, win, target, function_name):
-        ''' The function 'function_name' does the actual drawing
-        '''
+    def __init__(self, win, target):
         self.win = win
-        self.function_name = function_name
         self.target = target # psychopy.visual object (should be in 'pix' units)
         self.target_size = target.get_size()
         self.screen_refresh_rate = float(win.getActualFrameRate() or 60)
-
-    def animate_target(self, point_number, position, tick):
-        ''' Calls the target drawing function 'func'
-        '''
-
-        eval(''.join(['self.',self.function_name,'(',str(point_number),',',
-                                        '(',str(position[0]),',',
-                                            str(position[1]), ')' ,',', str(tick),')']))
-
 
     def animate_point(self, point_number, position, tick):
         ''' Animates calibration point with a certain point_number and position
@@ -633,7 +621,6 @@ class AnimatedCalibrationDisplay(object):
         self.target.set_size(target_size)
         self.target.set_pos(position)
         self.target.draw()
-
 
     def move_point(self, old_position, new_position, tick):
         ''' Animates movement between two positions
@@ -647,7 +634,6 @@ class AnimatedCalibrationDisplay(object):
         n_steps = int(self.screen_refresh_rate / 2)
         step_pos_x = np.linspace(old_position[0], new_position[0], n_steps)
         step_pos_y = np.linspace(old_position[1], new_position[1], n_steps)
-
 
         if tick >= len(step_pos_x):
             move_completed = True
