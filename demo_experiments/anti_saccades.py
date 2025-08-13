@@ -64,7 +64,7 @@ class ProAntiSaccades(object):
         self.duration_peripheral_target = duration_peripheral_target * screen_refresh_rate
 
         #Initialize stimuli used in experiment
-        self.dot_stim = helpers.MyDot2(win, units='deg', outer_diameter=1,
+        self.dot_stim = helpers.MyDot2(win=win, units='deg', outer_diameter=1,
                                        inner_diameter=0.2)
         self.et_sample = visual.GratingStim(win, color='black', tex=None, mask='circle',units='pix',size=2)
         self.line = visual.Line(win, start=(-0.5, -0.5), end=(0.5, 0.5), units='pix')

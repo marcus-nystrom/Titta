@@ -179,7 +179,7 @@ remote_gaze = visual.Circle(win, radius=50, lineColor='red', units='pix',
                             fillColor= None, lineWidth=5)
 local_gaze  = visual.Circle(win, radius=25, lineColor='red', units='pix',
                             fillColor= None, lineWidth=5)
-fixation_point = helpers.MyDot2(win)
+fixation_point = helpers.MyDot2(win=win)
 
 im_search = visual.ImageStim(win, image=IMNAME_WALLY)
 im_face   = visual.ImageStim(win, image=IMNAME_WALLY_FACE)

@@ -74,7 +74,7 @@ if dual_screen_setup:
     Setting waitBlanking to True can make drawing on the operator screen slow and choppy.
     '''
 
-fixation_point = helpers.MyDot2(win)
+fixation_point = helpers.MyDot2(win=win)
 
 images = []
 for im_name in im_names:
