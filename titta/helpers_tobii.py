@@ -8,6 +8,7 @@ from psychopy import visual
 import numpy as np
 import copy
 import warnings
+import abc
 
 HAS_PSYCHOPY = False
 try:
@@ -126,50 +127,58 @@ def pix2tobii(pos, mon):
     return norm2tobii(pos)
 
 # %%
-
-class CalDot:
-    def __init__(self, dot_class, *args, **kwargs):
-        self.dot = dot_class(*args, **kwargs)
-
-    def __getattr__(self, name):
-        # Delegate attribute access to the wrapped dot instance
-        return getattr(self.dot, name)
+class TargetBase(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def create_for_win(self, win):
+        pass
+    @abc.abstractmethod
+    def get_size(self, position):
+        # NB: sizes for the object should be in 'pix' units
+        pass
+    @abc.abstractmethod
+    def get_size(self):
+        pass
+    @abc.abstractmethod
+    def set_size(self, target_size):
+        pass
+    @abc.abstractmethod
+    def draw(self):
+        pass
 
 #%%
-class MyDot2:
+class MyDot2(TargetBase):
     '''
     Generates the best fixation target according to Thaler et al. (2013)
     '''
-    def __init__(self, win, outer_diameter=50, inner_diameter=10,
-                 outer_color = 'black', inner_color = 'white',units = 'pix'):
-        '''
-        Class to generate a stimulus dot with
-        units are derived from the window
-        '''
+    def __init__(self, outer_diameter=50, inner_diameter=10,
+                 outer_color='black', inner_color='white', units='pix', win=None):
+        super().__init__()
+        self.outer_diameter = outer_diameter
+        self.inner_diameter = inner_diameter
+        self.outer_color    = outer_color
+        self.inner_color    = inner_color
+        self.units          = units
+        if win is not None:
+            self.create_for_win(win)
 
-        # Set propertis of dot
-        outer_dot = visual.Circle(win,fillColor = outer_color, radius = outer_diameter/2,
-                                  units = units)
-        inner_dot = visual.Circle(win,fillColor = outer_color, radius = inner_diameter/2,
-                                  units = units)
-        line_vertical = visual.Rect(win, width=inner_diameter, height=outer_diameter,
-                                    fillColor=inner_color, units = units)
-        line_horizontal = visual.Rect(win, width=outer_diameter, height=inner_diameter,
-                                    fillColor=inner_color, units = units)
-
-
-        self.outer_dot = outer_dot
-        self.inner_dot = inner_dot
-        self.line_vertical = line_vertical
-        self.line_horizontal = line_horizontal
-
+    def create_for_win(self, win):
+        # Set properties of dot
+        self.outer_dot = visual.Circle(win, fillColor = self.outer_color, radius = self.outer_diameter/2,
+                                       units = self.units)
+        self.inner_dot = visual.Circle(win, fillColor = self.outer_color, radius = self.inner_diameter/2,
+                                       units = self.units)
+        self.line_vertical = visual.Rect(win, width=self.inner_diameter, height=self.outer_diameter,
+                                         fillColor=self.inner_color, units = self.units)
+        self.line_horizontal = visual.Rect(win, width=self.outer_diameter, height=self.inner_diameter,
+                                           fillColor=self.inner_color, units = self.units)
 
     def set_size(self, size):
         ''' Sets the size of the stimulus
         '''
-        self.outer_dot.radius = size / 2
-        self.line_vertical.size = (self.line_vertical.width, size)
-        self.line_horizontal.size = (size, self.line_horizontal.height)
+        self.outer_diameter = size
+        self.outer_dot.radius = self.outer_diameter/2
+        self.line_vertical.size = (self.line_vertical.width, self.outer_diameter)
+        self.line_horizontal.size = (self.outer_diameter, self.line_horizontal.height)
 
     def set_pos(self, pos):
         '''
@@ -185,17 +194,13 @@ class MyDot2:
         '''
         get position of dot
         '''
-        pos = self.outer_dot.pos
-
-        return pos
+        return self.outer_dot.pos
 
     def get_size(self):
         '''
         get size of dot
         '''
-
-        return self.outer_dot.radius * 2
-
+        return self.outer_diameter
 
     def draw(self):
         '''
@@ -206,53 +211,53 @@ class MyDot2:
         self.line_horizontal.draw()
         self.inner_dot.draw()
 
-
     def invert_color(self):
         '''
-        inverts the colors of the dot
+        inverts (swaps) the colors of the dot
         '''
-        temp = self.outer_dot.fillColor
-        self.outer_dot.fillColor = self.inner_dot.fillColor
-        self.inner_dot.fillColor = temp
+        self.inner_dot.fillColor, self.outer_dot.fillColor = self.outer_dot.fillColor, self.inner_dot.fillColor
+        self.inner_color, self.outer_color                 = self.outer_color, self.inner_color
 
     def set_color(self, outer_color, inner_color):
-        self.outer_dot.lineColor = outer_color
-        self.outer_dot.fillColor = outer_color
-        self.inner_dot.fillColor = outer_color
-        self.inner_dot.lineColor = outer_color
-        self.line_vertical.lineColor = inner_color
-        self.line_horizontal.fillColor = inner_color
-        self.line_vertical.fillColor = inner_color
-        self.line_horizontal.lineColor = inner_color
+        self.outer_color, self.inner_color = outer_color, inner_color
+        self.outer_dot.lineColor = self.outer_color
+        self.outer_dot.fillColor = self.outer_color
+        self.inner_dot.fillColor = self.outer_color
+        self.inner_dot.lineColor = self.outer_color
+        self.line_vertical.lineColor = self.inner_color
+        self.line_horizontal.fillColor = self.inner_color
+        self.line_vertical.fillColor = self.inner_color
+        self.line_horizontal.lineColor = self.inner_color
 
 
 #%%
-class MyDot3:
+class MyDot3(TargetBase):
     '''
     Black circle
     '''
-    def __init__(self, win, outer_diameter=50, inner_diameter=10,
-                 outer_color = 'black', inner_color = 'gray',units = 'pix'):
-        '''
-        Class to generate a stimulus dot with
-        units are derived from the window
-        '''
+    def __init__(self, outer_diameter=50, inner_diameter=10,
+                 outer_color='black', inner_color='gray', units='pix', win=None):
+        super().__init__()
+        self.outer_diameter = outer_diameter
+        self.inner_diameter = inner_diameter
+        self.outer_color    = outer_color
+        self.inner_color    = inner_color
+        self.units          = units
+        if win is not None:
+            self.create_for_win(win)
 
+    def create_for_win(self, win):
         # Set properties of dot
-        outer_dot = visual.Circle(win,fillColor = outer_color, radius = round(outer_diameter/2),
-                                  units = units)
-        inner_dot = visual.Circle(win,fillColor = inner_color, radius = round(inner_diameter/2),
-                                  units = units)
-
-
-        self.outer_dot = outer_dot
-        self.inner_dot = inner_dot
+        self.outer_dot = visual.Circle(win,fillColor = self.outer_color, radius = self.outer_diameter/2,
+                                       units = self.units)
+        self.inner_dot = visual.Circle(win,fillColor = self.inner_color, radius = self.inner_diameter/2,
+                                       units = self.units)
 
     def set_size(self, size):
-        ''' Sets the size of the stimulus as scaled by 'size'
-        That is, if size == 1, the size is not altered.
+        ''' Sets the size of the stimulus
         '''
-        self.outer_dot.radius = size / 2
+        self.outer_diameter = size
+        self.outer_dot.radius = self.outer_diameter/2
 
     def set_pos(self, pos):
         '''
@@ -266,17 +271,13 @@ class MyDot3:
         '''
         get position of dot
         '''
-        pos = self.outer_dot.pos
-
-        return pos
+        return self.outer_dot.pos
 
     def get_size(self):
         '''
         get size of dot
         '''
-
-        return self.outer_dot.radius * 2
-
+        return self.outer_diameter
 
     def draw(self):
         '''
