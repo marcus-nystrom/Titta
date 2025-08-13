@@ -1051,7 +1051,7 @@ class myTobii(object):
             # if a path is given by the user, use it!
             filename = self._add_to_name(filename)
 
-            with open(filename + '.p', 'wb') as handle:
+            with open(filename + '.cal', 'wb') as handle:
                 pickle.dump(calibration_data, handle)
         else:
             if self.settings.DEBUG:
@@ -1068,7 +1068,7 @@ class myTobii(object):
         filename = self._add_to_name(filename)
 
         # Read the calibration from file.
-        with open(filename + '.p', 'rb') as handle:
+        with open(filename + '.cal', 'rb') as handle:
             calibration_data = pickle.load(handle)
 
         # Don't apply empty calibrations.
