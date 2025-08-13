@@ -145,7 +145,6 @@ class Graphics(object):
         green = tuple(np.array([0, 120, 0]) / 255.0 * 2 - 1)
         red = tuple(np.array([150, 0, 0]) / 255.0 * 2 - 1)
         yellow = tuple(np.array([255, 255, 0]) / 255.0 * 2 - 1)
-        yellow_linecolor = tuple(np.array([255, 255, 0]) / 255.0 * 2 - 1)
 
         self.blue = blue
         self.blue_active = blue_active
@@ -155,18 +154,13 @@ class Graphics(object):
 
         self.ET_SAMPLE_RADIUS = 5 # in pix
 
-        # SIze of calibration dots
+        # Size of calibration dots
         self.TARGET_SIZE=30 # in pix
         self.TARGET_SIZE_INNER=self.TARGET_SIZE / 6  # inner diameter of dot
 
-        # Theses parameters are changed directly in the EThead class
-        # self.HEAD_POS_CIRCLE_FIXED_COLOR = blue
-        # self.HEAD_POS_CIRCLE_FIXED_RADIUS = 0.25
-
-        # self.HEAD_POS_CIRCLE_MOVING_COLOR = yellow
-        # self.HEAD_POS_CIRCLE_MOVING_FILLCOLOR = yellow
-        # self.HEAD_POS_CIRCLE_MOVING_RADIUS = 0.25
-        # self.HEAD_POS_CIRCLE_MOVING_MIN_RADIUS = 0.05
+        # Parameters of the EThead class (others are changed directly in the EThead class)
+        self.HEAD_POS_CIRCLE_FIXED_COLOR = blue
+        self.HEAD_POS_CIRCLE_MOVING_COLOR = yellow
 
         self.POS_CAL_BUTTON = (0.5, -0.8)
         self.COLOR_CAL_BUTTON =  green

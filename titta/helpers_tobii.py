@@ -320,24 +320,16 @@ class EThead(object):
     head.
     """
 
-    def __init__(self, win, HEAD_BOX_CENTER):
+    def __init__(self, win, HEAD_BOX_CENTER, HEAD_POS_CIRCLE_FIXED_COLOR, HEAD_POS_CIRCLE_MOVING_COLOR):
         '''
         Args:
             win - psychopy window handle
             HEAD_BOX_CENTER - center of headbox, e.g., [x, y, z] = [0, 0, 700]
         '''
-
         self.win = win
 
-        # Define colors
-        blue = tuple(np.array([37, 97, 163]) / 255.0 * 2 - 1)
-        green = tuple(np.array([0, 120, 0]) / 255.0 * 2 - 1)
-        red = tuple(np.array([150, 0, 0]) / 255.0 * 2 - 1)
-        yellow = tuple(np.array([255, 255, 0]) / 255.0 * 2 - 1)
-        yellow_linecolor = tuple(np.array([255, 255, 0]) / 255.0 * 2 - 1)
-
         # Head parameters
-        HEAD_POS_CIRCLE_FIXED_COLOR = blue
+        HEAD_POS_CIRCLE_FIXED_COLOR = HEAD_POS_CIRCLE_FIXED_COLOR
         HEAD_POS_CIRCLE_FIXED_RADIUS = 0.20
         self.HEAD_POS_ELLIPSE_MOVING_HEIGHT = 0.20
         self.HEAD_POS_ELLIPSE_MOVING_MIN_HEIGHT = 0.05
@@ -358,13 +350,13 @@ class EThead(object):
         self.static_circ = visual.Circle(win, radius = HEAD_POS_CIRCLE_FIXED_RADIUS,
                                          lineColor = HEAD_POS_CIRCLE_FIXED_COLOR,
                                          fillColor = None,
-                                         lineWidth=4, units='height')
+                                         lineWidth=6, units='height')
 
         # Size=None (If None is specified, the size will be set with values passed to width and height)
-        self.moving_ellipse = visual.ShapeStim(win,  lineColor = yellow_linecolor,
-                                         lineWidth=4, units='height',
+        self.moving_ellipse = visual.ShapeStim(win,  lineColor = HEAD_POS_CIRCLE_MOVING_COLOR,
+                                         lineWidth=6, units='height',
                                          size=None,
-                                         fillColor=yellow, opacity=0.5)
+                                         fillColor=HEAD_POS_CIRCLE_MOVING_COLOR, opacity=0.5)
 
         # Ellipses for eyes
         self.eye_l = visual.ShapeStim(win,  lineColor = 'white', fillColor='white',

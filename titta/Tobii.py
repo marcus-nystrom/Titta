@@ -632,11 +632,11 @@ class myTobii(object):
             raise Exception('Eye tracker switched on?')
 
         # Initiate parameters of head class (shown on participant screen)
-        et_head = helpers.EThead(self.win, self.settings.HEAD_BOX_CENTER)
+        et_head = helpers.EThead(self.win, self.settings.HEAD_BOX_CENTER, self.settings.graphics.HEAD_POS_CIRCLE_FIXED_COLOR, self.settings.graphics.HEAD_POS_CIRCLE_MOVING_COLOR)
 
         # Initiate parameters of head class (shown on operator screen)
         if self.win_operator:
-            et_head_op = helpers.EThead(self.win_temp, self.settings.HEAD_BOX_CENTER)
+            et_head_op = helpers.EThead(self.win_temp, self.settings.HEAD_BOX_CENTER, self.settings.graphics.HEAD_POS_CIRCLE_FIXED_COLOR, self.settings.graphics.HEAD_POS_CIRCLE_MOVING_COLOR)
 
         show_eye_images = False
         image_button_pressed = False
