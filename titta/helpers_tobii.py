@@ -167,8 +167,7 @@ class MyDot2:
 
 
     def set_size(self, size):
-        ''' Sets the size of the stimulus as scaled by 'size'
-        That is, if size == 1, the size is not altered.
+        ''' Sets the size of the stimulus
         '''
         self.outer_dot.radius = size / 2
         self.line_vertical.size = (self.line_vertical.width, size)
@@ -218,15 +217,15 @@ class MyDot2:
         self.outer_dot.fillColor = self.inner_dot.fillColor
         self.inner_dot.fillColor = temp
 
-    def set_color(self, color):
-        self.outer_dot.lineColor = 'blue'
-        self.outer_dot.fillColor = 'blue'
-        self.inner_dot.fillColor = 'blue'
-        self.inner_dot.lineColor = 'blue'
-        self.line_vertical.lineColor = 'red'
-        self.line_horizontal.fillColor = 'red'
-        self.line_vertical.fillColor = 'red'
-        self.line_horizontal.lineColor = 'red'
+    def set_color(self, outer_color, inner_color):
+        self.outer_dot.lineColor = outer_color
+        self.outer_dot.fillColor = outer_color
+        self.inner_dot.fillColor = outer_color
+        self.inner_dot.lineColor = outer_color
+        self.line_vertical.lineColor = inner_color
+        self.line_horizontal.fillColor = inner_color
+        self.line_vertical.fillColor = inner_color
+        self.line_horizontal.lineColor = inner_color
 
 
 
