@@ -35,5 +35,5 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 3',
     ],
-    install_requires=['numpy','pandas','h5py','TittaPy','websocket_client'],
+    install_requires=['numpy','pandas','h5py','TittaPy>=2','websocket_client'],
 )

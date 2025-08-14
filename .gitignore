@@ -36,10 +36,11 @@
 
 # demo data files    #
 ######################
-/demo-experiments/*.h5
-/demo-experiments/*.json
+/demo_experiments/*.h5
+/demo_experiments/*.json
 /playground/*.h5
 /playground/*.json
+testfile*
 
 # Logs and databases #
 ######################

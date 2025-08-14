@@ -16,7 +16,8 @@ import os
 import numpy as np
 import h5py
 import time
-import TittaPy
+import importlib
+import TittaPy_v2 as TittaPy
 import titta
 from titta import helpers_tobii as helpers
 
@@ -50,6 +51,13 @@ class myTobii(object):
 
         # Remove empty spaces (if any are given)
         self.settings.TRACKER_ADDRESS = self.settings.TRACKER_ADDRESS.replace(" ", "")
+
+        # ensure right SDK version is loaded
+        global TittaPy
+        SDKVersion = int(TittaPy.__name__[-1])
+        if self.settings.TittaPySDKVersion != SDKVersion:
+            # set global TittaPy to correct version
+            TittaPy = importlib.import_module('TittaPy_v'+str(self.settings.TittaPySDKVersion))
 
 
     #%%
@@ -191,14 +199,15 @@ class myTobii(object):
 
 
         # Setup stimuli for drawing calibration / validation targets
-        # self.cal_dot = helpers.MyDot2(self.win, units='pix',
-        #                              outer_diameter=self.settings.graphics.TARGET_SIZE,
-        #                              inner_diameter=self.settings.graphics.TARGET_SIZE_INNER)
-
-        self.cal_dot = helpers.CalDot(eval(f'helpers.{self.settings.CAL_TARGET}'),
-                                           self.win, units='pix',
-                                           outer_diameter=self.settings.graphics.TARGET_SIZE,
-                                           inner_diameter=self.settings.graphics.TARGET_SIZE_INNER)
+        if self.settings.CAL_TARGET is None:
+            self.cal_dot = helpers.MyDot2(units='pix',
+                                          outer_diameter=self.settings.graphics.TARGET_SIZE,
+                                          inner_diameter=self.settings.graphics.TARGET_SIZE_INNER)
+        else:
+            if not isinstance(self.settings.CAL_TARGET, helpers.TargetBase):
+                raise ValueError('Provided target should be an instance of a class derived from helpers_tobii.TargetBase')
+            self.cal_dot = self.settings.CAL_TARGET
+        self.cal_dot.create_for_win(self.win)
 
 
         # Click buttons
@@ -281,9 +290,9 @@ class myTobii(object):
                                                 pos=self.settings.graphics.POS_CAL_IMAGE_BUTTON)
 
         # Dots for the setup screen
-        self.setup_dot = helpers.MyDot2(self.win, units='height',
+        self.setup_dot = helpers.MyDot2(units='height',
                                      outer_diameter=self.settings.graphics.SETUP_DOT_OUTER_DIAMETER,
-                                     inner_diameter=self.settings.graphics.SETUP_DOT_INNER_DIAMETER)
+                                     inner_diameter=self.settings.graphics.SETUP_DOT_INNER_DIAMETER, win=self.win)
 
 
         # Dot for showing et data
@@ -299,7 +308,7 @@ class myTobii(object):
                                              fillColor = 'blue', units='norm')
             self.current_point = helpers.MyDot2(self.win_temp, units='norm',
                                          outer_diameter=0.05,
-                                         inner_diameter=0.02)
+                                         inner_diameter=0.02, win=self.win_temp)
 
         # Show images (eye image, validation resutls)
         self.eye_image_stim_l = visual.ImageStim(self.win_temp, units='norm',
@@ -439,12 +448,7 @@ class myTobii(object):
 
         # Animated calibration?
         if self.settings.ANIMATE_CALIBRATION:
-
-            # Define your calibration target
-            target = self.cal_dot #helpers.MyDot2(self.win, units='pix',
-                                     # outer_diameter=self.settings.graphics.TARGET_SIZE,
-                                     # inner_diameter=self.settings.graphics.TARGET_SIZE_INNER)
-            self.animator = helpers.AnimatedCalibrationDisplay(self.win, target, 'animate_point')
+            self.animator = helpers.AnimatedCalibrationDisplay(self.win, self.cal_dot, self.settings.MOVE_TARGET_DURATION)
 
         # Main control loop
         action = 'setup'
@@ -550,11 +554,12 @@ class myTobii(object):
 
     #%%
     def _add_to_name(self, fname, append_name=True):
-        # Add pid and path to name of calibraiton/validation images and calibration data
+        # Add pid and path to name of calibration/validation images and calibration data
+        # Add participant name to filename
+        if append_name:
+            fname = self.settings.FILENAME + '_' + fname
+        # add data storage path
         if self.settings.DATA_STORAGE_PATH.strip():
-            # Add participant name to filename
-            if append_name:
-                fname = self.settings.FILENAME + '_' + fname
             fname = self.settings.DATA_STORAGE_PATH + os.sep + fname
 
         return fname
@@ -627,11 +632,11 @@ class myTobii(object):
             raise Exception('Eye tracker switched on?')
 
         # Initiate parameters of head class (shown on participant screen)
-        et_head = helpers.EThead(self.win, self.settings.HEAD_BOX_CENTER)
+        et_head = helpers.EThead(self.win, self.settings.HEAD_BOX_CENTER, self.settings.graphics.HEAD_POS_CIRCLE_FIXED_COLOR, self.settings.graphics.HEAD_POS_CIRCLE_MOVING_COLOR)
 
         # Initiate parameters of head class (shown on operator screen)
         if self.win_operator:
-            et_head_op = helpers.EThead(self.win_temp, self.settings.HEAD_BOX_CENTER)
+            et_head_op = helpers.EThead(self.win_temp, self.settings.HEAD_BOX_CENTER, self.settings.graphics.HEAD_POS_CIRCLE_FIXED_COLOR, self.settings.graphics.HEAD_POS_CIRCLE_MOVING_COLOR)
 
         show_eye_images = False
         image_button_pressed = False
@@ -863,7 +868,7 @@ class myTobii(object):
                         tick = 0
                         t0 = self.clock.getTime()
                 else:
-                    self.animator.animate_target(0, (pos[0], pos[1]), tick)
+                    self.animator.animate_point(0, (pos[0], pos[1]), tick)
             else:
                 self.cal_dot.set_pos(pos)
                 self.cal_dot.draw()
@@ -1054,7 +1059,7 @@ class myTobii(object):
             # if a path is given by the user, use it!
             filename = self._add_to_name(filename)
 
-            with open(filename + '.p', 'wb') as handle:
+            with open(filename + '.cal', 'wb') as handle:
                 pickle.dump(calibration_data, handle)
         else:
             if self.settings.DEBUG:
@@ -1071,7 +1076,7 @@ class myTobii(object):
         filename = self._add_to_name(filename)
 
         # Read the calibration from file.
-        with open(filename + '.p', 'rb') as handle:
+        with open(filename + '.cal', 'rb') as handle:
             calibration_data = pickle.load(handle)
 
         # Don't apply empty calibrations.
@@ -1129,7 +1134,7 @@ class myTobii(object):
                         tick = 0
                         self.clock.reset()
                 else:
-                    self.animator.animate_target(0, (pos[0], pos[1]), tick)
+                    self.animator.animate_point(0, (pos[0], pos[1]), tick)
             else:
                 animation_state == 'static'
                 self.cal_dot.set_pos(pos)
@@ -1689,6 +1694,7 @@ RMS_R: {:.2f}, LOSS_L: {:.1f}, LOSS_R: {:.1f}, SD_L: {:.2f}, SD_R: {:.2f}' \
                                            str(sys.version_info[2])])
         info['psychopy_version'] = psychopy.__version__
         info['TittaPy_version'] = TittaPy.__version__
+        info['Tobii_SDK_version'] = TittaPy.get_SDK_version()
         info['titta_version'] = titta.__version__
         # info['git_revision'] = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
 
@@ -1884,17 +1890,10 @@ RMS_R: {:.2f}, LOSS_L: {:.1f}, LOSS_R: {:.1f}, SD_L: {:.2f}, SD_R: {:.2f}' \
 
         # Also save tracker/python version to .h5-file as attributes
         with h5py.File(fname + '.h5', 'a') as hf:
-            hf.attrs['serial_number'] = temp['serial_number']
-            hf.attrs['address'] = temp['address']
-            hf.attrs['model'] = temp['model']
-            hf.attrs['name'] = temp['name']
-            hf.attrs['firmware_version'] = temp['firmware_version']
-            hf.attrs['runtime_version'] = temp['runtime_version']
-            hf.attrs['sampling_frequency'] = temp['sampling_frequency']
-            hf.attrs['python_version'] = temp['python_version']
-            hf.attrs['psychopy_version'] = temp['psychopy_version']
-            hf.attrs['TittaPy_version'] = temp['TittaPy_version']
-            hf.attrs['titta_version'] = temp['titta_version']
+            for a in temp:
+                if a in ('track_box', 'display_area'):
+                    continue
+                hf.attrs[a] = temp[a]
 
         # Save image stream in the same HDF5 container
         temp = self.buffer.consume_N('eye_image')

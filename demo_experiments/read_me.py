@@ -65,16 +65,16 @@ tracker.init()
 
 # Window set-up (this color will be used for calibration)
 win = visual.Window(monitor=mon, fullscr=FULLSCREEN,
-                    screen=1, size=SCREEN_RES, units='deg')
+                    screen=1, size=SCREEN_RES, units='deg', multiSample=True, numSamples=4)
 if dual_screen_setup:
     win_op = visual.Window(monitor = mon_op, fullscr = FULLSCREEN_OP,
-                    screen=0, size=SCREEN_RES_OP, units = 'norm', waitBlanking=False)
+                    screen=0, size=SCREEN_RES_OP, units = 'norm', multiSample=True, numSamples=4, waitBlanking=False)
     '''
     Note that waitBlanking is set to False, because the screens are flipped serially and the screens are not exactly in sync.
     Setting waitBlanking to True can make drawing on the operator screen slow and choppy.
     '''
 
-fixation_point = helpers.MyDot2(win)
+fixation_point = helpers.MyDot2(win=win)
 
 images = []
 for im_name in im_names:

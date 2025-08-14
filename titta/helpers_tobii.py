@@ -8,6 +8,7 @@ from psychopy import visual
 import numpy as np
 import copy
 import warnings
+import abc
 
 HAS_PSYCHOPY = False
 try:
@@ -98,8 +99,6 @@ def tobii2pix(pos, win):
     and screen coordinate in the upper left corner
     Args:   pos: N x 2 array with calibratio position in [0, 1]
             screen_height: height of screen in cm
-
-
     '''
 
     pos_temp = copy.deepcopy(pos)     # Center
@@ -128,51 +127,58 @@ def pix2tobii(pos, mon):
     return norm2tobii(pos)
 
 # %%
-
-class CalDot:
-    def __init__(self, dot_class, *args, **kwargs):
-        self.dot = dot_class(*args, **kwargs)
-
-    def __getattr__(self, name):
-        # Delegate attribute access to the wrapped dot instance
-        return getattr(self.dot, name)
+class TargetBase(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def create_for_win(self, win):
+        pass
+    @abc.abstractmethod
+    def get_size(self, position):
+        # NB: sizes for the object should be in 'pix' units
+        pass
+    @abc.abstractmethod
+    def get_size(self):
+        pass
+    @abc.abstractmethod
+    def set_size(self, target_size):
+        pass
+    @abc.abstractmethod
+    def draw(self):
+        pass
 
 #%%
-class MyDot2:
+class MyDot2(TargetBase):
     '''
     Generates the best fixation target according to Thaler et al. (2013)
     '''
-    def __init__(self, win, outer_diameter=50, inner_diameter=10,
-                 outer_color = 'black', inner_color = 'white',units = 'pix'):
-        '''
-        Class to generate a stimulus dot with
-        units are derived from the window
-        '''
+    def __init__(self, outer_diameter=50, inner_diameter=10,
+                 outer_color='black', inner_color='white', units='pix', win=None):
+        super().__init__()
+        self.outer_diameter = outer_diameter
+        self.inner_diameter = inner_diameter
+        self.outer_color    = outer_color
+        self.inner_color    = inner_color
+        self.units          = units
+        if win is not None:
+            self.create_for_win(win)
 
-        # Set propertis of dot
-        outer_dot = visual.Circle(win,fillColor = outer_color, radius = outer_diameter/2,
-                                  units = units)
-        inner_dot = visual.Circle(win,fillColor = outer_color, radius = inner_diameter/2,
-                                  units = units)
-        line_vertical = visual.Rect(win, width=inner_diameter, height=outer_diameter,
-                                    fillColor=inner_color, units = units)
-        line_horizontal = visual.Rect(win, width=outer_diameter, height=inner_diameter,
-                                    fillColor=inner_color, units = units)
-
-
-        self.outer_dot = outer_dot
-        self.inner_dot = inner_dot
-        self.line_vertical = line_vertical
-        self.line_horizontal = line_horizontal
-
+    def create_for_win(self, win):
+        # Set properties of dot
+        self.outer_dot = visual.Circle(win, fillColor = self.outer_color, radius = self.outer_diameter/2,
+                                       units = self.units)
+        self.inner_dot = visual.Circle(win, fillColor = self.outer_color, radius = self.inner_diameter/2,
+                                       units = self.units)
+        self.line_vertical = visual.Rect(win, width=self.inner_diameter, height=self.outer_diameter,
+                                         fillColor=self.inner_color, units = self.units)
+        self.line_horizontal = visual.Rect(win, width=self.outer_diameter, height=self.inner_diameter,
+                                           fillColor=self.inner_color, units = self.units)
 
     def set_size(self, size):
-        ''' Sets the size of the stimulus as scaled by 'size'
-        That is, if size == 1, the size is not altered.
+        ''' Sets the size of the stimulus
         '''
-        self.outer_dot.radius = size / 2
-        self.line_vertical.size = (self.line_vertical.width, size)
-        self.line_horizontal.size = (size, self.line_horizontal.height)
+        self.outer_diameter = size
+        self.outer_dot.radius = self.outer_diameter/2
+        self.line_vertical.size = (self.line_vertical.width, self.outer_diameter)
+        self.line_horizontal.size = (self.outer_diameter, self.line_horizontal.height)
 
     def set_pos(self, pos):
         '''
@@ -188,17 +194,13 @@ class MyDot2:
         '''
         get position of dot
         '''
-        pos = self.outer_dot.pos
-
-        return pos
+        return self.outer_dot.pos
 
     def get_size(self):
         '''
         get size of dot
         '''
-
-        return self.outer_dot.radius * 2
-
+        return self.outer_diameter
 
     def draw(self):
         '''
@@ -209,54 +211,53 @@ class MyDot2:
         self.line_horizontal.draw()
         self.inner_dot.draw()
 
-
     def invert_color(self):
         '''
-        inverts the colors of the dot
+        inverts (swaps) the colors of the dot
         '''
-        temp = self.outer_dot.fillColor
-        self.outer_dot.fillColor = self.inner_dot.fillColor
-        self.inner_dot.fillColor = temp
+        self.inner_dot.fillColor, self.outer_dot.fillColor = self.outer_dot.fillColor, self.inner_dot.fillColor
+        self.inner_color, self.outer_color                 = self.outer_color, self.inner_color
 
-    def set_color(self, color):
-        self.outer_dot.lineColor = 'blue'
-        self.outer_dot.fillColor = 'blue'
-        self.inner_dot.fillColor = 'blue'
-        self.inner_dot.lineColor = 'blue'
-        self.line_vertical.lineColor = 'red'
-        self.line_horizontal.fillColor = 'red'
-        self.line_vertical.fillColor = 'red'
-        self.line_horizontal.lineColor = 'red'
-
+    def set_color(self, outer_color, inner_color):
+        self.outer_color, self.inner_color = outer_color, inner_color
+        self.outer_dot.lineColor = self.outer_color
+        self.outer_dot.fillColor = self.outer_color
+        self.inner_dot.fillColor = self.outer_color
+        self.inner_dot.lineColor = self.outer_color
+        self.line_vertical.lineColor = self.inner_color
+        self.line_horizontal.fillColor = self.inner_color
+        self.line_vertical.fillColor = self.inner_color
+        self.line_horizontal.lineColor = self.inner_color
 
 
 #%%
-class MyDot3:
+class MyDot3(TargetBase):
     '''
     Black circle
     '''
-    def __init__(self, win, outer_diameter=50, inner_diameter=10,
-                 outer_color = 'black', inner_color = 'gray',units = 'pix'):
-        '''
-        Class to generate a stimulus dot with
-        units are derived from the window
-        '''
+    def __init__(self, outer_diameter=50, inner_diameter=10,
+                 outer_color='black', inner_color='gray', units='pix', win=None):
+        super().__init__()
+        self.outer_diameter = outer_diameter
+        self.inner_diameter = inner_diameter
+        self.outer_color    = outer_color
+        self.inner_color    = inner_color
+        self.units          = units
+        if win is not None:
+            self.create_for_win(win)
 
-        # Set propertis of dot
-        outer_dot = visual.Circle(win,fillColor = outer_color, radius = round(outer_diameter/2),
-                                  units = units)
-        inner_dot = visual.Circle(win,fillColor = inner_color, radius = round(inner_diameter/2),
-                                  units = units)
-
-
-        self.outer_dot = outer_dot
-        self.inner_dot = inner_dot
+    def create_for_win(self, win):
+        # Set properties of dot
+        self.outer_dot = visual.Circle(win,fillColor = self.outer_color, radius = self.outer_diameter/2,
+                                       units = self.units)
+        self.inner_dot = visual.Circle(win,fillColor = self.inner_color, radius = self.inner_diameter/2,
+                                       units = self.units)
 
     def set_size(self, size):
-        ''' Sets the size of the stimulus as scaled by 'size'
-        That is, if size == 1, the size is not altered.
+        ''' Sets the size of the stimulus
         '''
-        self.outer_dot.radius = size / 2
+        self.outer_diameter = size
+        self.outer_dot.radius = self.outer_diameter/2
 
     def set_pos(self, pos):
         '''
@@ -270,17 +271,13 @@ class MyDot3:
         '''
         get position of dot
         '''
-        pos = self.outer_dot.pos
-
-        return pos
+        return self.outer_dot.pos
 
     def get_size(self):
         '''
         get size of dot
         '''
-
-        return self.outer_dot.radius * 2
-
+        return self.outer_diameter
 
     def draw(self):
         '''
@@ -315,6 +312,7 @@ def ellipse(xy = (0, 0), width=1, height=1, angle=0, n_points=50):
     points = np.vstack((X, Y)).T
 
     return points
+
 #%%
 class EThead(object):
     """ A class to handle head animation in Titta
@@ -322,24 +320,16 @@ class EThead(object):
     head.
     """
 
-    def __init__(self, win, HEAD_BOX_CENTER):
+    def __init__(self, win, HEAD_BOX_CENTER, HEAD_POS_CIRCLE_FIXED_COLOR, HEAD_POS_CIRCLE_MOVING_COLOR):
         '''
         Args:
             win - psychopy window handle
             HEAD_BOX_CENTER - center of headbox, e.g., [x, y, z] = [0, 0, 700]
         '''
-
         self.win = win
 
-        # Define colors
-        blue = tuple(np.array([37, 97, 163]) / 255.0 * 2 - 1)
-        green = tuple(np.array([0, 120, 0]) / 255.0 * 2 - 1)
-        red = tuple(np.array([150, 0, 0]) / 255.0 * 2 - 1)
-        yellow = tuple(np.array([255, 255, 0]) / 255.0 * 2 - 1)
-        yellow_linecolor = tuple(np.array([255, 255, 0]) / 255.0 * 2 - 1)
-
         # Head parameters
-        HEAD_POS_CIRCLE_FIXED_COLOR = blue
+        HEAD_POS_CIRCLE_FIXED_COLOR = HEAD_POS_CIRCLE_FIXED_COLOR
         HEAD_POS_CIRCLE_FIXED_RADIUS = 0.20
         self.HEAD_POS_ELLIPSE_MOVING_HEIGHT = 0.20
         self.HEAD_POS_ELLIPSE_MOVING_MIN_HEIGHT = 0.05
@@ -356,19 +346,17 @@ class EThead(object):
             self.use_positioning_stream = False
             # What is the position of HEAD_BOX_CENTER in positioning stream?
 
-
         # Setup control circles for head position
         self.static_circ = visual.Circle(win, radius = HEAD_POS_CIRCLE_FIXED_RADIUS,
                                          lineColor = HEAD_POS_CIRCLE_FIXED_COLOR,
                                          fillColor = None,
-                                         lineWidth=4, units='height')
+                                         lineWidth=6, units='height')
 
         # Size=None (If None is specified, the size will be set with values passed to width and height)
-        self.moving_ellipse = visual.ShapeStim(win,  lineColor = yellow_linecolor,
-                                         lineWidth=4, units='height',
+        self.moving_ellipse = visual.ShapeStim(win,  lineColor = HEAD_POS_CIRCLE_MOVING_COLOR,
+                                         lineWidth=6, units='height',
                                          size=None,
-                                         fillColor=yellow, opacity=0.5)
-
+                                         fillColor=HEAD_POS_CIRCLE_MOVING_COLOR, opacity=0.5)
 
         # Ellipses for eyes
         self.eye_l = visual.ShapeStim(win,  lineColor = 'white', fillColor='white',
@@ -447,7 +435,7 @@ class EThead(object):
         xyz_pos_eye_r = (sample_user_pos['right_user_position_x'][0],
                          sample_user_pos['right_user_position_y'][0],
                          sample_user_pos['right_user_position_z'][0])
-    # else: # Use User coordinate system (in mm)
+        # else: # Use User coordinate system (in mm)
 
         if not self.use_positioning_stream:
             xyz_pos_eye_l_ucs = (sample['left_gaze_origin_in_user_coordinates_x'][0],
@@ -472,7 +460,6 @@ class EThead(object):
 
             if not self.use_positioning_stream:
                 avg_pos_ucs = np.nanmean([xyz_pos_eye_l_ucs, xyz_pos_eye_r_ucs], axis=0)
-        # print('avg pos  {:f} {:f} {:f}'.format(avg_pos[0], avg_pos[1], avg_pos[2]))
 
         # If one eye is closed, the center of the circle is moved,
         # Try to prevent this by compensating by an offset
@@ -512,8 +499,6 @@ class EThead(object):
             yaw = self.latest_valid_yaw
         self.latest_valid_roll_deg = roll * 180 / np.pi * -1
 
-#        print('test', latest_valid_binocular_avg, roll, yaw)
-
         # Compute the ellipse height and width
         # The width should be zero if yaw = pi/2 rad (90 deg)
         # The width should be equal to the height if yaw = 0
@@ -532,14 +517,11 @@ class EThead(object):
         self.head_width = ellipse_height - \
                           np.abs(yaw) / np.pi * (ellipse_height)
 
-#        print(self.moving_ellipse.pos, self.moving_ellipse.height,
-#              self.head_width, roll, yaw)
-
         # Get head ellipse points to draw
         ellipse_points_head = ellipse(xy = (0, 0),
                                       width= self.head_width,
                                       height=ellipse_height,
-                                      angle=roll)
+                                      angle=roll, n_points=100)
 
         # update position and shape of head ellipse
         self.moving_ellipse.vertices = ellipse_points_head
@@ -555,14 +537,11 @@ class EThead(object):
         self.eye_r.vertices = ellipse_points_head / (5.0 + yaw)
 
         #%% Compute the position and size of the pupils
-#        print(self.eye_l.pos)
         self.pupil_l.pos = self.eye_l.pos
         self.pupil_l.vertices = self.eye_l.vertices * (sample['left_pupil_diameter'][0] - 1)*2 / 16
 
         self.pupil_r.pos = self.eye_r.pos
         self.pupil_r.vertices = self.eye_r.vertices * (sample['right_pupil_diameter'][0] - 1)*2 / 16
-
-#        print(self.eye_l.pos, self.eye_r.pos)
 
         return self.latest_valid_binocular_avg, self.previous_binocular_sample_valid, self.latest_valid_roll, self.latest_valid_yaw, self.offset
 
@@ -580,7 +559,6 @@ class EThead(object):
         # Draw head, eyes, and pupils
         self.moving_ellipse.draw()
 
-#        print(self.eye, self.moving_ellipse.pos, self.eye_r.pos, self.pupil_r.vertices)
         if 'both' in self.eye or 'right' in self.eye:
             if self.right_eye_valid:
                 self.eye_r.draw()
@@ -620,23 +598,14 @@ class EThead(object):
 #%%
 class AnimatedCalibrationDisplay(object):
     """ A class for drawing animated targets"""
-    def __init__(self, win, target, function_name):
-        ''' The function 'function_name' does the actual drawing
-        '''
+    def __init__(self, win, target, move_duration):
         self.win = win
-        self.function_name = function_name
-        self.target = target # psychopy.visual object (should be in 'pix' units)
+        if not isinstance(target,TargetBase):
+            raise ValueError('Provided target should be an instance of a class derived from helpers_tobii.TargetBase')
+        self.target = target
         self.target_size = target.get_size()
+        self.move_duration = move_duration
         self.screen_refresh_rate = float(win.getActualFrameRate() or 60)
-
-    def animate_target(self, point_number, position, tick):
-        ''' Calls the target drawing function 'func'
-        '''
-
-        eval(''.join(['self.',self.function_name,'(',str(point_number),',',
-                                        '(',str(position[0]),',',
-                                            str(position[1]), ')' ,',', str(tick),')']))
-
 
     def animate_point(self, point_number, position, tick):
         ''' Animates calibration point with a certain point_number and position
@@ -649,7 +618,6 @@ class AnimatedCalibrationDisplay(object):
         self.target.set_pos(position)
         self.target.draw()
 
-
     def move_point(self, old_position, new_position, tick):
         ''' Animates movement between two positions
         '''
@@ -659,10 +627,9 @@ class AnimatedCalibrationDisplay(object):
         self.target.set_size(2 * self.target_size)
 
         # How many ticks should the movement be (one screen unit in one second)?
-        n_steps = int(self.screen_refresh_rate / 2)
+        n_steps = int(self.screen_refresh_rate * self.move_duration)
         step_pos_x = np.linspace(old_position[0], new_position[0], n_steps)
         step_pos_y = np.linspace(old_position[1], new_position[1], n_steps)
-
 
         if tick >= len(step_pos_x):
             move_completed = True
@@ -702,6 +669,3 @@ def rms(x):
 #%%
 def sd(x):
     return np.nanstd(x)
-
-#%%
-

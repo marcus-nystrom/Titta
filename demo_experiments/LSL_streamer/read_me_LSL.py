@@ -21,7 +21,7 @@
 from psychopy import visual, monitors, core, event
 import numpy as np
 from titta import Titta, helpers_tobii as helpers
-import TittaLSLPy
+import TittaLSLPy_v2 as TittaLSLPy      # NB: import TittaLSLPy_v1 if the eye tracker you use is not supported by the version 2 of the Tobii Pro SDK
 import pylsl
 import os
 import socket
@@ -166,7 +166,7 @@ to_master.push_sample([msg])
 
 # Window set-up
 win = visual.Window(monitor=mon, fullscr=FULLSCREEN,
-                    screen=1, size=SCREEN_RES, units='deg', checkTiming=False)
+                    screen=1, size=SCREEN_RES, units='deg', multiSample=True, numSamples=4, checkTiming=False)
 text = visual.TextStim(win, height=50, units='pix')
 dot_wally = visual.Circle(win, radius=60, lineColor='red',
                           fillColor= None, lineWidth=10, units='pix',
@@ -179,7 +179,7 @@ remote_gaze = visual.Circle(win, radius=50, lineColor='red', units='pix',
                             fillColor= None, lineWidth=5)
 local_gaze  = visual.Circle(win, radius=25, lineColor='red', units='pix',
                             fillColor= None, lineWidth=5)
-fixation_point = helpers.MyDot2(win)
+fixation_point = helpers.MyDot2(win=win)
 
 im_search = visual.ImageStim(win, image=IMNAME_WALLY)
 im_face   = visual.ImageStim(win, image=IMNAME_WALLY_FACE)

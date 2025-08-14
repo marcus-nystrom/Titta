@@ -11,15 +11,21 @@ def get_defaults(et_name):
 
     settings = Settings(et_name)
 
-    if et_name == 'IS4_Large_Peripheral':
-        settings.SAMPLING_RATE = 90
-    elif et_name == 'Tobii Pro Spectrum':
-        settings.SAMPLING_RATE = 600
-        settings.TRACKING_MODE = 'human'
+    settings.TittaPySDKVersion = 1  # set version of Tobii SDK that should be used for eye tracker. For all except the newest eye trackers v1 should be used, so use that as the default
+    if et_name == 'Tobii Pro Spectrum':
+        settings.SAMPLING_RATE      = 600
+        settings.TRACKING_MODE      = 'human'
+        settings.TittaPySDKVersion  = 2
+    elif et_name == 'Tobii Pro Fusion':
+        settings.SAMPLING_RATE      = 120
+        settings.TittaPySDKVersion  = 2
     elif et_name == 'Tobii Pro Nano':
-        settings.SAMPLING_RATE = 60
+        settings.SAMPLING_RATE      = 60
+        settings.TittaPySDKVersion  = 2
     elif et_name == 'Tobii Pro Spark':
-        settings.SAMPLING_RATE = 60
+        settings.SAMPLING_RATE      = 60
+        settings.TittaPySDKVersion  = 2
+
     elif et_name == 'Tobii TX300':
         settings.SAMPLING_RATE = 300
     elif et_name == 'Tobii T60 XL':
@@ -40,8 +46,9 @@ def get_defaults(et_name):
         settings.SAMPLING_RATE = 60
     elif et_name == 'Tobii T120':
         settings.SAMPLING_RATE = 120
-    elif et_name == 'Tobii Pro Fusion':
-        settings.SAMPLING_RATE = 120
+
+    elif et_name == 'IS4_Large_Peripheral':
+        settings.SAMPLING_RATE = 90
     else:
         raise Exception('eye tracker type not supported')
 
@@ -93,11 +100,13 @@ class Settings(object):
         self.TRACKING_MODE = 'Default'
 
         # Parameters for calibration
-        self.PACING_INTERVAL = 1.0           # How long to present the dot until samples are collected
-        self.AUTO_PACE = 2                   # autoaccept (2), semi autoaccept (1, accept first point, default)
-                                        # of accept with space bar (0)
+        self.PACING_INTERVAL = 1.0           # How long to present the target at calibration/validation location until samples are collected
+        self.AUTO_PACE = 2                   # accept all points with space bar (0), semi autoaccept
+                                             # (1, accept only first point with space bar, default), or
+                                             # autoaccept (2)
 
         self.ANIMATE_CALIBRATION = True      # Static or animated calibration dots
+        self.MOVE_TARGET_DURATION = 0.5      # Duration for calibration/validation target to move from one position to the next
         self.RECORD_EYE_IMAGES_DURING_CALIBRATION = False
         self.N_CAL_TARGETS = 5               # Valid: 0, 1, 5, 9, 13
 
@@ -107,12 +116,14 @@ class Settings(object):
                                              # If empty, use the center of the
                                              # Track Box Coordinate System normalized [0, 1]
 
-        # List all possible calibration points (in Tobii's coordinate system)
-        # (0.0, 0.0) is the upper left corner and (1.0, 1.0) is the lower right corner.
+        # Class for calibration target
+        # If not provided, helpers_tobii.MyDot2 is used. Can be set to helpers_tobii.MyDot3
+        # or any custom class derived from helpers_tobii.TargetBase
+        self.CAL_TARGET = None
 
-        # Name of class for calibration target
-        # Class must be defined in helpers_tobii.py and have the structure of MyDot2
-        self.CAL_TARGET = 'MyDot2'
+        # List all possible calibration/validation points (in Tobii's coordinate system)
+        # (0.0, 0.0) is the upper left corner and (1.0, 1.0) is the lower right corner.
+        # If self.N_CAL_TARGETS is e.g. 5, the first 5 from the array will be used
 
         # Define the 13 point array (reading order)
         self.CAL_TARGETS = np.array([[0.1, 0.1], [0.5, 0.1], [.9,.1],
@@ -121,27 +132,7 @@ class Settings(object):
                            [.3,.7], [.7,.7],
                            [.1,.9], [.5,.9], [.9,.9]])
 
-
         self.VAL_POS_TOBII = np.array([[0.2, 0.5], [0.5, 0.8], [0.8, 0.5], [0.5, 0.2]])
-
-        # CAL_POS_TOBII = np.array([[0.5, 0.5], [0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0],
-        #                           [0.5, 1.0], [0.5, 0.0], [0.0, 0.5], [1.0, 0.5]])
-
-        # if N_CAL_TARGETS == 0:
-        #     CAL_POS_TOBII = []
-        # elif N_CAL_TARGETS == 1:
-        #     CAL_POS_TOBII = CAL_POS_TOBII[0, :]
-        # elif N_CAL_TARGETS == 5:
-        #     CAL_POS_TOBII = CAL_POS_TOBII[[0, 1, 2, 3, 4], :]
-
-        # # VAL_POS_TOBII = np.array([[0.2, 0.2], [0.2, 0.8], [0.8, 0.2], [0.8, 0.8]])
-        # VAL_POS_TOBII = np.array([[0.2, 0.5], [0.5, 0.8], [0.8, 0.5], [0.5, 0.2]])
-
-        # # Scale the positions so they look good on the screen
-        # scaling = 0.7
-        # corr = 0.5 - (scaling * 0.5)
-        # self.CAL_POS_TOBII = CAL_POS_TOBII * scaling + corr
-        # self.VAL_POS_TOBII = VAL_POS_TOBII * scaling + corr
 
 class Graphics(object):
 
@@ -154,7 +145,6 @@ class Graphics(object):
         green = tuple(np.array([0, 120, 0]) / 255.0 * 2 - 1)
         red = tuple(np.array([150, 0, 0]) / 255.0 * 2 - 1)
         yellow = tuple(np.array([255, 255, 0]) / 255.0 * 2 - 1)
-        yellow_linecolor = tuple(np.array([255, 255, 0]) / 255.0 * 2 - 1)
 
         self.blue = blue
         self.blue_active = blue_active
@@ -164,18 +154,13 @@ class Graphics(object):
 
         self.ET_SAMPLE_RADIUS = 5 # in pix
 
-        # SIze of calibration dots
+        # Size of calibration dots
         self.TARGET_SIZE=30 # in pix
         self.TARGET_SIZE_INNER=self.TARGET_SIZE / 6  # inner diameter of dot
 
-        # Theses parameters are changed directly in the EThead class
-        # self.HEAD_POS_CIRCLE_FIXED_COLOR = blue
-        # self.HEAD_POS_CIRCLE_FIXED_RADIUS = 0.25
-
-        # self.HEAD_POS_CIRCLE_MOVING_COLOR = yellow
-        # self.HEAD_POS_CIRCLE_MOVING_FILLCOLOR = yellow
-        # self.HEAD_POS_CIRCLE_MOVING_RADIUS = 0.25
-        # self.HEAD_POS_CIRCLE_MOVING_MIN_RADIUS = 0.05
+        # Parameters of the EThead class (others are changed directly in the EThead class)
+        self.HEAD_POS_CIRCLE_FIXED_COLOR = blue
+        self.HEAD_POS_CIRCLE_MOVING_COLOR = yellow
 
         self.POS_CAL_BUTTON = (0.5, -0.8)
         self.COLOR_CAL_BUTTON =  green

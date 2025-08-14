@@ -69,7 +69,7 @@ tracker.init()
 
 # Window set-up (this color will be used for calibration)
 win = visual.Window(monitor = mon, fullscr = FULLSCREEN,
-                    screen=1, size=SCREEN_RES, units = 'pix')
+                    screen=1, size=SCREEN_RES, units = 'pix', multiSample=True, numSamples=4)
 
 # mouse = event.Mouse(win=win)
 # mouse.setVisible(False)
