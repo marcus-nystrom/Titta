@@ -486,10 +486,10 @@ class EThead(object):
         # Compute roll and yaw data from 3D information about the eyes
         # in the headbox (if both eyes are valid)
         if self.left_eye_valid and self.right_eye_valid:
-            roll = np.math.tan((xyz_pos_eye_l[1] - xyz_pos_eye_r[1]) / \
-                               (xyz_pos_eye_l[0] - xyz_pos_eye_r[0]))
-            yaw =  np.math.tan((xyz_pos_eye_l[2] - xyz_pos_eye_r[2]) / \
-                               (xyz_pos_eye_l[0] - xyz_pos_eye_r[0])) *-1
+            roll = np.tan((xyz_pos_eye_l[1] - xyz_pos_eye_r[1]) / \
+                          (xyz_pos_eye_l[0] - xyz_pos_eye_r[0]))
+            yaw =  np.tan((xyz_pos_eye_l[2] - xyz_pos_eye_r[2]) / \
+                          (xyz_pos_eye_l[0] - xyz_pos_eye_r[0])) *-1
 
             self.latest_valid_roll = roll
             self.latest_valid_yaw = yaw
