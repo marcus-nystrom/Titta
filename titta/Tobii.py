@@ -306,9 +306,8 @@ class myTobii(object):
                                              fillColor = 'red', units='norm')
             self.raw_et_sample_r = visual.Circle(self.win_temp, radius = 0.01,
                                              fillColor = 'blue', units='norm')
-            self.current_point = helpers.MyDot2(self.win_temp, units='norm',
-                                         outer_diameter=0.05,
-                                         inner_diameter=0.02, win=self.win_temp)
+            self.current_point = helpers.MyDot2(outer_diameter=0.05, inner_diameter=0.02, 
+                                             units='norm', win=self.win_temp)
 
         # Show images (eye image, validation resutls)
         self.eye_image_stim_l = visual.ImageStim(self.win_temp, units='norm',
