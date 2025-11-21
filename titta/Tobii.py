@@ -368,7 +368,7 @@ class myTobii(object):
             # 1230333548588, 1230333548588, 1230333548588...-> 1230333715267
         '''
         if block_until_data_available:
-            t0 = self.tracker.get_system_time_stamp()
+            t0 = self.get_system_time_stamp()
             while True:
                 sample = self.buffer.peek_N('gaze', 1)
                 ts = sample['system_time_stamp']
