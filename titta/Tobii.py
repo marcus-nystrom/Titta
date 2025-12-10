@@ -306,7 +306,7 @@ class myTobii(object):
                                              fillColor = 'red', units='norm')
             self.raw_et_sample_r = visual.Circle(self.win_temp, radius = 0.01,
                                              fillColor = 'blue', units='norm')
-            self.current_point = helpers.MyDot2(outer_diameter=0.05, inner_diameter=0.02, 
+            self.current_point = helpers.MyDot2(outer_diameter=0.05, inner_diameter=0.02,
                                              units='norm', win=self.win_temp)
 
         # Show images (eye image, validation resutls)
@@ -964,6 +964,7 @@ class myTobii(object):
     def _generate_calibration_image(self, calibration_result): # TODO: display of gaze data on image does not seem correct
         ''' Generates visual representation of calibration results
         Plot only those who are valid and used?
+
         '''
 
         cal_data = []   # where calibration deviations are stored
@@ -1002,25 +1003,30 @@ class myTobii(object):
                      xys_right.append([xy[0], xy[1]])
                      cal_data.append([x_dot, y_dot, xy[0], xy[1], 'right'])
 
-        samples = visual.ElementArrayStim(self.win,
-                                          sizes=self.settings.graphics.ET_SAMPLE_RADIUS,
-                                          fieldSize=(100, 100),
-                                          nElements=np.max([len(xys_left),
-                                                            len(xys_right)]),
-                                          elementTex=None,
-                                          elementMask='circle',
-                                          units='pix')
-
         # Draw calibration gaze data samples for left eye and right eyes
         if self.eye == 'both' or self.eye == 'left':
-            samples.xys = np.array(xys_left)
-            samples.colors = 'red'
-            samples.draw()
+            samples_l = visual.ElementArrayStim(self.win,
+                                              sizes=self.settings.graphics.ET_SAMPLE_RADIUS,
+                                              fieldSize=(100, 100),
+                                              elementTex=None,
+                                              nElements=len(xys_left),
+                                              elementMask='circle',
+                                              xys=xys_left,
+                                              colors='red',
+                                              units='pix')
+            samples_l.draw()
 
         if self.eye == 'both' or self.eye == 'right':
-            samples.xys = np.array(xys_right)
-            samples.colors = 'blue'
-            samples.draw()
+            samples_r = visual.ElementArrayStim(self.win,
+                                              sizes=self.settings.graphics.ET_SAMPLE_RADIUS,
+                                              fieldSize=(100, 100),
+                                              elementTex=None,
+                                              nElements=len(xys_right),
+                                              elementMask='circle',
+                                              xys=xys_right,
+                                              colors='blue',
+                                              units='pix')
+            samples_r.draw()
 
         # Save validation results as image
         # nCalibrations = len(self.deviations) + 1
@@ -1031,6 +1037,8 @@ class myTobii(object):
 
         # Clear the back buffer without flipping the window
         self.win.clearBuffer()
+
+        del samples_l, samples_r
 
         return cal_data
 
