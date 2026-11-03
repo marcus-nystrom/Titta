@@ -9,5 +9,5 @@ __doc__ = __description__ + " <" + __url__ + ">"
 __author__ = "Marcus Nystrom"
 __email__ = "marcus.nystrom@humlab.lu.se"
 
-__license__ = "Creative Commons Attribution 4.0 (CC BY 4.0)"
+__license__ = "MIT"
 __copyright__ = "Copyright (c) 2019-2023 " + __author__
