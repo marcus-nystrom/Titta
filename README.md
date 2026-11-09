@@ -37,8 +37,8 @@ Then run `read_me.py` from the ['demos'](https://github.com/marcus-nystrom/Titta
 1. Navigate to the 'record'-tab in Pro Lab, and make sure that the External presenter button is red and says 'not connected'.
 1. In PsychoPy, run read_read_me_TalkToProLab.py (first change the monitor settings and the eye tracker name).
 
-Tested on Windows 10 using PsychoPy 2022.1.3 using Python 3.8. Ideally, make sure that the eye tracker is detected and works in 
-the [Tobii Eye Tracker Manager](https://www.tobii.com/products/software/applications-and-developer-kits/tobii-pro-eye-tracker-manager) before trying to use it with Titta.
+Tested on Windows 10 using PsychoPy 2022.1.3 using Python 3.8 and Windows 11 using PsychoPy 2025.1.1 and Python 3.10. Ideally, make sure that the eye tracker is detected and works in 
+the [Tobii Eye Tracker Manager](https://www.tobii.com/products/software/applications-and-developer-kits/tobii-pro-eye-tracker-manager) before trying to use it with Titta. Note also that some of the supported eye trackers require several setup steps before they are ready for use (e.g. do a display setup in Eye Tracker Manager). If these steps have not been performed, Titta will throw strange error messages. On Windows, if the eye tracker shows up in Tobii Eye Tracker Manager, but Titta cannot find it, it might be that a new version of eye tracker manager is required. Tobii has changed how it connects to its currently supported eye trackers, and Titta uses this new method by default. Connecting to the eye tracker now requires installing a small driver, which is provided through an updated version of Eye Tracker Manager.
 
 ## Contents
 The toolbox consists of two main parts:
