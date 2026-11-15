@@ -28,6 +28,14 @@ opt['xres']         = 1920.0                # maximum value of horizontal resolu
 opt['yres']         = 1080.0                # maximum value of vertical resolution in pixels
 opt['freq']         = 600.0                 # sampling frequency of data (check that this value matches with values actually obtained from measurement!)
 
+# Video codec (FourCC). 'avc1' (H.264) gives small files that play almost
+# everywhere, but needs an OpenCV built with an H.264 encoder (e.g. Debian's
+# python3-opencv; the pip wheels often have none). If it cannot be opened,
+# FALLBACK_CODEC is used instead. 'mp4v' (MPEG-4 Part 2) always works with
+# OpenCV, but gives larger files that some players (e.g. browsers) cannot play.
+VIDEO_CODEC = 'avc1'
+FALLBACK_CODEC = 'mp4v'
+
 # Data folder should be structured by one folder for each participant with the eye-tracking data in textfiles in each folder.
 dir_path = os.path.dirname(os.path.realpath(__file__))
 folders  = {}
@@ -49,15 +57,33 @@ def add_transparency_cv2(overlay, image, alpha):
         image_new = cv2.addWeighted(overlay, alpha, image, 1 - alpha, 0)
     return image_new
 
+def open_video_writer(video_file_path, FPS, width, height):
+    """Open a VideoWriter with VIDEO_CODEC, or FALLBACK_CODEC if that fails.
+
+    Returns the writer and the codec that was used.
+    """
+    codecs = [VIDEO_CODEC]
+    if FALLBACK_CODEC and FALLBACK_CODEC != VIDEO_CODEC:
+        codecs.append(FALLBACK_CODEC)
+    for codec in codecs:
+        video = VideoWriter(video_file_path, VideoWriter_fourcc(*codec), float(FPS), (width, height))
+        if video.isOpened():
+            if codec != VIDEO_CODEC and codec not in fallback_reported:
+                print(f"    Codec '{VIDEO_CODEC}' is not available in this OpenCV, using '{codec}'")
+                fallback_reported.add(codec)
+            return video, codec
+        video.release()
+    raise RuntimeError(f'Cannot write video {video_file_path} with codec(s) ' + ', '.join(codecs))
+
+fallback_reported = set()
+
 def create_gaze_video(data, fix, image_file_path, video_file_path, width, height, FPS):
     do_fix_size = True
     radius = round(30 * height/1080)
     radius_fix = round(8 * height/1080)
     fix_slowness = round(25 * height/1080)
     alpha = 0.7
-    fourcc = VideoWriter_fourcc(*'mp4v')
-
-    video = VideoWriter(video_file_path, fourcc, float(FPS), (width, height))
+    video, codec = open_video_writer(video_file_path, FPS, width, height)
     im_rgb = cv2.imread(image_file_path)
     counter = 0
 
@@ -90,7 +116,7 @@ def create_gaze_video(data, fix, image_file_path, video_file_path, width, height
             counter = 0
 
         video.write(image)
-    print('    Saving video to: ' + video_file_path)
+    print('    Saving video to: ' + video_file_path + ' (' + codec + ')')
     video.release()
 
 # %%
