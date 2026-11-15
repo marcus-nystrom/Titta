@@ -47,7 +47,15 @@ import warnings
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
-import numpy as np
+# One BLAS thread per process. The matrices per frame are small, and several
+# stimuli run in parallel (N_WORKERS); with the default of one BLAS thread per
+# CPU thread the threads mostly wait for each other (e.g. 163 s instead of
+# 10 s for 11 stimuli on 28 CPU threads). Must be set before numpy is
+# imported; a value set on the command line is kept.
+for _variable in ('OPENBLAS_NUM_THREADS', 'OMP_NUM_THREADS', 'MKL_NUM_THREADS'):
+    os.environ.setdefault(_variable, '1')
+
+import numpy as np  # noqa: E402
 import pandas as pd
 from PIL import Image
 
